@@ -5,7 +5,7 @@ mode: "wide"
 ---
 
 <div style={{ display: "flex", justifyContent: "center", margin: "4px 0 28px" }}>
-  <img src="/images/marginAccountArchitecture.png" alt="Margin Account Architecture" style={{ maxWidth: "100%", borderRadius: "16px" }} />
+  <img src="/images/learn/marginAccountArchitecture.png" alt="Margin Account Architecture" style={{ maxWidth: "100%", borderRadius: "16px" }} />
 </div>
 
 A Margin Account is the fundamental primitive of Vanna. It is **a smart contract**, not a database row — each user gets their own deployed contract, with its own storage, its own collateral balances, its own debt entries, and its own external positions. The Risk Engine evaluates the account's [health factor](/learn/health-factor) on this contract's state alone; nothing in another user's account can affect it.
@@ -35,7 +35,7 @@ The cost — one contract deployment per account — is amortized using cheap de
 ## Lifecycle
 
 <div style={{ display: "flex", justifyContent: "center", margin: "8px 0 24px" }}>
-  <img src="/images/marginAccountLifecycle.png" alt="Margin Account Lifecycle" style={{ maxWidth: "100%", borderRadius: "16px" }} />
+  <img src="/images/learn/marginAccountLifecycle.png" alt="Margin Account Lifecycle" style={{ maxWidth: "100%", borderRadius: "16px" }} />
 </div>
 
 <Steps>

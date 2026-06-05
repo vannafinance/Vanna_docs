@@ -11,7 +11,7 @@ The best way to understand Vanna's pools is through the lens of a **prime broker
 A prime broker provides a single credit line to a fund manager. The fund deploys that capital into equities, derivatives, or any market — all from one account. The prime broker doesn't care what individual trades are running. It monitors the fund's *overall* collateral and acts only if the aggregate position becomes unsafe.
 
 <div style={{ display: "flex", justifyContent: "center", margin: "8px 0 24px" }}>
-  <img src="/images/ThePrimeBrokerageModel.png" alt="The Prime Brokerage Model" style={{ maxWidth: "100%", borderRadius: "16px" }} />
+  <img src="/images/learn/ThePrimeBrokerageModel.png" alt="The Prime Brokerage Model" style={{ maxWidth: "100%", borderRadius: "16px" }} />
 </div>
 
 ## The Core Idea
@@ -42,7 +42,7 @@ LPs and borrowers never interact directly. The pool intermediates everything —
 Vanna runs a separate pool for each supported asset:
 
 <div style={{ display: "flex", justifyContent: "center", margin: "8px 0 24px" }}>
-  <img src="/images/isloatedLendingPool.png" alt="Per-Asset Isolated Lending Pools" style={{ maxWidth: "100%", borderRadius: "16px" }} />
+  <img src="/images/learn/isloatedLendingPool.png" alt="Per-Asset Isolated Lending Pools" style={{ maxWidth: "100%", borderRadius: "16px" }} />
 </div>
 
 A USDC depositor has zero exposure to the XLM pool. Bad debt in one pool cannot affect another. Each pool carries only the risk of its own borrowers.

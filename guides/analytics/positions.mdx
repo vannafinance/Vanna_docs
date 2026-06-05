@@ -14,7 +14,7 @@ This section has two charts side by side.
 
 A horizontal bar chart showing how many positions fall into each health factor bucket. Use this to quickly gauge how much of the protocol is near or below the liquidation threshold.
 
-![HF Distribution](/images/RiskMonitoringDashboard/HealthFactor.png)
+![HF Distribution](/images/analytics/HealthFactor.png)
 
 | Range | Status |
 |---|---|
@@ -28,7 +28,7 @@ A horizontal bar chart showing how many positions fall into each health factor b
 
 A bar chart showing the live borrow APR for each lending pool (XLM, Blend USDC, Aquarius USDC, Soroswap USDC). Rates are derived from on-chain utilization via the same kinked curve model used in the Margin tab. Refreshes on page load.
 
-![Borrow Rate](/images/RiskMonitoringDashboard/BorrowRate.png)
+![Borrow Rate](/images/analytics/BorrowRate.png)
 
 ## Leverage & health factor heatmap
 
@@ -38,7 +38,7 @@ This section has two panels side by side.
 
 Shows position count and total collateral value broken down by leverage tier. Below the chart you'll see three summary stats: **Avg leverage** across all active accounts, **Max allowed** leverage, and **High-risk (>5x)** — the number of accounts currently above the high-risk threshold.
 
-![Leverage Distribution](/images/RiskMonitoringDashboard/LeverageDistribution.png)
+![Leverage Distribution](/images/analytics/LeverageDistribution.png)
 
 | Range | Label |
 |---|---|
@@ -53,13 +53,13 @@ Shows position count and total collateral value broken down by leverage tier. Be
 
 A table showing collateral density by health factor range. For each HF bucket it shows the number of positions and the total collateral value backing them. Larger bars indicate more capital concentrated in that risk tier.
 
-![Health Factor Heatmap](/images/RiskMonitoringDashboard/HealthFactorHeatmap.png)
+![Health Factor Heatmap](/images/analytics/HealthFactorHeatmap.png)
 
 ## Position Lookup
 
 A searchable table of every active margin account on the protocol. Use the search bar to filter by wallet address, or browse the full list sorted by risk.
 
-![Position Lookup](/images/RiskMonitoringDashboard/PositionLookUp.png)
+![Position Lookup](/images/analytics/PositionLookUp.png)
 
 Each row shows:
 
