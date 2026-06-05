@@ -1,0 +1,37 @@
+---
+title: "Sample Strategies"
+description: "Practical strategies for using Vanna's Earn, Margin, Trade, and Farm sections to build yield-generating positions with minimal downside."
+mode: "wide"
+---
+
+The strategies on this page are designed to earn yield while minimising or eliminating directional price exposure. Rather than relying on asset prices moving in your favour, each approach isolates a yield source — lending interest, farming returns, or rate spreads — and constructs a position around it. Vanna's composable architecture across Earn, Margin, Trade, and Farm makes this possible within a single account.
+
+<Note>
+  No DeFi strategy is entirely risk-free. All positions on Vanna carry smart contract risk. The strategies below are designed to eliminate or minimise **price risk** and **liquidation risk** — not protocol risk. Each strategy page includes a clear risk breakdown.
+</Note>
+
+## Strategies
+
+<CardGroup cols={2}>
+  <Card title="Cross-Pool Rate Carry" href="/guides/strategies/cross-pool-rate-carry" icon="arrow-right-arrow-left">
+    Borrow XLM from Vanna, deploy to a Blend XLM pool — earn the rate spread with zero net XLM price exposure.
+  </Card>
+  <Card title="Earn + Borrow Hedge" href="/guides/strategies/earn-borrow-hedge" icon="shield-halved">
+    Supply XLM to Earn, borrow equal XLM and swap to USDC — the two legs cancel out, leaving zero net XLM exposure.
+  </Card>
+  <Card title="Parallel Rate Carry" href="/guides/strategies/parallel-rate-carry" icon="arrows-split-up-and-left">
+    Run two simultaneous carries — XLM and EURC — from one USDC collateral base, stacking two independent rate spreads with zero price exposure on either leg.
+  </Card>
+  <Card title="Dual Yield Stack" href="/guides/strategies/dual-yield-stack" icon="layer-group">
+    Supply EURC to Earn while running an XLM carry in Margin — two independent yield streams, zero directional exposure.
+  </Card>
+</CardGroup>
+
+## Comparison
+
+| Strategy | Sections | Delta Exposure | Risk | Complexity |
+|---|---|---|---|---|
+| [Cross-Pool Rate Carry](/guides/strategies/cross-pool-rate-carry) | Margin · Farm | None (XLM-neutral) | Low–Medium | Medium |
+| [Dual Yield Stack](/guides/strategies/dual-yield-stack) | Earn · Margin · Farm | None | Low–Medium | Medium |
+| [Earn + Borrow Hedge](/guides/strategies/earn-borrow-hedge) | Earn · Margin · Trade | None (XLM-neutral) | Medium | Medium |
+| [Parallel Rate Carry](/guides/strategies/parallel-rate-carry) | Margin · Farm | None | Medium–High | High |

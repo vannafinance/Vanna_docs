@@ -1,0 +1,109 @@
+---
+title: "Parallel Rate Carry"
+description: "Run two simultaneous rate carries — XLM and EURC — from a single USDC collateral base, stacking two independent spread incomes with no directional price exposure on either leg."
+mode: "wide"
+---
+
+<Info>
+  **Sections used:** Margin · Farm &nbsp;·&nbsp; **Delta exposure:** None &nbsp;·&nbsp; **Risk level:** Medium–High &nbsp;·&nbsp; **Complexity:** High
+</Info>
+
+Deposit USDC as Margin collateral and open two borrow positions simultaneously — one in XLM, one in EURC. Deploy each borrowed asset to its corresponding Blend single-asset pool via Farm. The XLM leg is XLM-neutral: the borrow and the farm position cancel each other on price. The EURC leg carries no meaningful price exposure as EURC is a USD-pegged stablecoin. Both legs generate a rate spread independently, and both draw from the same collateral base — compressing capital requirements while running two yield sources in parallel.
+
+## Why this is delta-neutral
+
+**XLM leg:** Your XLM borrow and your XLM farm position are equal in size and denominated in the same asset. Any price movement in XLM affects both sides by the same amount and cancels out.
+
+**EURC leg:** EURC is a USD-pegged stablecoin. Borrowing and deploying it to a EURC pool introduces no meaningful price exposure.
+
+**USDC collateral:** Stable. A USDC price move of any significance is a stablecoin depeg event — a systemic risk, not a strategy design flaw.
+
+The only source of profit or loss on each leg is the rate differential between what Blend pays and what Vanna charges.
+
+## How to execute
+
+<Steps>
+  <Step title="Open a Margin Account and deposit USDC">
+    Go to **Margin** → **Open Account** if you don't have one. Then go to **Deposit & Borrow** → deposit USDC as collateral. This single collateral position backs both borrows.
+  </Step>
+  <Step title="Borrow XLM — first carry leg">
+    In the borrow panel, select XLM and borrow roughly half your available borrow capacity. Keep Health Factor well above 2.0× at this stage — the EURC borrow in the next step will reduce it further.
+  </Step>
+  <Step title="Deploy XLM to the Blend XLM pool">
+    Go to **Farm** → **Single-Asset Pools** → select the Blend XLM pool → enter your full XLM balance → **Add Liquidity**. The first carry leg is now live.
+  </Step>
+  <Step title="Borrow EURC — second carry leg">
+    Return to **Margin** → **Deposit & Borrow** → borrow EURC using the remaining borrow capacity. Confirm that Health Factor remains at **1.5× or above** after this second borrow.
+  </Step>
+  <Step title="Deploy EURC to the Blend EURC pool">
+    Go to **Farm** → **Single-Asset Pools** → select the Blend EURC pool → enter your full EURC balance → **Add Liquidity**. Both carry legs are now running in parallel.
+  </Step>
+</Steps>
+
+## Example
+
+| | |
+|---|---|
+| USDC collateral deposited | $1,000 USDC |
+| XLM borrowed | $300 worth of XLM |
+| XLM deployed to Blend XLM pool | $300 worth of XLM |
+| Blend XLM Supply APY | 12% → earns $36/year |
+| Vanna XLM Borrow APR | 8% → costs $24/year |
+| **XLM leg net annual yield** | **$12** |
+| EURC borrowed | $300 worth of EURC |
+| EURC deployed to Blend EURC pool | $300 worth of EURC |
+| Blend EURC Supply APY | 7% → earns $21/year |
+| Vanna EURC Borrow APR | 4% → costs $12/year |
+| **EURC leg net annual yield** | **$9** |
+| **Combined annual yield** | **$21** |
+| **Total capital deployed** | **$1,000 USDC** |
+| **Net price exposure** | **Zero** |
+
+<Note>
+  Both legs must independently be profitable. If the XLM spread inverts, only the XLM leg loses — the EURC leg is unaffected, and vice versa. Monitor each rate spread separately and exit a leg as soon as its spread compresses to zero.
+</Note>
+
+## Unwinding the position
+
+Exit each leg completely before withdrawing collateral:
+
+<Steps>
+  <Step title="Exit the XLM leg">
+    Go to **Farm** → select the Blend XLM pool → **Remove Liquidity** → withdraw your full XLM position. Then go to **Margin** → **Repay** → repay the full XLM borrow including accrued interest.
+  </Step>
+  <Step title="Exit the EURC leg">
+    Go to **Farm** → select the Blend EURC pool → **Remove Liquidity** → withdraw your full EURC position. Then go to **Margin** → **Repay** → repay the full EURC borrow including accrued interest.
+  </Step>
+  <Step title="Withdraw USDC collateral">
+    Once both borrows are fully repaid, withdraw your USDC collateral back to your wallet.
+  </Step>
+</Steps>
+
+<Warning>
+  Repay each borrow fully before attempting to withdraw collateral. Partial repayments on either leg may leave the Health Factor constrained and block the collateral withdrawal.
+</Warning>
+
+## Risk profile
+
+| Risk | Level | Notes |
+|---|---|---|
+| XLM price risk | None | XLM borrow and XLM farm cancel exactly |
+| EURC price risk | None | EURC is USD-pegged |
+| Rate risk (XLM leg) | Medium | XLM carry turns negative if Vanna borrow rate exceeds Blend supply rate |
+| Rate risk (EURC leg) | Medium | EURC carry turns negative if Vanna borrow rate exceeds Blend supply rate |
+| Liquidation risk | Medium–High | Both borrows accrue interest against the same collateral base — HF declines from two directions simultaneously |
+| Smart contract risk | Low | Inherent to all on-chain protocols |
+
+## What to monitor
+
+**Both rate spreads independently** — Either leg can invert without affecting the other. Check Vanna borrow APRs vs Blend supply APYs for XLM and EURC separately. Exit only the leg whose spread has compressed.
+
+**Health Factor** — With two borrows accruing interest against a single collateral base, HF declines faster than a single-leg strategy. Add USDC collateral or partially exit one leg if HF falls below 1.5×.
+
+## Related
+
+- [Borrow](/guides/margin/borrow)
+- [Single-Asset Pools](/guides/farm/blend-pools)
+- [Health Factor](/guides/margin/health-factor)
+- [Repay](/guides/margin/repay)
+- [Cross-Pool Rate Carry](/guides/strategies/cross-pool-rate-carry)

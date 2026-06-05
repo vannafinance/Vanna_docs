@@ -106,6 +106,16 @@
               "guides/analytics/liquidations",
               "guides/analytics/risk-explorer"
             ]
+          },
+          {
+            "group": "Sample Strategies",
+            "pages": [
+              "guides/sample-strategies",
+              "guides/strategies/cross-pool-rate-carry",
+              "guides/strategies/earn-borrow-hedge",
+              "guides/strategies/parallel-rate-carry",
+              "guides/strategies/dual-yield-stack"
+            ]
           }
         ]
       },

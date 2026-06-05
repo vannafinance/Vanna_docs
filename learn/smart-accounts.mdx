@@ -14,7 +14,7 @@ A Margin Account is the fundamental primitive of Vanna. It is **a smart contract
 
 | State | Description |
 |---|---|
-| **Collateral tokens** | A list of token addresses the account holds as collateral, plus the balance of each. Includes both deposited assets (USDC, XLM) and tokens issued by external protocols (b-tokens from Blend, LP shares from AMMs). |
+| **Collateral tokens** | A list of token addresses the account holds as collateral, plus the balance of each. Accepted collateral assets are XLM, USDC, and EURC. |
 | **Borrowed tokens** | A list of token addresses the account has outstanding debt in, plus the *share* balance (not asset balance) for each — see [Lending Pools](/learn/lending-pools) for why shares. |
 | **Owner** | The address authorized to operate the account. Set at creation; not transferable without explicit account migration. |
 | **Activation flag** | Whether the account is currently active. Inactive accounts cannot execute new operations but remain on-chain. |
