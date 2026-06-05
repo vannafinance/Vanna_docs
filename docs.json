@@ -1,0 +1,262 @@
+{
+  "$schema": "https://mintlify.com/docs.json",
+  "theme": "mint",
+  "name": "Vanna",
+  "colors": {
+    "primary": "#7C5CFF",
+    "light": "#A387FF",
+    "dark": "#5A3ECC"
+  },
+  "favicon": "/favicon.png",
+  "logo": {
+    "light": "/logo/vanna-light.png",
+    "dark": "/logo/vanna-dark.png",
+    "width": 160,
+    "href": "/home"
+  },
+  "css": "/custom.css",
+  "navbar": {
+    "links": [
+      { "label": "App", "href": "https://app.vanna.finance" },
+      { "label": "GitHub", "href": "https://github.com/vanna-finance" }
+    ],
+    "primary": {
+      "type": "button",
+      "label": "Launch App",
+      "href": "https://app.vanna.finance"
+    }
+  },
+  "navigation": {
+    "anchors": [
+      {
+        "anchor": "Overview",
+        "icon": "house",
+        "groups": [
+          {
+            "group": " ",
+            "pages": ["home"]
+          }
+        ]
+      },
+      {
+        "anchor": "User Guide",
+        "icon": "book-open",
+        "groups": [
+          {
+            "group": "Get Started",
+            "pages": [
+              "guides/getting-started",
+              "guides/connect-wallet"
+            ]
+          },
+          {
+            "group": "How Vanna Works",
+            "pages": [
+              "guides/how-vanna-works",
+              "guides/for-liquidity-providers",
+              "guides/for-traders"
+            ]
+          },
+          {
+            "group": "Earn",
+            "pages": [
+              "guides/earn/overview",
+              "guides/earn/supply",
+              "guides/earn/withdraw"
+            ]
+          },
+          {
+            "group": "Margin Account",
+            "pages": [
+              "guides/margin/overview",
+              "guides/margin/open-account",
+              "guides/margin/deposit-collateral",
+              "guides/margin/borrow",
+              "guides/margin/repay",
+              "guides/margin/transfer-collateral"
+            ]
+          },
+          {
+            "group": "Trade",
+            "pages": [
+              "guides/trade/spot-swap"
+            ]
+          },
+          {
+            "group": "Farm",
+            "pages": [
+              "guides/farm/overview",
+              "guides/farm/blend-pools",
+              "guides/farm/amm-liquidity",
+              "guides/farm/leveraged-yield"
+            ]
+          },
+          {
+            "group": "Risk Management",
+            "pages": [
+              "guides/margin/health-factor",
+              "guides/margin/liquidation"
+            ]
+          },
+          {
+            "group": "Risk Monitoring Dashboard",
+            "pages": [
+              "guides/analytics/overview",
+              "guides/analytics/positions",
+              "guides/analytics/liquidations",
+              "guides/analytics/risk-explorer"
+            ]
+          }
+        ]
+      },
+      {
+        "anchor": "Core Concepts",
+        "icon": "graduation-cap",
+        "groups": [
+          {
+            "group": "Introduction",
+            "pages": [
+              "learn/overview",
+              "learn/protocol-architecture"
+            ]
+          },
+          {
+            "group": "Core Mechanics",
+            "pages": [
+              "learn/smart-accounts",
+              "learn/lending-pools",
+              "learn/vtokens",
+              "learn/composable-leverage"
+            ]
+          },
+          {
+            "group": "Risk & Economics",
+            "pages": [
+              "learn/health-factor",
+              "learn/liquidation",
+              "learn/interest-rate-model",
+              "learn/oracle-system"
+            ]
+          },
+          {
+            "group": "Infrastructure",
+            "pages": [
+              "learn/registry"
+            ]
+          }
+        ]
+      },
+      {
+        "anchor": "Developers",
+        "icon": "code",
+        "groups": [
+          {
+            "group": "Getting Started",
+            "pages": [
+              "developers/overview",
+              "developers/quickstart/stellar",
+              "developers/quickstart/evm",
+              "developers/local-setup"
+            ]
+          },
+          {
+            "group": "Contract Reference",
+            "pages": [
+              "developers/contracts/account-manager",
+              "developers/contracts/smart-account",
+              "developers/contracts/lending-pool",
+              "developers/contracts/risk-engine",
+              "developers/contracts/oracle",
+              "developers/contracts/registry",
+              "developers/contracts/rate-model",
+              "developers/contracts/vtoken"
+            ]
+          },
+          {
+            "group": "Protocol Flows",
+            "pages": [
+              "developers/flows/borrow",
+              "developers/flows/repay",
+              "developers/flows/liquidation",
+              "developers/flows/deposit",
+              "developers/flows/trade"
+            ]
+          },
+          {
+            "group": "Stellar / Soroban",
+            "pages": [
+              "developers/chains/stellar/overview",
+              "developers/chains/stellar/soroban-model",
+              "developers/chains/stellar/contracts",
+              "developers/chains/stellar/integrations",
+              "developers/chains/stellar/deployments"
+            ]
+          },
+          {
+            "group": "EVM / Base",
+            "pages": [
+              "developers/chains/evm/overview",
+              "developers/chains/evm/contracts",
+              "developers/chains/evm/integrations",
+              "developers/chains/evm/deployments"
+            ]
+          },
+          {
+            "group": "Reference",
+            "pages": [
+              "developers/errors"
+            ]
+          }
+        ]
+      },
+      {
+        "anchor": "Security",
+        "icon": "shield-halved",
+        "groups": [
+          {
+            "group": "Security",
+            "pages": [
+              "security/overview",
+              "security/audits",
+              "security/risk-model",
+              "security/emergency-mechanisms",
+              "security/bug-bounty"
+            ]
+          }
+        ]
+      },
+      {
+        "anchor": "Resources",
+        "icon": "circle-info",
+        "groups": [
+          {
+            "group": "Reference",
+            "pages": [
+              "resources/glossary",
+              "resources/supported-assets",
+              "resources/fees",
+              "resources/address-registry",
+              "resources/faq",
+              "resources/changelog"
+            ]
+          }
+        ]
+      },
+      {
+        "anchor": "Discord",
+        "href": "https://discord.gg/vanna",
+        "icon": "discord"
+      }
+    ]
+  },
+  "search": {
+    "prompt": "Search Vanna docs..."
+  },
+  "footer": {
+    "socials": {
+      "x": "https://x.com/vannafinance",
+      "github": "https://github.com/vanna-finance",
+      "discord": "https://discord.gg/vanna"
+    }
+  }
+}

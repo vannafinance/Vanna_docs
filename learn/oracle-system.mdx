@@ -1,0 +1,112 @@
+---
+title: "Oracle System"
+description: "How Vanna fetches real-time asset prices to value collateral and compute account health."
+mode: "wide"
+---
+
+## The Core Problem
+
+A Smart Margin Account might hold XLM as collateral and borrow USDC. To know whether that account is healthy — whether the collateral is worth more than the debt — the protocol needs a common unit. That unit is USD.
+
+The oracle's job is simple: **convert any token balance into a USD value the Risk Engine can use.**
+
+Without an oracle, there's no health factor. Without a health factor, there's no lending protocol.
+
+---
+
+## How Vanna Gets Prices
+
+On Stellar, Vanna uses **[Reflector](https://reflector.network)** — a decentralized on-chain oracle protocol built on Soroban.
+
+Vanna's Oracle contract wraps the Reflector client. When a price is needed, it calls:
+
+```
+reflector.lastprice(asset) → (price, timestamp)
+```
+
+Reflector returns the most recent price for the asset and the timestamp it was recorded at. Vanna then normalizes the price to its internal WAD (1e18) format.
+
+**If Reflector has no price for an asset, the transaction fails immediately.** Vanna never uses a default, a fallback, or a stale cache. Either the price is available, or the operation is blocked.
+
+---
+
+## How Prices Flow into Health Calculations
+
+Every time the Risk Engine checks an account — for a borrow, a withdrawal, a liquidation check — it needs prices for every asset in the account. Here's what happens:
+
+<Steps>
+  <Step title="Enumerate all assets">
+    The Risk Engine reads the account's full collateral list and identifies every token held.
+  </Step>
+  <Step title="Fetch each price once">
+    For each unique asset, the oracle is called once. All prices are cached in memory for the duration of the transaction — so no matter how many times the same asset appears in calculations, it's only fetched from Reflector once.
+  </Step>
+  <Step title="Convert balances to USD">
+    Each token balance is multiplied by its USD price. All values are in WAD scale (1e18).
+  </Step>
+  <Step title="Sum and compare">
+    Total collateral USD = sum of all asset values. This is divided by total debt USD to produce the health factor.
+  </Step>
+</Steps>
+
+The price cache is scoped to one transaction. Every transaction starts fresh — prices cannot carry over from a previous block and silently become stale within Vanna's logic.
+
+---
+
+## Pricing Blend Pool Positions
+
+Smart Margin Accounts can deposit into [Blend](https://blend.capital) lending pools to earn yield while keeping collateral in Vanna. These positions are held as Blend receipt tokens (bXLM, bUSDC, bEURC) rather than the underlying asset directly.
+
+The Risk Engine handles these specially:
+- It detects Blend tracking tokens by their symbol
+- It looks up the underlying asset (XLM, USDC, EURC)
+- It prices the position using the underlying asset's oracle price
+
+A bXLM position is worth the same as XLM for collateral purposes — the Blend yield accrual is tracked separately.
+
+---
+
+## What Happens When the Oracle Fails
+
+Vanna is built to **fail closed**. If the oracle cannot return a price, the entire transaction reverts.
+
+| Scenario | What happens |
+|---|---|
+| Price is available | Transaction proceeds normally |
+| Asset not supported by Reflector | Transaction reverts — operation blocked |
+| Reflector contract is unavailable | Transaction reverts — operation blocked |
+
+There is no degraded mode. A blocked borrow or withdrawal is a recoverable situation. A borrow processed at an unknown price is not.
+
+---
+
+## Price Update Cadence
+
+Vanna does not control when oracle prices update — that is Reflector's responsibility. By default:
+
+- **Resolution**: Prices update every **5 minutes**
+- **Retention**: 24 hours of historical price data is available
+- **TWAP**: Reflector supports time-weighted average prices, though Vanna reads `lastprice` (spot)
+
+Between Reflector updates, the price the Risk Engine sees is the last confirmed price. If a major market move happens between two 5-minute windows, it will only be reflected after the next Reflector update.
+
+---
+
+## Oracle Risk
+
+The protocol trusts the oracle completely. There are two risks this creates:
+
+**Stale prices** — If Reflector stops updating (network outage, validator issues), prices freeze at their last known value. Accounts that should be liquidated may not be, and accounts that are actually healthy may be blocked from borrowing if their collateral's true value hasn't been captured yet.
+
+**Bad data** — If Reflector publishes an incorrect price — due to a bug, manipulation, or an external data source issue — collateral valuations inside Vanna will be wrong. Liquidations can be triggered incorrectly, or positions that should be liquidated can stay open.
+
+These risks are bounded by Reflector's own security model, which aggregates data from multiple sources and uses decentralized validators. For the full treatment of oracle risk in Vanna's security model, see [Security → Risk Model](/security/risk-model).
+
+---
+
+## Related
+
+- [Health Factor](/learn/health-factor) — how collateral and debt values are compared
+- [Liquidation](/learn/liquidation) — what happens when oracle prices push an account below the threshold
+- [Smart Accounts](/learn/smart-accounts) — the collateral the oracle values
+- [Oracle reference](/developers/contracts/oracle) — contract addresses and function interface

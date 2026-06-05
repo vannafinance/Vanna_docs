@@ -1,0 +1,171 @@
+---
+title: "Health Factor"
+description: "The single number that determines whether a Margin Account can borrow, withdraw, or become eligible for liquidation. Vanna enforces a minimum of 1.1×."
+mode: "wide"
+---
+
+The health factor is Vanna's safety mechanism. Every borrow and withdrawal runs through one check: would the post-operation health factor remain at or above **1.1×**? If yes, the operation proceeds. If no, it is blocked.
+
+---
+
+## The Formula
+
+$$
+\text{Health Factor} = \frac{\text{Total Collateral Value (USD)}}{\text{Total Debt Value (USD)}}
+$$
+
+Both values are computed live — fresh oracle prices, current borrow shares, current collateral balances — at the moment of every operation. The health factor is never stored; it is always re-derived on demand.
+
+| Health Factor | Status |
+|---|---|
+| > 1.5× | Safe — comfortable buffer |
+| 1.1× – 1.5× | Caution — monitor closely |
+| ≤ 1.1× | Liquidatable |
+
+<div style={{background:"#111111",borderRadius:"16px",padding:"32px 28px 20px",margin:"12px 0 24px",position:"relative",overflow:"hidden"}}>
+  <div style={{position:"absolute",top:"-80px",right:"-60px",width:"200px",height:"200px",background:"radial-gradient(circle,rgba(252,84,87,0.20) 0%,transparent 70%)",pointerEvents:"none"}} />
+  <div style={{position:"absolute",bottom:"-80px",left:"-60px",width:"200px",height:"200px",background:"radial-gradient(circle,rgba(112,58,230,0.22) 0%,transparent 70%)",pointerEvents:"none"}} />
+  <div style={{position:"relative",zIndex:2}}>
+    <div style={{position:"relative",height:"22px",marginBottom:"10px"}}>
+      <div style={{position:"absolute",left:"0",width:"44%",textAlign:"center",fontSize:"11px",color:"rgba(252,84,87,0.82)",fontWeight:600,fontFamily:"system-ui"}}>Liquidatable</div>
+      <div style={{position:"absolute",left:"44%",width:"16%",textAlign:"center",fontSize:"11px",color:"rgba(251,191,36,0.88)",fontWeight:600,fontFamily:"system-ui"}}>Caution</div>
+      <div style={{position:"absolute",left:"60%",width:"40%",textAlign:"center",fontSize:"11px",color:"rgba(52,211,153,0.82)",fontWeight:600,fontFamily:"system-ui"}}>Safe</div>
+    </div>
+    <div style={{position:"relative",height:"16px",borderRadius:"8px",overflow:"hidden"}}>
+      <div style={{position:"absolute",left:"0",top:"0",width:"44%",height:"100%",background:"linear-gradient(90deg,rgba(252,84,87,0.22) 0%,rgba(252,84,87,0.62) 100%)"}} />
+      <div style={{position:"absolute",left:"44%",top:"0",width:"16%",height:"100%",background:"rgba(251,191,36,0.45)"}} />
+      <div style={{position:"absolute",left:"60%",top:"0",width:"40%",height:"100%",background:"linear-gradient(90deg,rgba(52,211,153,0.38) 0%,rgba(52,211,153,0.62) 100%)"}} />
+      <div style={{position:"absolute",left:"44%",top:"0",width:"2px",height:"100%",background:"rgba(255,255,255,0.85)"}} />
+    </div>
+    <div style={{position:"relative",height:"26px",marginTop:"8px",fontSize:"10px",fontFamily:"monospace"}}>
+      <span style={{position:"absolute",left:"0",color:"rgba(255,255,255,0.30)"}}>0×</span>
+      <span style={{position:"absolute",left:"44%",transform:"translateX(-50%)",color:"rgba(255,255,255,0.75)",fontWeight:700}}>1.1×</span>
+      <span style={{position:"absolute",left:"60%",transform:"translateX(-50%)",color:"rgba(255,255,255,0.30)"}}>1.5×</span>
+      <span style={{position:"absolute",left:"80%",transform:"translateX(-50%)",color:"rgba(255,255,255,0.30)"}}>2.0×</span>
+      <span style={{position:"absolute",right:"0",color:"rgba(255,255,255,0.30)"}}>2.5×</span>
+    </div>
+    <p style={{textAlign:"center",fontSize:"0.70rem",color:"rgba(255,255,255,0.28)",margin:"6px 0 0",fontFamily:"system-ui"}}>Accounts at or below 1.1× are eligible for liquidation</p>
+  </div>
+</div>
+
+---
+
+## A Worked Example
+
+A Margin Account holds two assets as collateral and has one outstanding borrow:
+
+| Component | USD Value |
+|---|---|
+| Collateral asset A | $5,000 |
+| Collateral asset B | $3,000 |
+| **Total collateral** | **$8,000** |
+| Outstanding debt | $4,000 |
+| **Health factor** | **8,000 ÷ 4,000 = 2.0×** ✓ |
+
+The account is healthy. Now suppose collateral asset B drops 80% in price:
+
+| Component | USD Value |
+|---|---|
+| Collateral asset A | $5,000 |
+| Collateral asset B | $600 |
+| **Total collateral** | **$5,600** |
+| Outstanding debt | $4,000 |
+| **Health factor** | **5,600 ÷ 4,000 = 1.4×** ✓ |
+
+Still healthy. If asset B falls to near zero:
+
+| Component | USD Value |
+|---|---|
+| Collateral asset A | $5,000 |
+| Collateral asset B | ~$0 |
+| **Total collateral** | **~$5,000** |
+| Outstanding debt | **$4,400** *(interest has accrued)* |
+| **Health factor** | **5,000 ÷ 4,400 = 1.14×** — approaching threshold |
+
+Once the ratio reaches 1.1×, the account becomes liquidation-eligible.
+
+---
+
+## How the Borrow Check Works
+
+The health check at borrow time is different from what most lending protocols use.
+
+**Standard protocol formula:**
+$$
+\frac{\text{Collateral}}{\ \text{Existing Debt} + \text{Borrow Amount}\ } \geq 1.1
+$$
+
+**Vanna's formula:**
+$$
+\frac{\text{Collateral} + \text{Borrow Amount}}{\ \text{Existing Debt} + \text{Borrow Amount}\ } \geq 1.1
+$$
+
+The borrowed amount is added to **both sides**. This reflects how Vanna accounts work: capital borrowed from a Lending Pool stays inside the Margin Account and is deployed into strategies — those positions then become tracked collateral in the next health check. The protocol treats the borrowed capital as immediately self-collateralizing.
+
+The practical effect is a significantly more permissive first borrow:
+
+| Collateral | Existing Debt | Borrow | Vanna check | Allowed? |
+|---|---|---|---|---|
+| $1,000 | $0 | $5,000 | $6,000 ÷ $5,000 = **1.2×** | ✓ |
+| $1,000 | $0 | $9,000 | $10,000 ÷ $9,000 = **1.11×** | ✓ |
+| $1,000 | $0 | $10,001 | $11,001 ÷ $10,001 = **1.09×** | ✗ |
+| $1,000 | $800 | $300 | $2,100 ÷ $1,100 = **1.9×** | ✓ |
+
+With zero existing debt, you can borrow up to **10× your collateral value** before the check fails.
+
+<Info>
+After borrowing, the ongoing health factor is evaluated using the standard formula — collateral value divided by total debt. The permissive borrow formula only applies at the moment of the borrow request itself.
+</Info>
+
+---
+
+## What Moves Your Health Factor
+
+| Event | Effect on Health Factor |
+|---|---|
+| Deposit more collateral | ↑ Ratio improves |
+| Withdraw collateral | ↓ Ratio worsens |
+| Open a new borrow | ↓ Ratio worsens |
+| Repay debt | ↑ Ratio improves |
+| Collateral asset price rises | ↑ Ratio improves |
+| Collateral asset price falls | ↓ Ratio worsens |
+| Borrowed asset price rises | ↓ Ratio worsens (debt costs more) |
+| Time passes (interest accrues) | ↓ Ratio drifts down slowly |
+| Deploy borrowed capital into a tracked position | ↑ Ratio may improve (new collateral recognized) |
+
+Interest accrues continuously but is only written to state when a pool operation occurs. Between transactions, your debt is silently growing — even if no on-chain event has happened.
+
+---
+
+## The Three Checks
+
+The Risk Engine runs a health check before three types of operations:
+
+| Check | When it runs | Formula used |
+|---|---|---|
+| **Borrow guard** | Before any borrow is issued | `(Collateral + Borrow) / (Debt + Borrow) ≥ 1.1` |
+| **Withdraw guard** | Before any collateral withdrawal | `(Collateral − Withdrawal) / Debt ≥ 1.1` |
+| **Liquidation guard** | Before liquidation is executed | `Collateral / Debt ≤ 1.1` (account must already be unhealthy) |
+
+If an account has no debt, the withdraw guard is skipped entirely — there is no risk to check.
+
+---
+
+## Why 1.1× and Not 1.0×
+
+A threshold of 1.0× would mean an account becomes liquidatable exactly when debt equals collateral — leaving no surplus to cover the cost of unwinding the position. By the time a liquidation executes, a price movement could leave the protocol with unrecoverable losses.
+
+The 1.1× buffer (10%) provides:
+
+- **Headroom for costs** — there is always a surplus available to cover the cost of closing positions
+- **Grace for volatility** — a brief oracle spike to 1.09× does not immediately result in liquidation; the account needs to remain below threshold
+- **Predictability** — traders know exactly when their position is at risk and can manage leverage accordingly
+
+---
+
+## Related
+
+- [Liquidation](/learn/liquidation) — what happens when health drops below 1.1×
+- [Oracle System](/learn/oracle-system) — the price source for the formula
+- [Lending Pools](/learn/lending-pools) — where debt is issued and tracked
+- [Interest Rate Model](/learn/interest-rate-model) — how interest accrues and slowly erodes health

@@ -1,0 +1,247 @@
+---
+title: "How the Pool Works"
+description: "The internal mechanics of a Vanna Lending Pool — from deposit to interest accrual."
+mode: "wide"
+---
+
+## Architecture
+
+Every Lending Pool connects four components. Here's how they relate:
+
+<div style={{background:"#111111",borderRadius:"16px",padding:"32px 24px 24px",margin:"8px 0 24px",position:"relative",overflow:"hidden"}}>
+  <div style={{position:"absolute",top:"-120px",right:"-100px",width:"300px",height:"300px",background:"radial-gradient(circle,rgba(255,0,122,0.2) 0%,transparent 65%)",pointerEvents:"none"}} />
+  <div style={{position:"absolute",bottom:"-120px",left:"-100px",width:"300px",height:"300px",background:"radial-gradient(circle,rgba(112,58,230,0.25) 0%,transparent 65%)",pointerEvents:"none"}} />
+
+  <div style={{position:"relative",zIndex:2,display:"flex",flexDirection:"column",alignItems:"center",gap:"0"}}>
+
+    <div style={{display:"flex",alignItems:"center",gap:"8px",justifyContent:"center"}}>
+      <div style={{background:"rgba(255,255,255,0.03)",border:"1px dashed rgba(255,255,255,0.12)",borderRadius:"10px",padding:"10px 16px",textAlign:"center",minWidth:"110px"}}>
+        <div style={{fontSize:"0.8rem",fontWeight:600,color:"#ffffff"}}>vToken Contract</div>
+        <div style={{fontSize:"0.68rem",color:"rgba(255,255,255,0.35)",marginTop:"3px"}}>mints & burns shares</div>
+      </div>
+      <div style={{color:"rgba(255,255,255,0.3)",fontSize:"12px",padding:"0 2px"}}>◀▶</div>
+      <div style={{background:"rgba(112,58,230,0.12)",border:"1px solid rgba(112,58,230,0.5)",borderRadius:"10px",padding:"12px 20px",textAlign:"center",minWidth:"130px"}}>
+        <div style={{fontSize:"0.88rem",fontWeight:700,background:"linear-gradient(90deg,#FC5457,#703AE6)",WebkitBackgroundClip:"text",WebkitTextFillColor:"transparent"}}>Lending Pool</div>
+        <div style={{fontSize:"0.68rem",color:"rgba(255,255,255,0.35)",marginTop:"3px"}}>USDC · XLM · EURC</div>
+      </div>
+      <div style={{color:"rgba(255,255,255,0.3)",fontSize:"12px",padding:"0 2px"}}>◀──</div>
+      <div style={{background:"rgba(255,255,255,0.03)",border:"1px dashed rgba(255,255,255,0.12)",borderRadius:"10px",padding:"10px 16px",textAlign:"center",minWidth:"110px"}}>
+        <div style={{fontSize:"0.8rem",fontWeight:600,color:"#ffffff"}}>Rate Model</div>
+        <div style={{fontSize:"0.68rem",color:"rgba(255,255,255,0.35)",marginTop:"3px"}}>borrow rate / sec</div>
+      </div>
+    </div>
+
+    <div style={{width:"1px",height:"24px",background:"linear-gradient(180deg,rgba(112,58,230,0.7),rgba(252,84,87,0.7))",margin:"0 auto"}} />
+
+    <div style={{display:"flex",alignItems:"center",gap:"8px",justifyContent:"center"}}>
+      <div style={{width:"110px"}} />
+      <div style={{width:"8px"}} />
+      <div style={{background:"rgba(255,255,255,0.04)",border:"1px solid rgba(255,255,255,0.1)",borderRadius:"10px",padding:"10px 20px",textAlign:"center",minWidth:"130px"}}>
+        <div style={{fontSize:"0.8rem",fontWeight:600,color:"#ffffff"}}>Account Manager</div>
+        <div style={{fontSize:"0.68rem",color:"rgba(255,255,255,0.35)",marginTop:"3px"}}>only borrowing gateway</div>
+      </div>
+      <div style={{color:"rgba(255,255,255,0.3)",fontSize:"12px",padding:"0 2px"}}>◀──</div>
+      <div style={{background:"rgba(255,255,255,0.03)",border:"1px dashed rgba(255,255,255,0.12)",borderRadius:"10px",padding:"10px 16px",textAlign:"center",minWidth:"110px"}}>
+        <div style={{fontSize:"0.8rem",fontWeight:600,color:"#ffffff"}}>Risk Engine</div>
+        <div style={{fontSize:"0.68rem",color:"rgba(255,255,255,0.35)",marginTop:"3px"}}>health check</div>
+      </div>
+    </div>
+
+    <div style={{width:"1px",height:"24px",background:"linear-gradient(180deg,rgba(112,58,230,0.7),rgba(252,84,87,0.7))",margin:"0 auto"}} />
+
+    <div style={{background:"rgba(255,255,255,0.04)",border:"1px solid rgba(255,255,255,0.1)",borderRadius:"10px",padding:"10px 20px",textAlign:"center",minWidth:"130px"}}>
+      <div style={{fontSize:"0.8rem",fontWeight:600,color:"#ffffff"}}>Margin Account</div>
+      <div style={{fontSize:"0.68rem",color:"rgba(255,255,255,0.35)",marginTop:"3px"}}>holds collateral & debt</div>
+    </div>
+
+    <div style={{width:"1px",height:"24px",background:"linear-gradient(180deg,rgba(112,58,230,0.7),rgba(252,84,87,0.7))",margin:"0 auto"}} />
+
+    <div style={{display:"flex",gap:"10px",justifyContent:"center"}}>
+      <div style={{background:"rgba(255,255,255,0.03)",border:"1px solid rgba(255,255,255,0.07)",borderRadius:"8px",padding:"8px 16px",fontSize:"0.75rem",color:"rgba(255,255,255,0.5)",fontWeight:500}}>Spot Trade</div>
+      <div style={{background:"rgba(255,255,255,0.03)",border:"1px solid rgba(255,255,255,0.07)",borderRadius:"8px",padding:"8px 16px",fontSize:"0.75rem",color:"rgba(255,255,255,0.5)",fontWeight:500}}>Perps</div>
+      <div style={{background:"rgba(255,255,255,0.03)",border:"1px solid rgba(255,255,255,0.07)",borderRadius:"8px",padding:"8px 16px",fontSize:"0.75rem",color:"rgba(255,255,255,0.5)",fontWeight:500}}>Yield Farm</div>
+    </div>
+
+    <div style={{textAlign:"center",fontSize:"0.68rem",color:"rgba(255,255,255,0.2)",marginTop:"14px",letterSpacing:"0.04em"}}>↑ Interest flows back to the pool on every repayment</div>
+
+  </div>
+</div>
+
+**Lending Pool** sits at the center — it holds the asset, tracks all deposits and borrows, and computes interest. The other three contracts are its dependencies:
+
+| Component | Role |
+|---|---|
+| **vToken Contract** | Mints LP shares on deposit, burns them on withdrawal |
+| **Rate Model** | Returns the current borrow rate per second, based on utilization |
+| **Account Manager** | The only address allowed to call `lend_to()` — no direct user borrows |
+| **Risk Engine** | Checks account health before Account Manager approves any borrow |
+
+---
+
+## Deposits & Exchange Rate
+
+When an LP deposits, the pool mints **vTokens** — shares that represent their portion of the pool.
+
+The number of vTokens minted is:
+
+```
+vTokens = deposit_amount × total_vToken_supply / total_pool_balance
+```
+
+On the **first ever deposit**, total supply and balance are both zero — so the rate defaults to 1:1. After that, every new deposit gets fewer vTokens per unit because the existing vTokens are already worth more (interest has accrued into the pool balance).
+
+When an LP redeems:
+
+```
+USDC returned = vTokens_burned × total_pool_balance / total_vToken_supply
+```
+
+The LP gets back more than they deposited — the difference is their share of all the interest the pool collected while they held vTokens.
+
+---
+
+## Borrow Shares — Not Amounts
+
+Debt is tracked as **shares**, not asset amounts. Here's why.
+
+If the pool tracked raw amounts, it would need to update every borrower's balance every second interest accrues. With thousands of accounts, that's impossible.
+
+Instead:
+
+- When you borrow 1,000 USDC, you receive **borrow shares** (initially equal to 1,000 shares)
+- Your share count never changes
+- As interest accrues, `total_borrows` grows — making each share worth more USDC
+
+```
+Your borrow balance = your_shares × total_borrows / total_shares
+```
+
+**Example:**
+```
+Borrow 1,000 USDC  →  receive 1,000 borrow shares
+
+30 days later, 50 USDC interest has accrued:
+  total_borrows = 1,050  |  total_shares = 1,000
+
+Your balance = 1,000 × 1,050 / 1,000 = 1,050 USDC owed
+```
+
+Your shares stayed at 1,000. The debt grew automatically — without touching your record.
+
+---
+
+## Interest Accrual — Lazy Update
+
+The pool does **not** accrue interest on every block. It uses a lazy pattern — interest is calculated on-demand.
+
+Before every deposit, withdrawal, borrow, or repay, the pool runs `update_state()`:
+
+```
+1. Time elapsed = current_timestamp − last_updated_timestamp
+2. Rate factor  = time_elapsed × borrow_rate_per_second
+3. Interest     = current_borrows × rate_factor
+4. New borrows  = old_borrows + interest
+5. Update last_updated_timestamp = now
+```
+
+If two transactions happen in the same ledger, `update_state()` returns immediately — there's nothing to accrue.
+
+Between transactions, debt silently grows in the background. When a borrower eventually interacts, all accumulated interest materializes in one step.
+
+---
+
+## Origination Fee
+
+Every borrow incurs a **one-time origination fee**, charged at the moment the loan is issued.
+
+```
+Fee = borrow_amount × origination_fee_rate
+```
+
+- The fee is **deducted before capital reaches the Margin Account** — the borrower receives `amount − fee`
+- The fee is transferred directly to the **treasury**
+- This is not ongoing interest — it's a flat cost paid once per borrow
+
+---
+
+## Utilization & Liquidity Risk
+
+The pool tracks one key ratio:
+
+```
+Utilization = total_borrows / (available_liquidity + total_borrows)
+```
+
+At high utilization, two things happen simultaneously:
+- The [Interest Rate Model](/learn/interest-rate-model) makes borrowing more expensive, pushing borrowers to repay
+- Withdrawals can be **blocked** if the pool has less liquidity than the redemption amount
+
+<div style={{background:"#111111",borderRadius:"14px",padding:"24px 24px 36px",margin:"12px 0",position:"relative",overflow:"hidden"}}>
+
+  {/* orbs */}
+  <div style={{position:"absolute",top:"-80px",right:"-80px",width:"220px",height:"220px",background:"radial-gradient(circle,rgba(252,84,87,0.18) 0%,transparent 70%)",pointerEvents:"none"}} />
+  <div style={{position:"absolute",bottom:"-80px",left:"-80px",width:"220px",height:"220px",background:"radial-gradient(circle,rgba(112,58,230,0.22) 0%,transparent 70%)",pointerEvents:"none"}} />
+
+  {/* chart area */}
+  <div style={{position:"relative",height:"160px",margin:"0 8px"}}>
+
+    {/* y-axis */}
+    <div style={{position:"absolute",left:"36px",top:"0",bottom:"28px",width:"1px",background:"rgba(255,255,255,0.1)"}} />
+    {/* x-axis */}
+    <div style={{position:"absolute",left:"36px",right:"0",bottom:"28px",height:"1px",background:"rgba(255,255,255,0.1)"}} />
+
+    {/* 70% reference line */}
+    <div style={{position:"absolute",left:"calc(36px + 63%)",top:"0",bottom:"28px",width:"1px",borderLeft:"1px dashed rgba(255,255,255,0.1)"}} />
+    {/* 90% reference line */}
+    <div style={{position:"absolute",left:"calc(36px + 86%)",top:"0",bottom:"28px",width:"1px",borderLeft:"1px dashed rgba(252,84,87,0.25)"}} />
+
+    {/* fill area under curve */}
+    <div style={{
+      position:"absolute",
+      left:"37px",right:"0",top:"0",bottom:"29px",
+      background:"linear-gradient(160deg,rgba(252,84,87,0.22) 0%,rgba(112,58,230,0.06) 100%)",
+      clipPath:"polygon(0% 100%, 8% 99.5%, 18% 98.5%, 28% 97%, 38% 95%, 48% 92%, 57% 88%, 65% 82%, 71% 74%, 77% 63%, 82% 50%, 87% 35%, 91% 20%, 95% 8%, 100% 0%, 100% 100%)"
+    }} />
+
+    {/* curve line (bright top edge of a thin strip) */}
+    <div style={{
+      position:"absolute",
+      left:"37px",right:"0",top:"0",bottom:"29px",
+      background:"linear-gradient(90deg,#703AE6,#FC5457)",
+      clipPath:"polygon(0% 100%, 8% 99.5%, 18% 98.5%, 28% 97%, 38% 95%, 48% 92%, 57% 88%, 65% 82%, 71% 74%, 77% 63%, 82% 50%, 87% 35%, 91% 20%, 95% 8%, 100% 0%, 100% 1.5%, 95% 9.5%, 91% 22%, 87% 37%, 82% 52%, 77% 65%, 71% 76%, 65% 84%, 57% 90%, 48% 94%, 38% 97%, 28% 98.5%, 18% 99.5%, 8% 100.5%)"
+    }} />
+
+    {/* axis tick labels */}
+    <div style={{position:"absolute",bottom:"10px",left:"30px",fontSize:"10px",color:"rgba(255,255,255,0.25)",fontFamily:"system-ui"}}>0%</div>
+    <div style={{position:"absolute",bottom:"10px",left:"calc(36px + 63% - 10px)",fontSize:"10px",color:"rgba(255,255,255,0.25)",fontFamily:"system-ui"}}>70%</div>
+    <div style={{position:"absolute",bottom:"10px",left:"calc(36px + 86% - 10px)",fontSize:"10px",color:"rgba(252,84,87,0.7)",fontFamily:"system-ui"}}>90%</div>
+    <div style={{position:"absolute",bottom:"10px",right:"0",fontSize:"10px",color:"rgba(255,255,255,0.25)",fontFamily:"system-ui"}}>100%</div>
+
+    {/* zone labels */}
+    <div style={{position:"absolute",bottom:"44px",left:"calc(36px + 25%)",fontSize:"10px",color:"rgba(255,255,255,0.2)",fontFamily:"system-ui",fontStyle:"italic"}}>flat zone</div>
+    <div style={{position:"absolute",top:"12px",right:"2px",fontSize:"10px",color:"rgba(252,84,87,0.6)",fontFamily:"system-ui",fontStyle:"italic",textAlign:"right",lineHeight:"1.3"}}>sharp<br/>rise</div>
+
+    {/* IRM label */}
+    <div style={{position:"absolute",bottom:"52px",left:"calc(36px + 38%)",fontSize:"11px",color:"rgba(255,255,255,0.35)",fontFamily:"system-ui",fontStyle:"italic"}}>IRM</div>
+
+    {/* axis name labels */}
+    <div style={{position:"absolute",bottom:"10px",left:"50%",transform:"translateX(-50%)",fontSize:"10px",color:"rgba(255,255,255,0.2)",fontFamily:"system-ui"}}>Utilization →</div>
+    <div style={{position:"absolute",top:"50%",left:"-8px",transform:"rotate(-90deg) translateX(50%)",fontSize:"10px",color:"rgba(255,255,255,0.2)",fontFamily:"system-ui",whiteSpace:"nowrap"}}>Borrow Rate ↑</div>
+
+  </div>
+
+  <p style={{textAlign:"center",fontSize:"0.7rem",color:"rgba(255,255,255,0.25)",margin:"12px 0 0",fontFamily:"system-ui"}}>Rate stays near-flat below 70% utilization, then accelerates sharply near 90–100%.</p>
+</div>
+
+If utilization is at 95%, only 5% of deposited funds are available for withdrawal. An LP trying to redeem more than that will get an `InsufficientPoolBalance` error. They must wait until a borrower repays.
+
+This is the primary risk LPs accept — not credit risk (that's handled by liquidations), but **liquidity risk** at high utilization.
+
+---
+
+## Related
+
+- [vTokens](/learn/vtokens) — full detail on LP shares and yield accounting
+- [Interest Rate Model](/learn/interest-rate-model) — how the borrow rate responds to utilization
+- [Health Factor](/learn/health-factor) — the Risk Engine check that gates every borrow
+- [Liquidation](/learn/liquidation) — how the pool is protected when accounts go unhealthy

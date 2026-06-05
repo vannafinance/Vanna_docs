@@ -1,0 +1,92 @@
+---
+title: "Margin Accounts"
+description: "Isolated smart contract vaults — one per user position — that hold collateral, track debt, and execute external calls under a unified health factor."
+mode: "wide"
+---
+
+<div style={{ display: "flex", justifyContent: "center", margin: "4px 0 28px" }}>
+  <img src="/images/marginAccountArchitecture.png" alt="Margin Account Architecture" style={{ maxWidth: "100%", borderRadius: "16px" }} />
+</div>
+
+A Margin Account is the fundamental primitive of Vanna. It is **a smart contract**, not a database row — each user gets their own deployed contract, with its own storage, its own collateral balances, its own debt entries, and its own external positions. The Risk Engine evaluates the account's [health factor](/learn/health-factor) on this contract's state alone; nothing in another user's account can affect it.
+
+## What a Margin Account Holds
+
+| State | Description |
+|---|---|
+| **Collateral tokens** | A list of token addresses the account holds as collateral, plus the balance of each. Includes both deposited assets (USDC, XLM) and tokens issued by external protocols (b-tokens from Blend, LP shares from AMMs). |
+| **Borrowed tokens** | A list of token addresses the account has outstanding debt in, plus the *share* balance (not asset balance) for each — see [Lending Pools](/learn/lending-pools) for why shares. |
+| **Owner** | The address authorized to operate the account. Set at creation; not transferable without explicit account migration. |
+| **Activation flag** | Whether the account is currently active. Inactive accounts cannot execute new operations but remain on-chain. |
+
+The list of *collateral tokens* and *borrowed tokens* grows and shrinks dynamically. Depositing a new asset adds it to the collateral list; repaying a borrow fully removes the token from the borrowed list.
+
+## Why Isolation
+
+There are two common ways to track per-user positions on-chain:
+
+- **Shared mapping.** One contract holds a `mapping(address => Position)`. Cheap to deploy, but a bug in the contract logic can cross-contaminate users.
+- **Isolated contract per user.** Each user gets a separately deployed contract. More expensive at creation; impossible for one user's state to corrupt another's.
+
+Vanna chose isolated contracts because **leverage is unforgiving**. A logic bug in a shared-mapping margin protocol can drain every user simultaneously. With isolated accounts, the worst-case blast radius of a single-account bug is one account. The Risk Engine reads each account's state via direct contract calls — it cannot accidentally see or modify another account.
+
+The cost — one contract deployment per account — is amortized using cheap deployment patterns: a beacon proxy on EVM, a deterministic factory deployment on Soroban.
+
+## Lifecycle
+
+<div style={{ display: "flex", justifyContent: "center", margin: "8px 0 24px" }}>
+  <img src="/images/marginAccountLifecycle.png" alt="Margin Account Lifecycle" style={{ maxWidth: "100%", borderRadius: "16px" }} />
+</div>
+
+<Steps>
+  <Step title="Created">
+    A user calls `AccountManager.open_account()`. The Account Manager deploys a new Margin Account contract addressed deterministically from `(owner, account_index)` and records the owner → account mapping in the [Registry](/learn/registry).
+  </Step>
+  <Step title="Funded">
+    The user deposits one or more collateral assets. The Margin Account's collateral list grows. At this point the account has no debt, so its health factor is effectively infinite.
+  </Step>
+  <Step title="Leveraged">
+    The user borrows from one or more Lending Pools, takes positions via `execute()`, or both. The Risk Engine validates each operation against the 1.1× threshold. Borrowed assets, position tokens (b-tokens, LP shares), and any external claims all live inside the same Margin Account.
+  </Step>
+  <Step title="Repay or close">
+    The user repays outstanding debt — fully or partially. Once debt = 0, the user can call `close_account()`, which sweeps remaining collateral back to the owner and marks the account closed.
+  </Step>
+  <Step title="Liquidation (if applicable)">
+    If the account's health factor falls below 1.1× while debt is outstanding, any address can call `liquidate()`. The protocol sweeps the account's assets, repays the debt to the Lending Pools, and the liquidator earns an incentive. See [Liquidation](/learn/liquidation).
+  </Step>
+</Steps>
+
+## Health Enforcement
+
+Every state-changing operation on a Margin Account goes through the Account Manager, and the Account Manager calls the Risk Engine before mutating state. The Risk Engine:
+
+1. Reads the Margin Account's current collateral and borrowed token lists.
+2. Queries the [Oracle](/learn/oracle-system) for current USD prices of every asset involved.
+3. Computes the **post-operation** health factor — what it would be if the operation succeeded.
+4. Returns `Ok(true)` if the post-operation ratio remains ≥ 1.1×, `Ok(false)` otherwise.
+
+The Account Manager rejects the operation if the Risk Engine returns false. This means:
+
+- A borrow that would push your health to 1.05× is rejected before any tokens move.
+- A withdraw of collateral that would push your health below 1.1× is rejected.
+- A liquidation that would *not* restore the account to health is permitted only if the alternative — letting the account remain insolvent — is worse.
+
+## What Margin Accounts Cannot Do
+
+By design, Margin Accounts are restricted:
+
+- **Cannot call arbitrary contracts.** All external calls go through `execute()`, which is gated by the [Controller](/glossary#controller) allowlist. A trader cannot drain their account by interacting with a malicious contract.
+- **Cannot move collateral to another account.** Margin Accounts are owner-locked. To move funds, the owner must withdraw to their wallet and then deposit to the new account.
+- **Cannot bypass the Risk Engine.** Even the Account Manager cannot mutate Margin Account state without first calling `is_borrow_allowed` / `is_withdraw_allowed`. The Risk Engine is the single chokepoint.
+
+## Chain Support
+
+<Snippet file="chain-support-table.mdx" />
+
+## Related
+
+- [Lending Pools](/learn/lending-pools) — the other side of the market
+- [Health Factor](/learn/health-factor) — what the Risk Engine actually computes
+- [Composable Leverage](/learn/composable-leverage) — how `execute()` puts borrowed assets to work
+- [Account Manager reference](/developers/contracts/account-manager) — the function-level interface
+- [Margin Account reference](/developers/contracts/smart-account) — the contract you don't call directly but should understand

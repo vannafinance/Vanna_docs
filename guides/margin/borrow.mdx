@@ -1,0 +1,68 @@
+---
+title: "Borrow"
+description: "How to borrow assets against your Margin Account collateral."
+mode: "wide"
+---
+
+<Snippet file="snippets/testnet-notice.mdx" />
+
+<Snippet file="snippets/risk-notice.mdx" />
+
+## Before you start
+
+- **Margin Account with collateral deposited** — see [Deposit Collateral](/guides/margin/deposit-collateral) if you haven't added collateral yet.
+- **Health Factor above 1.1×** — you can only borrow if your current Health Factor leaves room for new debt. See [Health Factor](/guides/margin/health-factor) for details.
+
+## How borrowing works
+
+You borrow from Vanna's lending pools — the same pools that Earn suppliers deposit into. When you borrow, your debt draws liquidity from those pools and accrues interest continuously based on the pool's current borrow rate.
+
+A small origination fee is charged when you borrow. The exact amount is calculated and shown in the transaction preview before you confirm, so you don't need to calculate it yourself.
+
+Borrowed assets stay inside your Margin Account. You cannot send them directly to your wallet. You can deploy them within the account by routing them to Farm or Trade.
+
+Interest accrues on your debt continuously. Your Health Factor reflects your current collateral-to-debt ratio at all times, so as interest builds up, your Health Factor will gradually decrease even if collateral prices stay flat.
+
+## Steps
+
+<Steps>
+  <Step title="Go to the Margin tab">
+    Click **Margin** in the top navigation bar. Your current Health Factor, Net Available Collateral, and Collateral Left Before Liquidation are shown in the metrics bar at the top.
+  </Step>
+  <Step title="Open the borrow panel">
+    Click **Deposit & Borrow**. The panel has two sections: one for depositing collateral and one for entering a borrow amount. You can deposit additional collateral and borrow in the same transaction, or borrow against collateral you've already deposited.
+  </Step>
+  <Step title="Enter a borrow amount or use the leverage slider">
+    You can either type a specific borrow amount directly into the borrow field, or use the leverage slider to set a target leverage level. The slider adjusts the borrow amount and shows the resulting Health Factor and loan-to-value (LTV) ratio in real time as you drag it. Aim to keep the resulting Health Factor comfortably above 1.1×.
+  </Step>
+  <Step title="Review the preview">
+    Before confirming, check the post-borrow Health Factor displayed in the panel. Confirm it is well above 1.1× — not just barely above — to give yourself a buffer against price movements and accruing interest. The panel also shows the origination fee and your post-borrow Net Available Collateral.
+  </Step>
+  <Step title="Click Deposit & Borrow">
+    Click the **Deposit & Borrow** button. Your wallet opens a confirmation prompt showing the full transaction details, including the origination fee. Review and confirm to sign and broadcast the transaction.
+  </Step>
+  <Step title="Borrowed">
+    Once confirmed, your debt balance and Health Factor update in the Margin metrics bar. The borrowed assets are now inside your Margin Account and ready to be deployed to Farm or Trade.
+  </Step>
+</Steps>
+
+<Warning>
+  Borrowing reduces your Health Factor. If the value of your collateral falls or your debt grows from accruing interest, your Health Factor drops further. Monitor it regularly. If it reaches 1.1×, your account can be liquidated — a liquidator will repay part of your debt and claim a portion of your collateral at a discount.
+</Warning>
+
+## Monitoring your position
+
+Keep an eye on your Health Factor over time, especially when collateral prices are volatile. See [Health Factor](/guides/margin/health-factor) to understand how it is calculated and what actions you can take to improve it.
+
+## What to do with borrowed assets
+
+Borrowed assets remain in your Margin Account. You can put them to work in two ways:
+
+- **Farm** — deploy borrowed assets into yield strategies. See [Farm Overview](/guides/farm/overview).
+- **Trade** — swap borrowed assets into other positions. See [Spot Swap](/guides/trade/spot-swap).
+
+## Related
+
+- [Repay](/guides/margin/repay) — pay down your debt and recover Health Factor.
+- [Health Factor](/guides/margin/health-factor) — understand your position health in detail.
+- [Liquidation](/guides/margin/liquidation) — learn what happens if your Health Factor reaches 1.1×.

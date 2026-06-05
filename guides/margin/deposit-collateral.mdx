@@ -1,0 +1,56 @@
+---
+title: "Deposit Collateral"
+description: "How to deposit assets into your Margin Account as collateral."
+mode: "wide"
+---
+
+<Snippet file="snippets/testnet-notice.mdx" />
+
+## Before you start
+
+- **Margin Account created** — see [Open a Margin Account](/guides/margin/open-account) if you haven't done this yet.
+- **Wallet connected** — your wallet must be connected to approve the transaction.
+- **Assets to deposit** — have XLM, USDC, EURC, or vTokens available in your wallet.
+
+## What counts as collateral
+
+You can deposit XLM, USDC, EURC, vXLM, and vUSDC as collateral. The vTokens — vXLM and vUSDC — are the yield-bearing tokens you receive when you supply assets through the Earn tab. Depositing vTokens as collateral lets you continue earning Earn yield on those assets while simultaneously using their value to back borrowed positions in your Margin Account.
+
+## Steps
+
+<Steps>
+  <Step title="Go to the Margin tab">
+    Click **Margin** in the top navigation bar. Your Margin Account metrics panel is shown at the top of the page.
+  </Step>
+  <Step title="Open the deposit panel">
+    Click the **Deposit & Borrow** tab or button in the Margin interface. The deposit and borrow panel opens, showing fields for both depositing collateral and entering a borrow amount.
+  </Step>
+  <Step title="Select WB (wallet balance)">
+    Make sure the **WB** toggle is selected at the top of the deposit section. WB stands for wallet balance — this moves assets from your wallet into your Margin Account. The **MB** toggle (margin balance) is used for repositioning assets that are already inside your Margin Account, not for adding new collateral from your wallet.
+  </Step>
+  <Step title="Choose an asset and amount">
+    Select the asset you want to deposit from the asset selector (for example, USDC). Enter the amount you want to deposit, or click **MAX** to deposit your full available balance of that asset.
+  </Step>
+  <Step title="Review the preview">
+    The panel updates to show a preview of your position after the deposit. Check the updated Health Factor and the new Net Available Collateral figure to confirm the deposit improves your borrowing capacity as expected.
+  </Step>
+  <Step title="Confirm the transaction">
+    Click the deposit button to proceed. Your wallet opens a confirmation prompt. Review and confirm to sign and broadcast the transaction.
+  </Step>
+  <Step title="Confirmed">
+    Once the transaction is confirmed, your collateral balance updates in the Margin metrics bar. Your Net Available Collateral increases, and you can now borrow against the deposited assets.
+  </Step>
+</Steps>
+
+<Note>
+  You can deposit multiple asset types as collateral. Depositing more collateral improves your Health Factor and increases your Net Available Collateral, giving you more room to borrow without approaching the liquidation threshold.
+</Note>
+
+## Just depositing — no borrowing?
+
+If you want to deposit assets into your Margin Account to use for trading (spot swaps, farm strategies) but **do not want to borrow**, set your leverage to **1×**. At 1× leverage, you are using only your own deposited capital with no borrowed funds — giving you full control without any liquidation risk from borrowing.
+
+## Related
+
+- [Borrow](/guides/margin/borrow) — use your collateral to borrow assets.
+- [Health Factor](/guides/margin/health-factor) — understand how your collateral value affects your position health.

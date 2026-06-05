@@ -1,0 +1,57 @@
+---
+title: "Repay a Loan"
+description: "How to repay your borrowed assets and improve your Health Factor."
+mode: "wide"
+---
+
+<Snippet file="snippets/testnet-notice.mdx" />
+
+## Before you start
+
+- **Active Margin Account with debt** — you must have an outstanding borrow balance. See [Open a Margin Account](/guides/margin/open-account) if you haven't created one yet.
+- **Borrowed asset available** — the asset you want to repay must be held inside your Margin Account, or available in your wallet if the interface pulls from your wallet balance.
+- **Wallet connected** — your wallet must be connected to approve the transaction.
+
+## Partial vs full repayment
+
+You can repay any amount at any time — there is no minimum repayment and no penalty for early repayment. Partial repayment reduces your debt balance and improves your Health Factor proportionally, giving your position more breathing room. Full repayment clears your debt entirely, which resets your Health Factor to reflect no outstanding debt — it effectively goes to infinity because there is nothing in the denominator. In either case, your collateral remains in your Margin Account after repaying; repaying debt does not automatically return collateral to your wallet.
+
+## Steps
+
+<Steps>
+  <Step title="Go to the Margin tab">
+    Click **Margin** in the top navigation bar. Your Margin Account metrics panel is shown at the top of the page, displaying your current Health Factor, Net Available Collateral, and Collateral Left Before Liquidation.
+  </Step>
+  <Step title="Open the repay panel">
+    Find the **Repay Loan** section in the Margin interface. Depending on the current UI layout, this may appear as a dedicated tab or as a button inside the main Margin panel. Click it to open the repay form.
+  </Step>
+  <Step title="Enter an amount">
+    Type the amount you want to repay into the amount field. Your current debt balance is shown above the field for reference. Click **MAX** to fill in your full outstanding debt balance and repay the loan in its entirety. As you type, the panel updates to show the Health Factor your account would have after this repayment.
+  </Step>
+  <Step title="Review the preview">
+    Check the post-repayment Health Factor shown in the panel. If you are repaying in full, the preview will indicate that you have no remaining debt. If you are making a partial repayment, confirm that the resulting Health Factor gives you comfortable headroom above 1.1×.
+  </Step>
+  <Step title="Click Pay Now">
+    Once you have entered an amount, the **Pay Now** button becomes active. Click it. Your wallet opens a confirmation prompt showing the asset, repayment amount, and estimated network fee.
+  </Step>
+  <Step title="Sign with your wallet">
+    Review the transaction. Confirm the asset and amount are correct, then confirm and sign to broadcast the transaction.
+  </Step>
+  <Step title="Confirmed">
+    Once the transaction is confirmed, your debt balance decreases by the amount you repaid. The Health Factor in the metrics bar updates immediately. If you repaid in full, your debt balance shows zero and your Health Factor reflects no outstanding risk.
+  </Step>
+</Steps>
+
+<Note>
+  If your Health Factor is near 1.1×, repaying is the fastest way to reduce liquidation risk. Even a small repayment meaningfully improves your position — you do not need to repay in full to pull your Health Factor back to a safer level.
+</Note>
+
+## What happens next
+
+If you repaid in full, you have no outstanding debt and your Margin Account carries no liquidation risk from borrowing. Your collateral remains in the Margin Account — you can withdraw it back to your wallet via the **Transfer Collateral** tab, or leave it in place and use it to open a new borrow position when you are ready.
+
+## Related
+
+- [Health Factor](/guides/margin/health-factor) — understand how repayment affects your position health.
+- [Transfer Collateral](/guides/margin/transfer-collateral) — withdraw collateral from your Margin Account back to your wallet.
+- [Borrow](/guides/margin/borrow) — open a new borrow position once you have repaid.

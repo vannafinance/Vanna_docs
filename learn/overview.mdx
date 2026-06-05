@@ -1,0 +1,43 @@
+---
+title: "Concepts Overview"
+mode: "wide"
+---
+
+<div style={{marginTop: "-16px"}}>
+This section explains the fundamental building blocks and internal mechanics of the Vanna protocol. Understanding these concepts will help you better understand how Vanna powers composable credit infrastructure at the protocol level.
+</div>
+
+## Core Mechanics
+
+<CardGroup cols={2}>
+  <Card title="Margin Accounts" icon="vault" href="/learn/smart-accounts">
+    Per-user on-chain accounts that hold collateral, track debt, and deploy capital into external DeFi protocols.
+  </Card>
+  <Card title="Lending Pools" icon="layer-group" href="/learn/lending-pools">
+    Per-asset vaults that accept deposits, lend to Margin Accounts, and distribute interest to liquidity providers.
+  </Card>
+  <Card title="vTokens" icon="ticket" href="/learn/vtokens">
+    Share tokens issued to liquidity providers. Appreciate in value as borrowers pay interest.
+  </Card>
+  <Card title="Composable Leverage" icon="layer-plus" href="/learn/composable-leverage">
+    How borrowed capital is deployed into external protocols — spot, perps, and yield strategies — from a single account.
+  </Card>
+</CardGroup>
+
+## Risk & Economics
+
+<CardGroup cols={2}>
+  <Card title="Health Factor" icon="heart-pulse" href="/learn/health-factor">
+    The metric that determines whether an account can borrow, withdraw, or must be liquidated.
+  </Card>
+  <Card title="Liquidation" icon="triangle-exclamation" href="/learn/liquidation">
+    How undercollateralized accounts are closed and lenders are made whole.
+  </Card>
+  <Card title="Interest Rate Model" icon="chart-line" href="/learn/interest-rate-model">
+    How borrowing costs adjust automatically based on pool utilization.
+  </Card>
+  <Card title="Oracle System" icon="signal" href="/learn/oracle-system">
+    How asset prices enter the protocol for collateral valuation and health checks.
+  </Card>
+</CardGroup>
+

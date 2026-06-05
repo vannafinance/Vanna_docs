@@ -1,0 +1,99 @@
+---
+title: "Protocol Architecture"
+description: "How Vanna's contracts are layered, what each one does, and how they connect."
+mode: "wide"
+---
+
+Vanna is organized into five contract layers. Every user-facing operation enters through a single contract, passes through a risk check, and then reaches the relevant pool or margin account. No state changes before the Risk Engine approves.
+
+## Architecture Diagram
+
+<div style={{ display: "flex", justifyContent: "center", margin: "8px 0 24px" }}>
+  <img src="/images/VannaArchitecture.png" alt="Vanna Protocol Architecture" style={{ maxWidth: "100%", borderRadius: "16px" }} />
+</div>
+
+The diagram shows two participant types on the left: **Lender** and **Trader**. Both interact with the protocol through separate paths that converge at the Lending Pool.
+
+The **Lender** supplies assets directly to the Lending Pool and earns yield passively. The **Trader** opens a Margin Account, borrows from that same pool at up to 10x undercollateralized leverage, and deploys capital into external DeFi protocols. The **Risk Monitoring Dashboard** connects to the Risk Engine to display real-time position health, liquidation proximity, and protocol-wide metrics.
+
+## The Five Layers
+
+### Entry Layer — Account Manager
+
+The Account Manager is the sole entry point for all trader operations: account creation, collateral deposit and withdrawal, borrow, repay, liquidation, and `execute()`. It resolves all peer contract addresses from the Registry at runtime. No trader call bypasses it.
+
+### Per-User Layer — Margin Account (Smart Account)
+
+Each trader gets a separately deployed contract — not a mapping entry in a shared contract. It physically holds the trader's collateral tokens, maintains the borrow list, and is the contract that calls Blend or Aquarius when a trader opens an external position. One account's state cannot affect another's. Closed accounts are pooled and reused to amortize deployment costs.
+
+### Lending Markets — Pools and vTokens
+
+Three isolated pools: one each for XLM, USDC, and EURC. Each pool accepts LP deposits, lends to Margin Accounts, accrues interest via the Rate Model, and mints or burns its corresponding vToken (vXLM, vUSDC, vEURC). Pool isolation means a borrow shortfall in one asset does not spill into another.
+
+### Risk Layer — Risk Engine and Oracle
+
+The Risk Engine is the protocol's gatekeeper. The Account Manager calls it before every borrow, withdrawal, or liquidation. It reads collateral balances from the Margin Account, borrow shares from each Lending Pool, and live USD prices from the Oracle. It caches prices per symbol within a transaction to avoid duplicate oracle calls. If the post-operation health factor would fall below 1.1x, the operation is rejected.
+
+### Infrastructure — Registry and Tracking Token
+
+The **Registry** is the on-chain address book. Every contract resolves peer addresses through it at runtime. Upgrading the Oracle or Rate Model requires updating one registry entry, not redeploying dependents.
+
+The **Tracking Token** is a multi-symbol receipt contract. When a Margin Account deposits into Blend or adds liquidity to Aquarius, the Account Manager mints a tracking token representing that external position. The Risk Engine reads these balances to include Blend b-token and Aquarius LP positions in the collateral calculation.
+
+## The Gating Order
+
+Every state-changing operation follows the same sequence:
+
+<Steps>
+  <Step title="Call enters Account Manager">
+    The Account Manager authenticates the caller, resolves contract addresses from the Registry, and prepares the operation.
+  </Step>
+  <Step title="Risk Engine evaluates post-operation health">
+    Before any tokens move, the Account Manager calls the Risk Engine. It computes what the health factor would be after the operation completes. If it falls below 1.1x, the call panics here — nothing else executes.
+  </Step>
+  <Step title="Lending Pool or Margin Account processes the operation">
+    If approved, the Account Manager calls the Lending Pool (for borrows and repayments) or the Margin Account (for collateral changes and execute calls). The pool calls `update_state()` first to accrue interest since the last operation.
+  </Step>
+  <Step title="State is recorded">
+    The Margin Account updates its collateral or borrow list. For `execute()` calls, the Account Manager mints or burns Tracking Tokens based on the resulting position delta.
+  </Step>
+</Steps>
+
+## Contract Map
+
+| Contract | Layer | Responsibility |
+|---|---|---|
+| AccountManager | Entry | Single user-facing entry point |
+| SmartAccount | Per-User | Isolated margin account per trader |
+| RiskEngine | Risk | Health factor gatekeeper |
+| Oracle | Risk | Live asset price feeds |
+| LendingPool (XLM) | Markets | XLM lending and borrowing |
+| LendingPool (USDC) | Markets | USDC lending and borrowing |
+| LendingPool (EURC) | Markets | EURC lending and borrowing |
+| vXLM / vUSDC / vEURC | Markets | LP receipt tokens |
+| RateModel | Markets | Polynomial interest rate curve |
+| Registry | Infrastructure | On-chain address book |
+| TrackingToken | Infrastructure | External position receipts |
+
+## Go Deeper
+
+<CardGroup cols={2}>
+  <Card title="Margin Accounts" icon="vault" href="/learn/smart-accounts">
+    Per-user contract lifecycle, storage layout, and isolation model.
+  </Card>
+  <Card title="Lending Pools" icon="layer-group" href="/learn/lending-pools">
+    Pool accounting, vToken mechanics, and how borrows are issued.
+  </Card>
+  <Card title="Health Factor" icon="heart-pulse" href="/learn/health-factor">
+    The 1.1x threshold, the three check types, and what moves the ratio.
+  </Card>
+  <Card title="Composable Leverage" icon="layer-plus" href="/learn/composable-leverage">
+    How execute() deploys borrowed capital into external protocols.
+  </Card>
+  <Card title="Interest Rate Model" icon="chart-line" href="/learn/interest-rate-model">
+    The utilization-based polynomial curve that prices every borrow.
+  </Card>
+  <Card title="Oracle System" icon="signal" href="/learn/oracle-system">
+    How asset prices enter the Risk Engine and what happens on failure.
+  </Card>
+</CardGroup>

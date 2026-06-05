@@ -1,0 +1,42 @@
+---
+title: "Open a Margin Account"
+description: "How to create your Margin Account on Vanna."
+mode: "wide"
+---
+
+<Snippet file="snippets/testnet-notice.mdx" />
+
+<Note>
+  You only create a Margin Account once. Once created, it persists on-chain. The creation costs a small network fee.
+</Note>
+
+## Before you start
+
+- **Wallet connected** — see [Connect Wallet](/guides/connect-wallet) if you haven't done this yet.
+
+## Steps
+
+<Steps>
+  <Step title="Go to the Margin tab">
+    Click **Margin** in the top navigation bar. If you don't have a Margin Account yet, you'll see a prompt to create one rather than the usual metrics panel.
+  </Step>
+  <Step title="Click Create Account">
+    Click the **Create Account** button (or the equivalent prompt shown on screen). A confirmation modal opens showing you what the transaction will do and the estimated network fee.
+  </Step>
+  <Step title="Review the agreement">
+    Read the terms shown in the modal. This includes acknowledging the liquidation risk — if your Health Factor drops to 1.1×, your account can be liquidated. Check the checkbox to confirm you have read and understood the terms before you can continue.
+  </Step>
+  <Step title="Sign the transaction">
+    Click to proceed. Your wallet opens a confirmation prompt. Review the fee and transaction data, then confirm and sign to broadcast it.
+  </Step>
+  <Step title="Account created">
+    Once the transaction is confirmed, the Margin tab updates and displays your account's metrics panel. You'll see your Health Factor, Net Available Collateral, and Collateral Left Before Liquidation. Your account starts with no collateral and no debt.
+  </Step>
+</Steps>
+
+## What happens next
+
+Your Margin Account is now live and ready to use. The next step is to deposit collateral so that you have borrowing capacity.
+
+- [Deposit Collateral](/guides/margin/deposit-collateral) — move assets from your wallet into the account.
+- [Margin Overview](/guides/margin/overview) — revisit the full picture of how the Margin system works.

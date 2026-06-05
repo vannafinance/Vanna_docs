@@ -1,0 +1,65 @@
+---
+title: "Lending Pools"
+description: "The passive liquidity layer that powers every borrow on Vanna."
+mode: "wide"
+---
+
+## The Prime Brokerage Model
+
+The best way to understand Vanna's pools is through the lens of a **prime brokerage**.
+
+A prime broker provides a single credit line to a fund manager. The fund deploys that capital into equities, derivatives, or any market — all from one account. The prime broker doesn't care what individual trades are running. It monitors the fund's *overall* collateral and acts only if the aggregate position becomes unsafe.
+
+<div style={{ display: "flex", justifyContent: "center", margin: "8px 0 24px" }}>
+  <img src="/images/ThePrimeBrokerageModel.png" alt="The Prime Brokerage Model" style={{ maxWidth: "100%", borderRadius: "16px" }} />
+</div>
+
+## The Core Idea
+
+Every borrow on Vanna comes from a Lending Pool.
+
+A Lending Pool is a smart contract that holds a single asset — USDC, XLM, or EURC — and makes it available for Margin Accounts to borrow. Liquidity providers deposit into the pool, earn yield from borrower interest, and can withdraw at any time.
+
+The pool doesn't pick strategies. It doesn't manage risk. It just holds capital, lends it out, and collects interest. The pool earns interest on every dollar lent — regardless of what the Margin Account does with the capital.
+
+## Two Sides
+
+Every pool has two participants with different goals:
+
+<CardGroup cols={2}>
+  <Card title="Liquidity Providers" icon="piggy-bank">
+    Deposit an asset, receive **vTokens**, earn yield passively as borrowers pay interest. No active management needed.
+  </Card>
+  <Card title="Margin Accounts" icon="chart-line">
+    Borrow from the pool against posted collateral. Deploy capital into DeFi strategies. Pay interest that flows back to LPs.
+  </Card>
+</CardGroup>
+
+LPs and borrowers never interact directly. The pool intermediates everything — collecting deposits on one side, issuing credit on the other.
+
+## Per-Asset Isolation
+
+Vanna runs a separate pool for each supported asset:
+
+<div style={{ display: "flex", justifyContent: "center", margin: "8px 0 24px" }}>
+  <img src="/images/isloatedLendingPool.png" alt="Per-Asset Isolated Lending Pools" style={{ maxWidth: "100%", borderRadius: "16px" }} />
+</div>
+
+A USDC depositor has zero exposure to the XLM pool. Bad debt in one pool cannot affect another. Each pool carries only the risk of its own borrowers.
+
+## Risk Isolation
+
+The pool enforces one rule: **it only lends when the Margin Account is healthy**.
+
+Before any loan goes out, the [Risk Engine](/learn/health-factor) checks the account's collateral value against its existing debt. If the account is near the liquidation threshold, the borrow is blocked.
+
+If an account's health deteriorates after borrowing — because collateral dropped in value or interest accumulated — the [liquidation engine](/learn/liquidation) closes positions before the pool takes a loss.
+
+The pool never makes credit decisions. That logic lives in the Risk Engine. The pool just executes what gets approved.
+
+## Related
+
+- [vTokens](/learn/vtokens) — how LP yield is tracked and distributed
+- [Health Factor](/learn/health-factor) — the check that gates every borrow
+- [Interest Rate Model](/learn/interest-rate-model) — how borrowing costs adjust with utilization
+- [Liquidation](/learn/liquidation) — what happens when an account becomes undercollateralized

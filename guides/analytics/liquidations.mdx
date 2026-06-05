@@ -1,0 +1,47 @@
+---
+title: "Liquidations"
+description: "Monitor recent liquidation events and wallets currently eligible for liquidation."
+mode: "wide"
+---
+
+The Liquidations section gives you a real-time view of liquidation activity across the protocol — both completed liquidations and accounts that are currently eligible to be liquidated.
+
+## Overview metrics
+
+At the top of the page, key summary statistics are shown:
+
+| Metric | What it means |
+|---|---|
+| **Number of Liquidations** | Total liquidation events recorded |
+| **Collateral Seized** | Total USD value of collateral taken from liquidated accounts |
+| **Debt Repaid** | Total debt cleared through liquidations |
+| **Wallets with Bad Debt** | Accounts where HF dropped below 1.0 (debt exceeded collateral) |
+| **Live Bad Debt Estimate** | Current uncovered protocol loss in USD |
+| **Success Rate** | % of liquidation attempts that completed successfully |
+| **Avg Time to Liquidate** | How quickly the protocol responded to eligible positions |
+
+## Recent liquidation events
+
+The events table shows each liquidation with:
+
+- **Time** — When the liquidation occurred
+- **Tx Hash** — On-chain transaction identifier
+- **Position** — The account that was liquidated
+- **Liquidator** — The address that triggered the liquidation
+- **Debt** — Amount of debt cleared
+- **Recovered** — Collateral recovered in the liquidation
+- **Bad Debt** — Any shortfall that could not be recovered
+- **Duration** — Time from eligibility to completion
+- **Status** — Success or partial/failed
+
+## Wallets eligible for liquidation
+
+This table lists all accounts currently at HF < 1.1 — positions that can be liquidated right now. The data refreshes live and shows current debt, collateral value, and liquidation distance for each account.
+
+![Wallets Eligible for Liquidation](/images/RiskMonitoringDashboard/WalletEligibleForLiquidation.png)
+
+## Related
+
+- [Risk Monitoring Dashboard](/guides/analytics/overview)
+- [Positions](/guides/analytics/positions)
+- [Liquidation](/guides/margin/liquidation)

@@ -1,0 +1,55 @@
+---
+title: "Spot Swap"
+description: "How to trade assets using borrowed margin from your Margin Account."
+mode: "wide"
+---
+
+Vanna enables spot trading through direct integration with Soroswap and Aquarius, allowing users to swap assets using borrowed margin from their Margin Accounts. Unlike standard spot trading, Vanna lets traders borrow from the lending pools and deploy that balance to trade in spot markets — amplifying their positions with capital efficiency.
+
+## Key capabilities
+
+**Margin-enhanced trading** — Traders can borrow from Vanna's lending pools and use that balance directly in spot swaps, going beyond what their own capital alone would allow.
+
+**Supported features:**
+- Access to Soroswap and Aquarius liquidity pools on Stellar
+- Immediate execution and settlement without expiration dates
+- Trading across multiple asset pairs
+- Swaps execute directly inside your Margin Account — no need to move funds back to your wallet
+
+**Capital efficiency** — By enabling traders to amplify positions with borrowed funds, Vanna adds a distinctive advantage on top of standard DEX trading. Your Health Factor tracks your full position risk in real time, keeping you informed and protected.
+
+## Steps
+
+<Steps>
+  <Step title="Go to Trade">
+    Click **Trade** in the top nav, then select **Spot**.
+  </Step>
+  <Step title="Select assets and enter an amount">
+    Choose the asset you are swapping from in the **You Pay** field and the asset you want to receive in the **You Receive** field. Enter the amount, or use the quick-select buttons (25% / 50% / 75% / Max).
+    <div style={{ display: "flex", justifyContent: "center", margin: "12px 0" }}>
+      <img src="/images/swap.png" alt="Spot Swap UI" style={{ maxWidth: "500px", width: "100%", borderRadius: "12px" }} />
+    </div>
+  </Step>
+  <Step title="Choose a DEX">
+    Click the DEX name next to **via** at the top to open the selector. Choose **Soroswap** or **Aquarius** as your swap route.
+    <div style={{ display: "flex", justifyContent: "center", margin: "12px 0" }}>
+      <img src="/images/spot-selectDex.png" alt="Select DEX" style={{ maxWidth: "500px", width: "100%", borderRadius: "12px" }} />
+    </div>
+  </Step>
+  <Step title="Review the quote">
+    Check the estimated output, the exchange rate, and the price impact. If price impact is high, consider reducing the amount or switching to a different DEX.
+  </Step>
+  <Step title="Confirm the swap">
+    Click **Swap**. Your wallet prompts you to approve the transaction. Once confirmed, the output asset arrives in your Margin Account balance.
+  </Step>
+</Steps>
+
+## What happens next
+
+The swapped asset is now in your Margin Account. You can hold it, use it as collateral, deploy it to Farm, or swap it again.
+
+## Related
+
+- [Farm overview](/guides/farm/overview)
+- [Margin overview](/guides/margin/overview)
+- [Transfer Collateral](/guides/margin/transfer-collateral)

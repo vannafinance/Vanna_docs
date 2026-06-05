@@ -1,0 +1,53 @@
+---
+title: "Risk Explorer"
+description: "Run stress simulations to understand how the protocol responds to market crashes, depegs, and liquidity shocks."
+mode: "wide"
+---
+
+
+The Risk Explorer is a stress-testing hub that lets you simulate extreme market conditions and see how the protocol's positions would respond. Use it to understand the protocol's exposure before deploying capital, or to monitor systemic risk during volatile market conditions.
+![Risk Explorer Overview](/images/RiskMonitoringDashboard/RiskExplorerOverview.png)
+
+## Available simulations
+
+### Market Risk
+**Single Asset Risk Explorer** — Simulate a price drop in one asset and see how many accounts would become liquidatable, how much bad debt would be generated, and what the total collateral impact would be.
+
+![Single Asset Risk Explorer](/images/RiskMonitoringDashboard/SingleAssetRiskExplorer.png)
+
+**Multi-Asset Correlated Crash** — Model a scenario where multiple assets fall simultaneously (e.g. a broad market selloff). Shows the cascading effect across all positions.
+
+![Multi Asset Risk Explorer](/images/RiskMonitoringDashboard/MultiAssetRiskExplorer.png)
+
+### Leverage Risk
+**LP Impermanent Loss Amplification** — Simulate how impermanent loss in AMM LP positions amplifies leverage risk across accounts that hold LP tokens as collateral.
+
+![LP Impermanent Loss Risk Explorer](/images/RiskMonitoringDashboard/LpImpermanentLossRiskExplorer.png)
+
+### Systemic Risk
+**Whale Withdrawal Risk** — Model the impact of a large depositor withdrawing a significant portion of liquidity from a lending pool. Shows how utilization and borrowing capacity would change.
+
+![Whale Withdrawal Risk](/images/RiskMonitoringDashboard/WhaleWithdrawal.png)
+
+**Stablecoin Depeg Simulation** — Simulate a stablecoin losing its peg and see the downstream impact on accounts using it as collateral or for borrowing.
+
+![Stablecoin Depeg](/images/RiskMonitoringDashboard/StableCoinDepeg.png)
+
+### Protocol Risk
+**Oracle Failure / Manipulation** — Model an oracle price reporting incorrectly or being delayed. Shows which positions become liquidatable under incorrect price feeds and the resulting protocol risk.
+
+## How to use
+
+1. Go to **Analytics** in the top navigation
+2. Click **Risk Explorer** in the sidebar
+3. Select a simulation category and scenario
+4. Adjust the input parameters (e.g. price drop %, asset selection)
+5. Click **Run Simulation** to see the projected impact
+
+Each simulation shows: accounts affected, projected bad debt, total collateral at risk, and which accounts would cross liquidation thresholds.
+
+## Related
+
+- [Risk Monitoring Dashboard](/guides/analytics/overview)
+- [Positions](/guides/analytics/positions)
+- [Liquidations](/guides/analytics/liquidations)

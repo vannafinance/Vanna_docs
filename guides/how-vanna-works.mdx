@@ -1,0 +1,42 @@
+---
+title: "How Vanna Works"
+description: "How Liquidity Providers and Traders Create a Win-Win Situation for Both."
+mode: "wide"
+---
+
+Vanna is a dual-sided protocol built for two kinds of users: **passive investors** who want to put capital to work without managing positions, and **active traders** who want undercollateralized leverage to execute strategies across DeFi markets. Both sides run on the same shared infrastructure: a lending pool, a risk engine, and a composable margin account system.
+
+Liquidity providers deposit assets into Vanna's lending pools and earn yield automatically. No positions to manage, no active decisions required. Traders open Margin Accounts, borrow from those pools against their collateral, and deploy that capital across spot markets, yield farms, and other DeFi protocols. All within a single account, under one unified health check. The interest traders pay flows directly back to liquidity providers, keeping both sides economically connected.
+
+<div style={{ display: "flex", justifyContent: "center", margin: "4px 0 24px" }}>
+  <img src="/images/VannaArchitecture.png" alt="Vanna Protocol Architecture" style={{ maxWidth: "100%", borderRadius: "16px" }} />
+</div>
+
+## The Vanna Flywheel
+
+What separates Vanna from standard money markets is **undercollateralized leverage**. On protocols like Aave or Morpho, traders must overcollateralize every borrow, locking up more than they take out. Vanna removes that ceiling. Traders can borrow up to 10x against their collateral, which keeps pool utilization structurally higher.
+
+Higher utilization means higher yields for liquidity providers. Higher yields bring more capital into the pools. More capital lowers borrowing costs, which attracts more traders. More traders push utilization back up. The cycle runs on its own.
+
+<div style={{ display: "flex", justifyContent: "center", margin: "8px 0 24px" }}>
+  <img src="/images/VannaFlywheel.png" alt="The Vanna Flywheel" style={{ maxWidth: "100%", borderRadius: "16px" }} />
+</div>
+
+## Under the hood
+
+Want to understand how the contracts are structured and how they connect?
+
+<Card title="Protocol Architecture" href="/learn/protocol-architecture" icon="sitemap">
+  A technical breakdown of Vanna's five contract layers, the gating order every operation follows, and how the Risk Engine connects everything.
+</Card>
+
+## Explore your path
+
+<CardGroup cols={2}>
+  <Card title="For Liquidity Providers" href="/guides/for-liquidity-providers" icon="piggy-bank">
+    Supply assets to Vanna's lending pools and earn yield from trader interest, passively, with no positions to manage.
+  </Card>
+  <Card title="For Traders" href="/guides/for-traders" icon="chart-candlestick">
+    Open a Margin Account, borrow up to 10x against your collateral, and deploy capital across DeFi markets.
+  </Card>
+</CardGroup>

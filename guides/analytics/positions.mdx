@@ -1,0 +1,83 @@
+---
+title: "Positions"
+description: "View all active margin positions, HF distribution, leverage analytics, and live borrow rates across pools."
+mode: "wide"
+---
+
+The **Positions** tab gives you a protocol-wide snapshot of all active margin accounts. It breaks down how positions are distributed by health factor and leverage, shows live borrow rates per pool, and lets you look up any wallet directly.
+
+## Health factor distribution & borrow rate
+
+This section has two charts side by side.
+
+### HF distribution
+
+A horizontal bar chart showing how many positions fall into each health factor bucket. Use this to quickly gauge how much of the protocol is near or below the liquidation threshold.
+
+![HF Distribution](/images/RiskMonitoringDashboard/HealthFactor.png)
+
+| Range | Status |
+|---|---|
+| < 1.0 | Underwater |
+| 1.0 – 1.1 | Critical |
+| 1.1 – 1.2 | Warning |
+| 1.2 – 1.5 | Caution |
+| > 1.5 | Safe |
+
+### Borrow rate (pools)
+
+A bar chart showing the live borrow APR for each lending pool (XLM, Blend USDC, Aquarius USDC, Soroswap USDC). Rates are derived from on-chain utilization via the same kinked curve model used in the Margin tab. Refreshes on page load.
+
+![Borrow Rate](/images/RiskMonitoringDashboard/BorrowRate.png)
+
+## Leverage & health factor heatmap
+
+This section has two panels side by side.
+
+### Leverage distribution
+
+Shows position count and total collateral value broken down by leverage tier. Below the chart you'll see three summary stats: **Avg leverage** across all active accounts, **Max allowed** leverage, and **High-risk (>5x)** — the number of accounts currently above the high-risk threshold.
+
+![Leverage Distribution](/images/RiskMonitoringDashboard/LeverageDistribution.png)
+
+| Range | Label |
+|---|---|
+| 1–2x | Conservative |
+| 2–3x | Moderate |
+| 3–5x | Aggressive |
+| 5–7x | High Risk |
+| 7–10x | Max Leverage |
+| 10x+ | Over-leveraged |
+
+### HF heatmap
+
+A table showing collateral density by health factor range. For each HF bucket it shows the number of positions and the total collateral value backing them. Larger bars indicate more capital concentrated in that risk tier.
+
+![Health Factor Heatmap](/images/RiskMonitoringDashboard/HealthFactorHeatmap.png)
+
+## Position Lookup
+
+A searchable table of every active margin account on the protocol. Use the search bar to filter by wallet address, or browse the full list sorted by risk.
+
+![Position Lookup](/images/RiskMonitoringDashboard/PositionLookUp.png)
+
+Each row shows:
+
+| Column | What it shows |
+|---|---|
+| **#** | Rank by risk (lowest HF first) |
+| **Address** | Wallet address |
+| **Primary Asset** | The main collateral asset for this position |
+| **Collateral** | Total USD value of collateral |
+| **Debt** | Total USD value of borrowed assets |
+| **Leverage** | Current effective leverage multiplier |
+| **Health Factor** | Current HF, color-coded by risk level |
+| **Status** | Liquidatable / Critical / Warning / Caution / Safe |
+
+Click any row to open the full margin breakdown for that wallet.
+
+## Related
+
+- [Risk Monitoring Dashboard](/guides/analytics/overview)
+- [Liquidations](/guides/analytics/liquidations)
+- [Risk Explorer](/guides/analytics/risk-explorer)

@@ -1,0 +1,64 @@
+---
+title: "Risk Monitoring Dashboard"
+description: "Protocol-wide risk intelligence dashboard - monitor positions, liquidation risk, bad debt, and run stress simulations in real time."
+mode: "wide"
+---
+
+
+The **Risk Monitoring Dashboard** is a protocol-level risk intelligence tool available in **Pro Mode**. It serves two purposes:
+
+- **For your own positions**: Monitor your open Margin Account positions, track your Health Factor in real time, and understand how much room you have before liquidation.
+- **For the protocol**: See the overall risk state of every active margin account on the protocol, track bad debt and liquidation activity, and run stress simulations to understand how market crashes or extreme scenarios would impact both your positions and the protocol as a whole.
+![Risk Monitoring Dashboard Overview](/images/RiskMonitoringDashboard/Overview.png)
+
+Whether you want to stay on top of your own risk or evaluate systemic risk across the entire protocol, the Risk Monitoring Dashboard gives you the tools to do both.
+
+<Note>
+  The Risk Monitoring Dashboard is available in **Pro Mode only**. Switch to Pro using the **Pro / Lite** toggle in the top navigation.
+</Note>
+
+## What it shows
+
+The dashboard tracks the overall risk state of the protocol across all active margin accounts. Key top-level metrics:
+
+| Metric | What it means |
+|---|---|
+| **Active Bad Debt** | Uncovered protocol loss from positions where debt exceeds collateral |
+| **Insurance Fund** | Reserve available to cover bad debt |
+| **Positions Below HF 1.1** | Number of accounts eligible for liquidation + total debt at risk |
+| **Value Eligible for Liquidation** | Total debt value in liquidatable positions |
+| **Average Health Factor** | Debt-weighted HF across all active margin accounts |
+| **Total Collateral at Risk** | USD value of collateral backing positions with HF below 1.5 |
+| **Average Leverage** | Debt-weighted leverage across all active accounts |
+| **System Health Score** | Composite 0–100 score reflecting overall protocol risk level |
+
+## Health Factor status thresholds
+
+| Status | Health Factor | Meaning |
+|---|---|---|
+| 🟢 **Healthy** | HF ≥ 1.5 | Position is comfortably safe |
+| 🟡 **Warning** | HF 1.3 – 1.5 | Approaching risk zone |
+| 🟠 **Critical** | HF 1.1 – 1.3 | Close to liquidation threshold |
+| 🔴 **Liquidatable** | HF < 1.1 | Eligible for liquidation |
+
+## Dashboard sections
+
+<CardGroup cols={2}>
+  <Card title="Positions" href="/guides/analytics/positions" icon="table-list">
+    All active margin accounts ranked by Health Factor, PnL, or leverage. Expand any row to see the full margin breakdown and liquidation distance.
+  </Card>
+  <Card title="Liquidations" href="/guides/analytics/liquidations" icon="triangle-exclamation">
+    Monitor recent liquidation events and wallets currently eligible for liquidation.
+  </Card>
+  <Card title="Risk Explorer" href="/guides/analytics/risk-explorer" icon="flask">
+    Run stress simulations — single asset crash, multi-asset correlated crash, stablecoin depeg, and more.
+  </Card>
+  <Card title="Oracles" href="/guides/analytics/oracles" icon="signal">
+    Track oracle prices vs CEX and DEX market prices to detect deviations or stale feeds.
+  </Card>
+</CardGroup>
+
+## Before you start
+
+- You must be in **Pro Mode** — switch using the Pro / Lite toggle in the top navigation.
+- The dashboard uses live on-chain data and oracle price feeds, refreshing approximately every 30 seconds.

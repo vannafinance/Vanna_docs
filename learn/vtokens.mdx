@@ -1,0 +1,104 @@
+---
+title: "vTokens"
+description: "vTokens are the ERC-4626-style share tokens issued by Vanna's Lending Pools. They represent a depositor's claim on the pool and accrue value passively as borrowers pay interest."
+mode: "wide"
+---
+
+When an LP deposits into a [Lending Pool](/learn/lending-pools), they receive vTokens — share tokens that grow in value over time without the LP needing to claim, restake, or compound anything. The vToken is the mechanism that makes yield passive.
+
+<div style={{ display: "flex", justifyContent: "center", margin: "8px 0 24px" }}>
+  <img src="/images/vToken.png" alt="vToken mechanics" style={{ maxWidth: "100%", borderRadius: "16px" }} />
+</div>
+
+## The Core Idea: Shares vs. Amounts
+
+A vToken does **not** represent a fixed quantity of the underlying asset. It represents a **fractional claim on the pool's total assets**. Two scalars matter:
+
+| Scalar | Meaning |
+|---|---|
+| `total_assets` | Current accounting value of everything in the pool — deposits, accrued interest, and outstanding borrows valued at current rates. |
+| `total_supply` | Total vToken shares outstanding. |
+
+The price of one vToken in underlying units is implicit:
+
+$$
+\text{assetsPerShare} = \frac{\text{total\_assets}}{\text{total\_supply}}
+$$
+
+When a borrower pays interest, `total_assets` grows. `total_supply` does not change. So `assetsPerShare` rises — and every vToken holder benefits automatically, proportionally to their share.
+
+## A Worked Example
+
+Suppose a pool starts empty and an LP deposits `1,000 USDC`:
+
+| Time | Event | total_assets | total_supply | assetsPerShare | LP balance (vTokens) | LP balance (USDC equivalent) |
+|---|---|---|---|---|---|---|
+| t = 0 | LP deposits 1,000 USDC | 1,000 | 1,000 | 1.000 | 1,000 vUSDC | 1,000 USDC |
+| t = 1d | Borrower draws 500 USDC | 1,000 | 1,000 | 1.000 | 1,000 vUSDC | 1,000 USDC |
+| t = 30d | Interest accrues; borrower owes ~510 | 1,010 | 1,000 | 1.010 | 1,000 vUSDC | 1,010 USDC |
+| t = 60d | More interest | 1,020 | 1,000 | 1.020 | 1,000 vUSDC | 1,020 USDC |
+
+The LP did nothing in this period. Their vToken balance stayed at 1,000 vUSDC. The price of each vUSDC rose from 1.000 to 1.020, so their redemption value grew.
+
+A second LP depositing at `t = 60d` would receive `1,000 / 1.020 ≈ 980.39 vUSDC` for their 1,000 USDC — they're entering at a higher exchange rate, fairly priced against existing LPs.
+
+## Why ERC-4626 (Or its Soroban Equivalent)
+
+[ERC-4626](https://eips.ethereum.org/EIPS/eip-4626) is the standard "tokenized vault" interface on EVM:
+
+- `deposit(assets, receiver) → shares`
+- `redeem(shares, receiver, owner) → assets`
+- `convertToShares(assets) → shares`
+- `convertToAssets(shares) → assets`
+- `totalAssets() → assets`
+- `totalSupply() → shares`
+
+Vanna's EVM vTokens implement this interface directly, which means any wallet, indexer, or DeFi aggregator that understands ERC-4626 understands a Vanna vToken without custom code.
+
+On Soroban there is no formal "ERC-4626" — but Vanna's `VXLMToken` and the analogous per-asset contracts expose the same conceptual interface: `deposit`, `redeem`, `convert_to_shares`, `convert_to_assets`. The accounting is identical; only the language and call conventions differ.
+
+## What vTokens Are Not
+
+A vToken is **not**:
+
+- **A fixed-yield bond.** The yield is whatever borrowers pay, which depends on pool utilization and the [Rate Model](/learn/interest-rate-model).
+- **Risk-free.** vTokens represent a claim on the pool, including its outstanding borrows. If borrowers become insolvent and liquidations don't recover the full debt, the pool's `total_assets` decreases — and so does the vToken's value. See [Risk Model](/security/risk-model).
+- **Always redeemable.** If pool utilization is 100%, the available (non-borrowed) liquidity is zero and redemption must wait for a borrower to repay. Liquidity risk is real.
+- **A governance token.** vTokens give no voting rights. They are purely economic claims on the pool.
+
+## Interactions with the Rest of the Protocol
+
+| Action | What happens to vTokens |
+|---|---|
+| LP deposits | `total_supply` increases; the LP receives vTokens at the current exchange rate. |
+| LP redeems | `total_supply` decreases; the LP receives underlying at the current exchange rate. |
+| Borrower borrows | No change to vToken supply. `total_assets` includes the new debt at face value; the exchange rate is unchanged. |
+| Interest accrues | `total_assets` grows; `total_supply` is unchanged; exchange rate rises. Every vToken holder benefits passively. |
+| Borrower repays | `total_assets` increases by the repayment amount; exchange rate unchanged. |
+| Liquidation recovers full debt | Net zero impact on vToken value. |
+| Liquidation recovers less than full debt | `total_assets` decreases by the shortfall; exchange rate falls. LPs absorb the loss proportionally. |
+
+## Transferability
+
+vTokens are standard fungible tokens. They can be transferred between addresses, sold on secondary markets, or used as collateral in other protocols. The receiving address inherits the same proportional claim on the underlying pool. Vanna does not restrict transfers — but receiving a vToken means inheriting the liquidity and credit risk attached to it.
+
+## Chain Support
+
+vTokens exist on every chain Vanna is deployed on. The naming convention is `v` + the underlying asset symbol:
+
+| Underlying | vToken name | Stellar | EVM |
+|---|---|:-:|:-:|
+| USDC | `vUSDC` | ✓ | ✓ |
+| USDT | `vUSDT` | — | ✓ |
+| WETH / ETH | `vETH` | — | ✓ |
+| DAI | `vDAI` | — | ✓ (Base only) |
+| XLM | `VXLMToken` | ✓ | — |
+| EURC | (planned) | ✓ | — |
+
+## Related
+
+- [Lending Pools](/learn/lending-pools) — the pool that issues the vToken
+- [Interest Rate Model](/learn/interest-rate-model) — what makes the exchange rate rise
+- [Liquidation](/learn/liquidation) — what can cause LP loss
+- [vToken reference](/developers/contracts/vtoken) — the function-level interface
+- [Risk Model](/security/risk-model) — the full LP risk picture
