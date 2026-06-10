@@ -1,10 +1,10 @@
 ---
 title: "Lite Mode"
-description: "Lite Mode is Vanna's simplified one-click leveraged yield strategy — deposit collateral, borrow, and deploy into a yield pool in a single transaction."
+description: "Lite Mode is Vanna's simplified one-click leveraged yield strategy - deposit collateral, borrow, and deploy into a yield pool in a single transaction."
 mode: "wide"
 ---
 
-Lite Mode is Vanna's simplified **one-click leveraged yield strategy**. It automates the complete flow — deposit collateral, borrow undercollateralized credit from Vanna, and deploy both into a yield pool — in a single transaction.
+Lite Mode is Vanna's simplified **one-click leveraged yield strategy**. It automates the complete flow - deposit collateral, borrow undercollateralized credit from Vanna, and deploy both into a yield pool - in a single transaction.
 
 Switch between Lite and Pro using the **Pro / Lite** toggle in the top navigation bar.
 
@@ -16,8 +16,8 @@ Switch between Lite and Pro using the **Pro / Lite** toggle in the top navigatio
 
 Lite Mode has two tabs:
 
-- **Deposit & Deploy** — open new leveraged yield positions
-- **Position** — view and manage your open positions
+- **Deposit & Deploy** - open new leveraged yield positions
+- **Position** - view and manage your open positions
 
 ## How to open a position
 
@@ -26,7 +26,7 @@ Lite Mode has two tabs:
     Click the **Pro / Lite** toggle in the top navigation and select **Lite**.
   </Step>
   <Step title="Select a yield pool">
-    Choose the pool you want to deploy into. Each pool card shows its current Supply APR. The right panel shows live pool statistics — Supply APY, Borrow APY, Total TVL, and Utilization.
+    Choose the pool you want to deploy into. Each pool card shows its current Supply APR. The right panel shows live pool statistics - Supply APY, Borrow APY, Total TVL, and Utilization.
     <div style={{ display: "flex", justifyContent: "center", margin: "12px 0" }}>
       <img src="/images/farm/LiteMode1.png" alt="Select yield pool" style={{ maxWidth: "700px", width: "100%", borderRadius: "12px" }} />
     </div>
@@ -40,10 +40,10 @@ Lite Mode has two tabs:
   <Step title="Set leverage">
     Use the leverage slider to set how much to borrow on top of your collateral. The interface shows exactly what will be borrowed, the total amount deployed, and the deployment route.
 
-    At **1× leverage** no borrowing occurs — only your deposited capital is deployed. The button shows **Deposit Margin**.
+    At **1× leverage** no borrowing occurs - only your deposited capital is deployed. The button shows **Deposit Margin**.
 
     At **higher leverage**, the interface shows the **Estimated Returns** section with:
-    - **Net APR** — your yield after borrow cost (daily, monthly, yearly)
+    - **Net APR** - your yield after borrow cost (daily, monthly, yearly)
     - Full breakdown: Pool Supply APR × leverage minus Vanna Borrow Cost
     <div style={{ display: "flex", justifyContent: "center", margin: "12px 0" }}>
       <img src="/images/farm/LiteMode7.png" alt="Leverage slider and estimated returns" style={{ maxWidth: "700px", width: "100%", borderRadius: "12px" }} />
@@ -63,7 +63,7 @@ Lite Mode has two tabs:
     | **Borrow Cost** | The APR you pay for the borrowed capital. |
     | **Effective Leverage** | Your actual leverage multiplier. |
 
-    The **How This Works** section explains the exact flow — what gets deposited, what gets borrowed, and the final net result.
+    The **How This Works** section explains the exact flow - what gets deposited, what gets borrowed, and the final net result.
   </Step>
   <Step title="Deploy">
     Click **Deploy Strategy** and approve the transaction in your wallet. The protocol deposits your collateral, borrows the required amount, and deploys both to the yield pool in a single transaction.
@@ -79,9 +79,9 @@ Go to the **Position** tab to see all open positions. Each row shows Pool, Colla
 </div>
 
 Health Factor is color-coded:
-- 🟢 **Safe** — HF ≥ 1.5
-- 🟠 **At Risk** — HF between 1.1 and 1.5
-- 🔴 **Liquidation** — HF below 1.1
+- 🟢 **Safe** - HF ≥ 1.5
+- 🟠 **At Risk** - HF between 1.1 and 1.5
+- 🔴 **Liquidation** - HF below 1.1
 
 Click any position to view full details and manage it.
 
@@ -89,8 +89,8 @@ Click any position to view full details and manage it.
 
 In the position detail view, choose how much to exit:
 
-- **Partial exit (25% / 50% / 75%)** — repays and withdraws proportionally. Health Factor stays unchanged.
-- **Full exit (100%)** — closes all debt and returns all collateral in one transaction.
+- **Partial exit (25% / 50% / 75%)** - repays and withdraws proportionally. Health Factor stays unchanged.
+- **Full exit (100%)** - closes all debt and returns all collateral in one transaction.
 
 <Warning>
   Leveraged yield amplifies both returns and risk. If your Health Factor falls below 1.1×, your position can be liquidated. Monitor your Health Factor regularly, especially at high leverage.

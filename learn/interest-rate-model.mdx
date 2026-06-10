@@ -1,6 +1,6 @@
 ---
 title: "Interest Rate Model"
-description: "How Vanna automatically adjusts borrowing costs based on pool utilization — no governance votes, no fixed rates."
+description: "How Vanna automatically adjusts borrowing costs based on pool utilization - no governance votes, no fixed rates."
 mode: "wide"
 ---
 
@@ -8,13 +8,13 @@ mode: "wide"
 
 Vanna does not have a fixed interest rate. Borrowing costs adjust continuously based on a single input: **how much of the pool is currently being borrowed.**
 
-When a pool is mostly idle, borrowing is cheap — the protocol wants to attract borrowers. When a pool is nearly fully lent out, borrowing becomes very expensive — the protocol needs to incentivize repayment and keep liquidity available for withdrawals.
+When a pool is mostly idle, borrowing is cheap - the protocol wants to attract borrowers. When a pool is nearly fully lent out, borrowing becomes very expensive - the protocol needs to incentivize repayment and keep liquidity available for withdrawals.
 
 This happens automatically. No governance votes, no manual updates. The rate responds to pool state in real time.
 
 ---
 
-## Utilization — The Only Input
+## Utilization - The Only Input
 
 Every rate calculation starts with the pool's **utilization ratio**:
 
@@ -26,55 +26,75 @@ Utilization is a number between 0 and 1. Everything else is a function of this s
 
 | Utilization | State |
 |---|---|
-| 0% | Pool is idle — no active borrowing |
+| 0% | Pool is idle - no active borrowing |
 | 50% | Half the pool is deployed |
-| 80% | Pool is tightening — rate begins climbing |
-| 95%+ | Near-fully lent — rate becomes expensive |
-| 100% | Every asset is borrowed — withdrawals blocked |
+| 80% | Pool is tightening - rate begins climbing |
+| 95%+ | Near-fully lent - rate becomes expensive |
+| 100% | Every asset is borrowed - withdrawals blocked |
 
 ---
 
 ## The Rate Curve
 
-Vanna uses a **smooth polynomial curve** — not a two-segment "kinked" model with a hard breakpoint. The borrow rate accelerates organically as utilization increases, with the steepest acceleration above 90%.
+Vanna uses a **smooth polynomial curve** - not a two-segment "kinked" model with a hard breakpoint. The borrow rate accelerates organically as utilization increases, with the steepest acceleration above 90%.
 
-<div style={{background:"#111111",borderRadius:"16px",padding:"28px 24px 20px",margin:"8px 0 28px",position:"relative",overflow:"hidden"}}>
-  <div style={{position:"absolute",top:"-80px",right:"-60px",width:"200px",height:"200px",background:"radial-gradient(circle,rgba(252,84,87,0.22) 0%,transparent 70%)",pointerEvents:"none"}} />
-  <div style={{position:"absolute",bottom:"-80px",left:"-60px",width:"200px",height:"200px",background:"radial-gradient(circle,rgba(112,58,230,0.28) 0%,transparent 70%)",pointerEvents:"none"}} />
-  <div style={{position:"relative",height:"220px",zIndex:2}}>
-    <div style={{position:"absolute",left:"0",width:"34px",top:"54px",fontSize:"10px",color:"rgba(255,255,255,0.45)",fontFamily:"monospace",textAlign:"right"}}>90%</div>
-    <div style={{position:"absolute",left:"0",width:"34px",top:"97px",fontSize:"10px",color:"rgba(255,255,255,0.45)",fontFamily:"monospace",textAlign:"right"}}>60%</div>
-    <div style={{position:"absolute",left:"0",width:"34px",top:"140px",fontSize:"10px",color:"rgba(255,255,255,0.45)",fontFamily:"monospace",textAlign:"right"}}>30%</div>
-    <div style={{position:"absolute",left:"0",width:"34px",top:"183px",fontSize:"10px",color:"rgba(255,255,255,0.45)",fontFamily:"monospace",textAlign:"right"}}>0%</div>
-    <div style={{position:"absolute",left:"38px",right:"0",top:"57px",height:"1px",borderTop:"1px dashed rgba(255,255,255,0.08)"}} />
-    <div style={{position:"absolute",left:"38px",right:"0",top:"100px",height:"1px",borderTop:"1px dashed rgba(255,255,255,0.08)"}} />
-    <div style={{position:"absolute",left:"38px",right:"0",top:"143px",height:"1px",borderTop:"1px dashed rgba(255,255,255,0.08)"}} />
-    <div style={{position:"absolute",left:"38px",top:"0",height:"186px",width:"1px",background:"rgba(255,255,255,0.15)"}} />
-    <div style={{position:"absolute",left:"38px",right:"0",top:"186px",height:"1px",background:"rgba(255,255,255,0.15)"}} />
-    <div style={{position:"absolute",left:"calc(80% + 8px)",top:"0",height:"186px",width:"1px",borderLeft:"1px dashed rgba(255,255,255,0.22)"}} />
-    <div style={{position:"absolute",top:"2px",left:"calc(80% + 8px)",transform:"translateX(-50%)",fontSize:"10px",color:"rgba(255,255,255,0.55)",fontFamily:"monospace",fontWeight:600}}>80%</div>
+<div style={{background:"#161616",border:"1px solid rgba(255,255,255,0.1)",borderRadius:"16px",padding:"28px 28px 20px",margin:"8px 0 28px"}}>
+  <div style={{position:"relative",height:"240px"}}>
+
+    {/* Y-axis label */}
+    <div style={{position:"absolute",left:"-22px",top:"50%",transform:"translateY(-50%) rotate(-90deg)",fontSize:"11px",color:"rgba(255,255,255,0.5)",fontFamily:"system-ui",letterSpacing:"0.04em",whiteSpace:"nowrap"}}>Borrow APR</div>
+
+    {/* Y-axis tick labels */}
+    <div style={{position:"absolute",left:"18px",width:"36px",top:"4px",fontSize:"11px",color:"rgba(255,255,255,0.75)",fontFamily:"monospace",textAlign:"right"}}>120%</div>
+    <div style={{position:"absolute",left:"18px",width:"36px",top:"66px",fontSize:"11px",color:"rgba(255,255,255,0.75)",fontFamily:"monospace",textAlign:"right"}}>80%</div>
+    <div style={{position:"absolute",left:"18px",width:"36px",top:"128px",fontSize:"11px",color:"rgba(255,255,255,0.75)",fontFamily:"monospace",textAlign:"right"}}>40%</div>
+    <div style={{position:"absolute",left:"18px",width:"36px",top:"189px",fontSize:"11px",color:"rgba(255,255,255,0.75)",fontFamily:"monospace",textAlign:"right"}}>0%</div>
+
+    {/* Grid lines */}
+    <div style={{position:"absolute",left:"60px",right:"0",top:"8px",height:"1px",background:"rgba(255,255,255,0.1)"}} />
+    <div style={{position:"absolute",left:"60px",right:"0",top:"70px",height:"1px",background:"rgba(255,255,255,0.1)"}} />
+    <div style={{position:"absolute",left:"60px",right:"0",top:"132px",height:"1px",background:"rgba(255,255,255,0.1)"}} />
+    <div style={{position:"absolute",left:"60px",right:"0",top:"193px",height:"1px",background:"rgba(255,255,255,0.15)"}} />
+
+    {/* Y-axis line */}
+    <div style={{position:"absolute",left:"60px",top:"8px",height:"185px",width:"1px",background:"rgba(255,255,255,0.15)"}} />
+
+    {/* 80% utilization reference line */}
+    <div style={{position:"absolute",left:"calc(60px + (100% - 60px) * 0.8)",top:"8px",height:"185px",width:"1px",borderLeft:"1.5px dashed rgba(255,255,255,0.35)"}} />
+    <div style={{position:"absolute",top:"8px",left:"calc(60px + (100% - 60px) * 0.8 + 5px)",fontSize:"11px",color:"rgba(255,255,255,0.75)",fontFamily:"monospace",fontWeight:600}}>80%</div>
+
+    {/* Curve fill */}
     <div style={{
-      position:"absolute",left:"39px",right:"0",top:"0",bottom:"34px",
-      background:"linear-gradient(180deg,rgba(112,58,230,0.52) 0%,rgba(112,58,230,0.06) 100%)",
+      position:"absolute",left:"61px",right:"0",top:"8px",bottom:"47px",
+      background:"linear-gradient(180deg,rgba(252,84,87,0.25) 0%,rgba(112,58,230,0.12) 100%)",
       clipPath:"polygon(0% 100%, 10% 97.3%, 20% 94.6%, 30% 91.9%, 40% 89.2%, 50% 86.5%, 60% 83.8%, 70% 81.2%, 80% 78.5%, 85% 77%, 90% 74.8%, 95% 66.2%, 97% 52.3%, 98% 37.3%, 99% 11.5%, 100% 0%, 100% 100%)"
     }} />
+
+    {/* Curve line */}
     <div style={{
-      position:"absolute",left:"39px",right:"0",top:"0",bottom:"34px",
+      position:"absolute",left:"61px",right:"0",top:"8px",bottom:"47px",
       background:"linear-gradient(90deg,#703AE6,#FC5457)",
       clipPath:"polygon(0% 100%, 10% 97.3%, 20% 94.6%, 30% 91.9%, 40% 89.2%, 50% 86.5%, 60% 83.8%, 70% 81.2%, 80% 78.5%, 85% 77%, 90% 74.8%, 95% 66.2%, 97% 52.3%, 98% 37.3%, 99% 11.5%, 100% 0%, 100% 1.5%, 99% 13%, 98% 38.8%, 97% 53.8%, 95% 67.7%, 90% 76.3%, 85% 78.5%, 80% 80%, 70% 82.7%, 60% 85.3%, 50% 88%, 40% 90.7%, 30% 93.4%, 20% 96.1%, 10% 98.8%, 0% 100%)"
     }} />
-    <div style={{position:"absolute",top:"16px",left:"45%",transform:"translateX(-50%)",fontSize:"11px",color:"rgba(255,255,255,0.35)",fontFamily:"system-ui",fontStyle:"italic",fontWeight:500}}>gradual</div>
-    <div style={{position:"absolute",top:"8px",right:"1.5%",fontSize:"11px",color:"rgba(252,84,87,0.78)",fontFamily:"system-ui",fontStyle:"italic",fontWeight:600,textAlign:"right",lineHeight:"1.4"}}>steep<br/>rise</div>
-    <div style={{display:"flex",justifyContent:"space-between",position:"absolute",left:"38px",right:"0",bottom:"12px"}}>
-      <span style={{fontSize:"11px",color:"rgba(255,255,255,0.48)",fontFamily:"monospace"}}>0%</span>
-      <span style={{fontSize:"11px",color:"rgba(255,255,255,0.48)",fontFamily:"monospace"}}>25%</span>
-      <span style={{fontSize:"11px",color:"rgba(255,255,255,0.48)",fontFamily:"monospace"}}>50%</span>
-      <span style={{fontSize:"11px",color:"rgba(255,255,255,0.48)",fontFamily:"monospace"}}>75%</span>
-      <span style={{fontSize:"11px",color:"rgba(255,255,255,0.48)",fontFamily:"monospace"}}>100%</span>
+
+    {/* Annotations */}
+    <div style={{position:"absolute",top:"80px",left:"calc(60px + (100% - 60px) * 0.3)",fontSize:"12px",color:"rgba(255,255,255,0.6)",fontFamily:"system-ui",fontStyle:"italic"}}>gradual</div>
+    <div style={{position:"absolute",top:"20px",right:"8px",fontSize:"12px",color:"#FC5457",fontFamily:"system-ui",fontStyle:"italic",fontWeight:600,textAlign:"right",lineHeight:"1.5"}}>steep<br/>rise</div>
+
+    {/* X-axis labels */}
+    <div style={{display:"flex",justifyContent:"space-between",position:"absolute",left:"60px",right:"0",bottom:"20px"}}>
+      <span style={{fontSize:"11px",color:"rgba(255,255,255,0.65)",fontFamily:"monospace"}}>0%</span>
+      <span style={{fontSize:"11px",color:"rgba(255,255,255,0.65)",fontFamily:"monospace"}}>25%</span>
+      <span style={{fontSize:"11px",color:"rgba(255,255,255,0.65)",fontFamily:"monospace"}}>50%</span>
+      <span style={{fontSize:"11px",color:"rgba(255,255,255,0.65)",fontFamily:"monospace"}}>75%</span>
+      <span style={{fontSize:"11px",color:"rgba(255,255,255,0.65)",fontFamily:"monospace"}}>100%</span>
     </div>
-    <div style={{position:"absolute",bottom:"-2px",left:"60%",fontSize:"10px",color:"rgba(255,255,255,0.22)",fontFamily:"system-ui"}}>Utilization →</div>
+
+    {/* X-axis title */}
+    <div style={{position:"absolute",bottom:"4px",left:"50%",transform:"translateX(-50%)",fontSize:"11px",color:"rgba(255,255,255,0.5)",fontFamily:"system-ui",letterSpacing:"0.04em"}}>Utilization →</div>
+
   </div>
-  <p style={{textAlign:"center",fontSize:"0.72rem",color:"rgba(255,255,255,0.32)",margin:"10px 0 0",fontFamily:"system-ui"}}>Rate stays near-flat below 80% utilization, then accelerates sharply near 90–100%.</p>
+  <p style={{textAlign:"center",fontSize:"0.75rem",color:"rgba(255,255,255,0.55)",margin:"4px 0 0",fontFamily:"system-ui"}}>Rate stays near-flat below 80% utilization, then accelerates sharply near 90–100%.</p>
 </div>
 
 The borrow APR is computed as:
@@ -93,7 +113,7 @@ Where **u** is the utilization ratio (0 to 1) and the constants are:
 
 ### How the three terms work
 
-The three terms — `u`, `u^32`, and `u^64` — behave very differently depending on utilization:
+The three terms - `u`, `u^32`, and `u^64` - behave very differently depending on utilization:
 
 | Term | At 50% util | At 90% util | At 99% util |
 |---|---|---|---|
@@ -103,7 +123,7 @@ The three terms — `u`, `u^32`, and `u^64` — behave very differently dependin
 | **Total × C₃ = APR** | **~18%** | **~33%** | **~115%** |
 
 <Info>
-There is no kink point — no arbitrary breakpoint where the rate suddenly jumps. Acceleration is organic: the high-exponent terms are near zero at low utilization, then rapidly dominate as utilization approaches 100%.
+There is no kink point - no arbitrary breakpoint where the rate suddenly jumps. Acceleration is organic: the high-exponent terms are near zero at low utilization, then rapidly dominate as utilization approaches 100%.
 </Info>
 
 ### Approximate rate levels
@@ -135,7 +155,7 @@ This design means the pool naturally stabilizes without external intervention:
     Repayments reduce outstanding borrows. The rate decreases and liquidity becomes available again.
   </Step>
   <Step title="Equilibrium">
-    The pool settles at the utilization where borrow demand and repayment pressure balance — typically in the 70–85% range.
+    The pool settles at the utilization where borrow demand and repayment pressure balance - typically in the 70–85% range.
   </Step>
 </Steps>
 
@@ -143,7 +163,7 @@ This design means the pool naturally stabilizes without external intervention:
 
 ## Related
 
-- [Lending Pools](/learn/lending-pools) — how utilization is computed from pool state
-- [vTokens](/learn/vtokens) — how borrow interest flows into LP yield
-- [Health Factor](/learn/health-factor) — what happens when borrowing costs erode account health
-- [Rate Model reference](/developers/contracts/rate-model) — the full function interface
+- [Lending Pools](/learn/lending-pools) - how utilization is computed from pool state
+- [vTokens](/learn/vtokens) - how borrow interest flows into LP yield
+- [Health Factor](/learn/health-factor) - what happens when borrowing costs erode account health
+- [Rate Model reference](/developers/contracts/rate-model) - the full function interface

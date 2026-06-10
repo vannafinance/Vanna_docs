@@ -1,6 +1,6 @@
 ---
 title: "Health Factor"
-description: "How your Health Factor is calculated and what it means for your Margin Account."
+description: "What your Health Factor means, what moves it, and how to keep your position safe."
 mode: "wide"
 ---
 
@@ -8,66 +8,112 @@ mode: "wide"
 
 ## What the Health Factor is
 
-The Health Factor is a single number that represents the safety of your Margin Account. It compares how much your collateral is currently worth against how much you owe — the higher the number, the more protected your position is against price movements and accruing interest.
+The Health Factor is a single number that represents the safety of your Margin Account. It compares how much your collateral is currently worth against how much you owe - the higher the number, the more protected your position is against price movements and accruing interest.
 
-A Health Factor above 1.1× means your position is safe and your collateral sufficiently covers your debt. Exactly at 1.1×, your account becomes eligible for liquidation. Falling below 1.1× is not possible in normal operation — the protocol blocks borrows that would take you there, and once your account reaches 1.1× due to price movement or accrued interest, liquidators can close the position immediately.
+Think of it as a cushion: a higher Health Factor means more room to absorb a drop in collateral value before you are at risk. A Health Factor of 2.0× means your collateral is worth twice your debt. A Health Factor of 1.2× means your collateral is only 20% more valuable than your debt - a much thinner cushion that a moderate price swing could erase.
 
-Think of it as a cushion: a higher Health Factor means more room to absorb a drop in collateral value before you are at risk. A Health Factor of 2.0× means your collateral is worth twice your debt. A Health Factor of 1.2× means your collateral is only 20% more valuable than your debt — a much thinner cushion that a moderate price swing could erase.
+A Health Factor above 1.1× means your position is safe and your collateral sufficiently covers your debt. Falling below 1.1× is not possible in normal operation - the protocol blocks borrows or withdrawals that would take you there. Once your account reaches 1.1× due to a price drop or accumulated interest, it becomes eligible for liquidation immediately.
 
-## The formula
+<Card title="Health Factor - Core Concepts" href="/learn/health-factor">
+  How the Risk Engine computes this number - collateral valuation, debt representation, guard functions, and the 1.1× threshold.
+</Card>
+
+## The Formula
 
 ```
-Health Factor = Total Collateral Value / Total Debt Value
+Health Factor = Total Collateral Value (USD) / Total Debt Value (USD)
 ```
 
-The values are denominated in USD at current market prices. If your collateral consists of multiple assets, their combined USD value is used. The same applies to debt.
+Both values use current market prices. If you hold multiple collateral assets, their combined USD value is used. The same applies to debt across multiple borrows. The ratio is recalculated live - it is not stored and does not update on a schedule. Every time you interact with your account, the latest prices are used.
 
-**Worked examples:**
+| Health Factor | What it means |
+|---|---|
+| Above 1.5× | Comfortable - a significant price move is needed to put you at risk |
+| 1.1× – 1.5× | Monitor closely - a moderate price move could approach the threshold |
+| At 1.1× | Liquidation eligible - act immediately |
 
-| Collateral | Debt | Health Factor | Status |
-|---|---|---|---|
-| $1,000 USDC | $500 USDC | 2.0× | Safe |
-| $1,000 USDC | $900 USDC | 1.11× | Near threshold |
-| $1,000 USDC | $909 USDC | 1.10× | Liquidation eligible |
+<div style={{background:"#111111",borderRadius:"16px",padding:"32px 28px 24px",margin:"12px 0 24px",position:"relative",overflow:"hidden"}}>
+  <div style={{position:"absolute",top:"-80px",right:"-60px",width:"200px",height:"200px",background:"radial-gradient(circle,rgba(252,84,87,0.20) 0%,transparent 70%)",pointerEvents:"none"}} />
+  <div style={{position:"absolute",bottom:"-80px",left:"-60px",width:"200px",height:"200px",background:"radial-gradient(circle,rgba(112,58,230,0.22) 0%,transparent 70%)",pointerEvents:"none"}} />
+  <div style={{position:"relative",zIndex:2}}>
+    <div style={{position:"relative",height:"26px",marginBottom:"12px"}}>
+      <div style={{position:"absolute",left:"0",width:"44%",textAlign:"center",fontSize:"13px",color:"rgba(252,84,87,1)",fontWeight:700,fontFamily:"system-ui",letterSpacing:"0.02em"}}>Liquidatable</div>
+      <div style={{position:"absolute",left:"44%",width:"16%",textAlign:"center",fontSize:"13px",color:"rgba(251,191,36,1)",fontWeight:700,fontFamily:"system-ui",letterSpacing:"0.02em"}}>Caution</div>
+      <div style={{position:"absolute",left:"60%",width:"40%",textAlign:"center",fontSize:"13px",color:"rgba(52,211,153,1)",fontWeight:700,fontFamily:"system-ui",letterSpacing:"0.02em"}}>Safe</div>
+    </div>
+    <div style={{position:"relative",height:"20px",borderRadius:"10px",overflow:"hidden"}}>
+      <div style={{position:"absolute",left:"0",top:"0",width:"44%",height:"100%",background:"linear-gradient(90deg,rgba(252,84,87,0.35) 0%,rgba(252,84,87,0.85) 100%)"}} />
+      <div style={{position:"absolute",left:"44%",top:"0",width:"16%",height:"100%",background:"rgba(251,191,36,0.75)"}} />
+      <div style={{position:"absolute",left:"60%",top:"0",width:"40%",height:"100%",background:"linear-gradient(90deg,rgba(52,211,153,0.60) 0%,rgba(52,211,153,0.90) 100%)"}} />
+      <div style={{position:"absolute",left:"44%",top:"0",width:"3px",height:"100%",background:"rgba(255,255,255,0.95)"}} />
+    </div>
+    <div style={{position:"relative",height:"28px",marginTop:"10px",fontSize:"12px",fontFamily:"monospace"}}>
+      <span style={{position:"absolute",left:"0",color:"rgba(255,255,255,0.45)"}}>0×</span>
+      <span style={{position:"absolute",left:"44%",transform:"translateX(-50%)",color:"rgba(255,255,255,0.95)",fontWeight:700,fontSize:"13px"}}>1.1×</span>
+      <span style={{position:"absolute",left:"60%",transform:"translateX(-50%)",color:"rgba(255,255,255,0.55)"}}>1.5×</span>
+      <span style={{position:"absolute",left:"80%",transform:"translateX(-50%)",color:"rgba(255,255,255,0.55)"}}>2.0×</span>
+      <span style={{position:"absolute",right:"0",color:"rgba(255,255,255,0.45)"}}>2.5×</span>
+    </div>
+    <p style={{textAlign:"center",fontSize:"0.78rem",color:"rgba(255,255,255,0.70)",margin:"8px 0 0",fontFamily:"system-ui"}}>Accounts at or below 1.1× are eligible for liquidation</p>
+  </div>
+</div>
 
-The third row illustrates how little margin there is between 1.11× and 1.10×. A small move in collateral price — or a small amount of accrued interest — is enough to cross the threshold.
+## Your Margin Account Metrics
 
-## The metrics bar
+The Margin tab shows three numbers that together describe the state of your position.
 
-The Margin tab displays three fields in the metrics bar that together describe the health of your position.
+**Health Factor**
+Your current ratio, updated in real time as market prices change. The display turns red as it approaches 1.1×. This is the primary number to watch.
 
-**Health Factor** — your current ratio, calculated in real time from the current market prices of your collateral and the outstanding debt balance including accrued interest. The display turns red as the value approaches 1.1× to signal increasing risk.
+**Net Available Collateral**
+Your net equity in the account - the total value of all assets inside your Margin Account minus what you owe. For a leveraged position, this represents your initial deposited capital. If this number is small relative to your total position size, your leverage is high and a price move against you will have a large impact on your Health Factor.
 
-**Net Available Collateral** — the additional amount you can borrow before your Health Factor would reach 1.1×. If this figure is close to zero, you are near the liquidation threshold and should not borrow more or withdraw collateral.
+**Collateral Left Before Liquidation**
+How much your total collateral value can fall in USD - before your account becomes eligible for liquidation, given your current debt. Use this during volatile markets to understand how much price movement your position can absorb.
 
-**Collateral Left Before Liquidation** — how much your collateral's total USD value can fall before your account becomes eligible for liquidation. This number accounts for your current debt. Monitoring this field during volatile markets helps you understand how much price movement your position can withstand.
-
-## What changes your Health Factor
-
-Your Health Factor is not static. It moves continuously as market prices change and as interest accrues on your debt.
+## What Changes Your Health Factor
 
 **Health Factor goes down when:**
 
-- The market price of one or more collateral assets falls, reducing total collateral value.
-- You borrow more assets, increasing your total debt.
-- Interest accrues on your outstanding debt over time, gradually increasing the debt balance.
+- A collateral asset's price falls, reducing your total collateral value
+- You borrow more, increasing your total debt
+- Interest accrues on your outstanding debt, gradually growing the debt balance over time
 
 **Health Factor goes up when:**
 
-- The market price of your collateral assets rises, increasing total collateral value.
-- You [repay some or all of your debt](/guides/margin/repay), reducing the debt balance.
-- You [add more collateral](/guides/margin/deposit-collateral), increasing total collateral value.
+- A collateral asset's price rises, increasing your total collateral value
+- You [repay debt](/guides/margin/repay), reducing your total debt balance
+- You [add more collateral](/guides/margin/deposit-collateral), increasing your total collateral value
 
-## How to monitor it
+One detail worth knowing: interest on your debt grows continuously in the background, even between transactions. The debt balance the protocol uses to calculate your Health Factor updates each time any user interacts with the lending pool - which happens regularly - but in quiet periods, your true debt may be slightly higher than what is displayed. This means your Health Factor can drift downward over time even if prices are flat and you take no actions.
 
-The Margin tab displays your Health Factor in real time. You do not need to refresh the page — the value updates as prices change.
+## How to Keep Your Position Safe
 
-The Analytics section under your positions shows historical Health Factor data, which can help you understand how your position has moved over time and whether your collateral mix is stable.
+**Leave room above 1.1×.** A Health Factor of 1.5× or higher means a 27% drop in your collateral value is needed to reach the liquidation threshold. A Health Factor of 1.15× means a 4% drop is enough. Give yourself room that matches the volatility of your collateral assets.
 
-If you have open debt, make a habit of checking your Health Factor during periods of market volatility. Collateral prices can move quickly, and a position that appears safe in calm conditions may approach 1.1× during a sharp price decline.
+**Check it during volatile markets.** The Margin tab updates in real time - you do not need to refresh. If a market is moving quickly, watch your Health Factor directly rather than assuming it is still where it was an hour ago.
+
+**Repay or add collateral before it reaches 1.1×.** Once your account is at 1.1×, liquidation can happen in the very next block. The only way to prevent it is to act before it gets there, not after.
+
+**Prefer stable collateral when borrowing heavily.** USDC and EURC carry far less price risk than XLM. If you are borrowing close to your limit, holding more of your collateral in stable assets reduces the chance of a sudden price move pushing you below the threshold.
+
+## If Your Health Factor Is Dropping
+
+Act immediately. Do not wait to see if the market recovers.
+
+Your options, in order of how quickly they take effect:
+
+1. **Repay some debt** - even a partial repayment meaningfully improves your Health Factor. See [Repay a Loan](/guides/margin/repay).
+2. **Add more collateral** - transfer additional assets from your wallet into your Margin Account to increase your collateral value. See [Deposit Collateral](/guides/margin/deposit-collateral).
+3. **Do both** - if you are very close to 1.1×, combining a repayment with a collateral top-up is the safest approach.
+
+<Warning>
+  There is no grace period. Once your Health Factor reaches 1.1×, your account is immediately eligible for liquidation. Act before the threshold is reached - not after.
+</Warning>
 
 ## Related
 
-- [Liquidation](/guides/margin/liquidation) — what happens when your Health Factor reaches 1.1×.
-- [Repay a Loan](/guides/margin/repay) — the fastest way to improve your Health Factor if it is dropping.
-- [Deposit Collateral](/guides/margin/deposit-collateral) — add collateral to strengthen your position.
+- [Liquidation](/guides/margin/liquidation) - what happens to your position if it reaches 1.1×
+- [Repay a Loan](/guides/margin/repay) - the fastest way to raise your Health Factor
+- [Deposit Collateral](/guides/margin/deposit-collateral) - add collateral to strengthen your position
+- [Health Factor - Core Concepts](/learn/health-factor) - how the protocol computes this number

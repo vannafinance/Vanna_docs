@@ -1,104 +1,113 @@
 ---
 title: "vTokens"
-description: "vTokens are the ERC-4626-style share tokens issued by Vanna's Lending Pools. They represent a depositor's claim on the pool and accrue value passively as borrowers pay interest."
+description: "vTokens are the share tokens issued by Vanna's Lending Pools. They represent a depositor's proportional claim on the pool and grow in redemption value as borrowers repay debt with interest."
 mode: "wide"
 ---
 
-When an LP deposits into a [Lending Pool](/learn/lending-pools), they receive vTokens — share tokens that grow in value over time without the LP needing to claim, restake, or compound anything. The vToken is the mechanism that makes yield passive.
+When an LP deposits into a [Lending Pool](/learn/lending-pools), they receive vTokens - share tokens that track their proportional claim on the pool. The vToken is the mechanism that makes yield passive.
 
 <div style={{ display: "flex", justifyContent: "center", margin: "8px 0 24px" }}>
   <img src="/images/learn/vToken.png" alt="vToken mechanics" style={{ maxWidth: "100%", borderRadius: "16px" }} />
 </div>
 
-## The Core Idea: Shares vs. Amounts
+## The Core Idea: Shares
 
-A vToken does **not** represent a fixed quantity of the underlying asset. It represents a **fractional claim on the pool's total assets**. Two scalars matter:
+A vToken does **not** represent a fixed quantity of the underlying asset. It represents a **proportional claim on the pool's physical balance**. Two values determine the exchange rate at any moment:
 
-| Scalar | Meaning |
+| Value | Meaning |
 |---|---|
-| `total_assets` | Current accounting value of everything in the pool — deposits, accrued interest, and outstanding borrows valued at current rates. |
-| `total_supply` | Total vToken shares outstanding. |
+| `pool_balance` | The asset balance physically held by the pool contract right now - what can actually be withdrawn. |
+| `vToken supply` | Total vTokens currently in circulation. |
 
-The price of one vToken in underlying units is implicit:
+The redemption rate (assets per vToken) is:
 
 $$
-\text{assetsPerShare} = \frac{\text{total\_assets}}{\text{total\_supply}}
+\text{assetsPerShare} = \frac{\text{pool\_balance}}{\text{vToken supply}}
 $$
 
-When a borrower pays interest, `total_assets` grows. `total_supply` does not change. So `assetsPerShare` rises — and every vToken holder benefits automatically, proportionally to their share.
+When a borrower repays their debt plus accrued interest, `pool_balance` rises. `vToken supply` does not change. So `assetsPerShare` rises - and every vToken holder benefits proportionally, without doing anything.
+
+## How vTokens Are Minted and Burned
+
+**On deposit** - the pool calculates shares to issue:
+
+```
+vTokens minted = amount × vToken supply / pool_balance
+```
+
+If the pool is empty or no vTokens have ever been minted, the first depositor receives shares 1:1.
+
+**On redemption** - the pool calculates assets to return:
+
+```
+asset amount = vTokens redeemed × pool_balance / vToken supply
+```
+
+Both operations use the same ratio: `pool_balance / vToken supply`. A depositor who supplies, waits, and then redeems gets back more than they put in - as long as at least one repayment with interest has occurred during that period.
+
+## When Does the Exchange Rate Rise?
+
+The exchange rate rises when `pool_balance` grows. This happens when **a borrower repays their debt**.
+
+- **Borrow:** XLM leaves the pool. `pool_balance` drops. The exchange rate drops proportionally - but the LP's total claim is unchanged, because the same XLM now exists as an outstanding loan.
+- **Repayment:** XLM returns to the pool. Since borrowers owe principal plus accrued interest, the interest portion is surplus. After repayment, `pool_balance` ends up higher than it was before the borrow, and `assetsPerShare` rises above the original level.
+
+Interest **accrues** in the pool's accounting (`borrows_wad` grows via `update_state()`), but this accounting does not affect `pool_balance` or the vToken exchange rate. The rate only moves when tokens physically enter or leave the pool contract.
 
 ## A Worked Example
 
-Suppose a pool starts empty and an LP deposits `1,000 USDC`:
+Suppose a pool starts empty and an LP deposits 1,000 XLM:
 
-| Time | Event | total_assets | total_supply | assetsPerShare | LP balance (vTokens) | LP balance (USDC equivalent) |
-|---|---|---|---|---|---|---|
-| t = 0 | LP deposits 1,000 USDC | 1,000 | 1,000 | 1.000 | 1,000 vUSDC | 1,000 USDC |
-| t = 1d | Borrower draws 500 USDC | 1,000 | 1,000 | 1.000 | 1,000 vUSDC | 1,000 USDC |
-| t = 30d | Interest accrues; borrower owes ~510 | 1,010 | 1,000 | 1.010 | 1,000 vUSDC | 1,010 USDC |
-| t = 60d | More interest | 1,020 | 1,000 | 1.020 | 1,000 vUSDC | 1,020 USDC |
+| Event | pool_balance | vToken supply | Exchange rate | LP vTokens | LP redeemable (liquid) |
+|---|---|---|---|---|---|
+| LP deposits 1,000 XLM | 1,000 | 1,000 | 1.000 | 1,000 vXLM | 1,000 XLM |
+| Borrower draws 500 XLM | 500 | 1,000 | 0.500 | 1,000 vXLM | 500 XLM |
+| 30 days pass, interest accrues in accounting | 500 | 1,000 | 0.500 | 1,000 vXLM | 500 XLM |
+| Borrower repays 510 XLM (500 principal + 10 interest) | 1,010 | 1,000 | 1.010 | 1,000 vXLM | 1,010 XLM |
 
-The LP did nothing in this period. Their vToken balance stayed at 1,000 vUSDC. The price of each vUSDC rose from 1.000 to 1.020, so their redemption value grew.
+The LP did nothing between the borrow and repayment. Their vToken balance stayed at 1,000 vXLM throughout. Once the borrower repaid with interest, the exchange rate rose from 1.000 to 1.010.
 
-A second LP depositing at `t = 60d` would receive `1,000 / 1.020 ≈ 980.39 vUSDC` for their 1,000 USDC — they're entering at a higher exchange rate, fairly priced against existing LPs.
+During the active borrow, the LP's redeemable amount reflects only the liquid portion of the pool. The outstanding 500 XLM is an active loan - the LP's full claim is restored once the borrower repays. If utilization is high, full redemptions may be temporarily limited.
 
-## Why ERC-4626 (Or its Soroban Equivalent)
+A second LP depositing 100 XLM at the end would receive `100 / 1.010 ≈ 99.01 vXLM` - they enter at the current exchange rate, fairly priced against the original LP.
 
-[ERC-4626](https://eips.ethereum.org/EIPS/eip-4626) is the standard "tokenized vault" interface on EVM:
+## vToken Operations
 
-- `deposit(assets, receiver) → shares`
-- `redeem(shares, receiver, owner) → assets`
-- `convertToShares(assets) → shares`
-- `convertToAssets(shares) → assets`
-- `totalAssets() → assets`
-- `totalSupply() → shares`
-
-Vanna's EVM vTokens implement this interface directly, which means any wallet, indexer, or DeFi aggregator that understands ERC-4626 understands a Vanna vToken without custom code.
-
-On Soroban there is no formal "ERC-4626" — but Vanna's `VXLMToken` and the analogous per-asset contracts expose the same conceptual interface: `deposit`, `redeem`, `convert_to_shares`, `convert_to_assets`. The accounting is identical; only the language and call conventions differ.
+| Action | pool_balance | vToken supply | Exchange rate |
+|---|---|---|---|
+| LP deposits | Increases | Increases (vTokens minted) | Unchanged |
+| LP redeems | Decreases | Decreases (vTokens burned) | Unchanged |
+| Borrower borrows | Decreases (XLM leaves pool) | No change | Decreases |
+| Borrower repays principal only | Returns to pre-borrow level | No change | Returns to pre-borrow rate |
+| Borrower repays principal + interest | Rises above pre-borrow level | No change | Rises above original rate |
+| Liquidation - full debt recovered | Pool receives full repayment | No change | Rises (full recovery) |
+| Liquidation - partial recovery | Pool receives partial repayment | No change | Rises less (LPs absorb the shortfall) |
 
 ## What vTokens Are Not
 
 A vToken is **not**:
 
-- **A fixed-yield bond.** The yield is whatever borrowers pay, which depends on pool utilization and the [Rate Model](/learn/interest-rate-model).
-- **Risk-free.** vTokens represent a claim on the pool, including its outstanding borrows. If borrowers become insolvent and liquidations don't recover the full debt, the pool's `total_assets` decreases — and so does the vToken's value. See [Risk Model](/security/risk-model).
-- **Always redeemable.** If pool utilization is 100%, the available (non-borrowed) liquidity is zero and redemption must wait for a borrower to repay. Liquidity risk is real.
-- **A governance token.** vTokens give no voting rights. They are purely economic claims on the pool.
-
-## Interactions with the Rest of the Protocol
-
-| Action | What happens to vTokens |
-|---|---|
-| LP deposits | `total_supply` increases; the LP receives vTokens at the current exchange rate. |
-| LP redeems | `total_supply` decreases; the LP receives underlying at the current exchange rate. |
-| Borrower borrows | No change to vToken supply. `total_assets` includes the new debt at face value; the exchange rate is unchanged. |
-| Interest accrues | `total_assets` grows; `total_supply` is unchanged; exchange rate rises. Every vToken holder benefits passively. |
-| Borrower repays | `total_assets` increases by the repayment amount; exchange rate unchanged. |
-| Liquidation recovers full debt | Net zero impact on vToken value. |
-| Liquidation recovers less than full debt | `total_assets` decreases by the shortfall; exchange rate falls. LPs absorb the loss proportionally. |
+- **A fixed-yield bond.** Yield depends on what borrowers repay, which varies with utilization and the [Rate Model](/learn/interest-rate-model).
+- **Risk-free.** If a borrower defaults and liquidation does not recover the full debt, `pool_balance` receives less than the full repayment. The shortfall reduces the exchange rate permanently - LPs absorb it proportionally.
+- **Always redeemable.** If pool utilization is near 100%, most assets are out as active loans. Redemptions may fail until borrowers repay. This is a liquidity constraint, not a solvency problem - the debt is still tracked and will return to the pool.
+- **A governance token.** vTokens carry no voting rights. They are purely economic claims on the pool.
 
 ## Transferability
 
-vTokens are standard fungible tokens. They can be transferred between addresses, sold on secondary markets, or used as collateral in other protocols. The receiving address inherits the same proportional claim on the underlying pool. Vanna does not restrict transfers — but receiving a vToken means inheriting the liquidity and credit risk attached to it.
+vTokens are standard fungible tokens with `transfer` and `transfer_from` functions. They can be sent to another address, which then holds the same proportional claim on the pool. Vanna does not restrict transfers.
 
-## Chain Support
+## Supported Assets
 
-vTokens exist on every chain Vanna is deployed on. The naming convention is `v` + the underlying asset symbol:
+Vanna currently deploys three vToken contracts on Stellar:
 
-| Underlying | vToken name | Stellar | EVM |
-|---|---|:-:|:-:|
-| USDC | `vUSDC` | ✓ | ✓ |
-| USDT | `vUSDT` | — | ✓ |
-| WETH / ETH | `vETH` | — | ✓ |
-| DAI | `vDAI` | — | ✓ (Base only) |
-| XLM | `VXLMToken` | ✓ | — |
-| EURC | (planned) | ✓ | — |
+| Underlying | vToken |
+|---|---|
+| XLM | vXLM |
+| USDC | vUSDC |
+| EURC | vEURC |
 
 ## Related
 
-- [Lending Pools](/learn/lending-pools) — the pool that issues the vToken
-- [Interest Rate Model](/learn/interest-rate-model) — what makes the exchange rate rise
-- [Liquidation](/learn/liquidation) — what can cause LP loss
-- [vToken reference](/developers/contracts/vtoken) — the function-level interface
-- [Risk Model](/security/risk-model) — the full LP risk picture
+- [Lending Pools](/learn/lending-pools) - the pool that issues vTokens and how borrow accounting works
+- [Interest Rate Model](/learn/interest-rate-model) - the utilization-based curve that drives borrow cost and LP yield
+- [Liquidation](/learn/liquidation) - what can cause LP loss

@@ -1,59 +1,55 @@
 ---
-title: "Margin Overview"
-description: "How to borrow against your assets and use leverage with a Vanna Margin Account."
+title: "Margin Account"
+description: "Your personal on-chain account for depositing collateral, borrowing assets, and trading with leverage."
 mode: "wide"
 ---
 
-Margin lets you borrow assets against collateral you deposit into a dedicated Margin Account — a smart contract that belongs to you. You create a per-user Margin Account, deposit collateral, and borrow assets against it, while Vanna's risk engine monitors your Health Factor continuously.
+A Margin Account is your personal smart contract on Stellar. You deposit collateral into it, borrow assets against that collateral, and deploy those assets into trading or farming strategies - all while Vanna's risk engine monitors your position health continuously.
 
 <Snippet file="snippets/risk-notice.mdx" />
 
 ## What you can do
 
 <CardGroup cols={2}>
-  <Card title="Open Account" href="/guides/margin/open-account">
-    Create your Margin Account.
+  <Card title="Open Account" icon="plus" href="/guides/margin/open-account">
+    Create your Margin Account on-chain.
   </Card>
-  <Card title="Deposit Collateral" href="/guides/margin/deposit-collateral">
-    Move assets into your Margin Account to use as collateral.
+  <Card title="Deposit Collateral" icon="arrow-down-to-bracket" href="/guides/margin/deposit-collateral">
+    Move assets from your wallet into your Margin Account.
   </Card>
-  <Card title="Borrow" href="/guides/margin/borrow">
+  <Card title="Borrow" icon="hand-holding-dollar" href="/guides/margin/borrow">
     Borrow assets against your deposited collateral.
   </Card>
-  <Card title="Repay" href="/guides/margin/repay">
-    Pay down your debt and free up collateral.
+  <Card title="Repay" icon="arrow-up-from-bracket" href="/guides/margin/repay">
+    Pay down your outstanding debt.
   </Card>
-  <Card title="Transfer Collateral" href="/guides/margin/transfer-collateral">
+  <Card title="Transfer Collateral" icon="arrow-right-arrow-left" href="/guides/margin/transfer-collateral">
     Move assets between your wallet and Margin Account.
   </Card>
-  <Card title="Health Factor" href="/guides/margin/health-factor">
-    Understand how your position health is calculated.
+  <Card title="Health Factor" icon="heart-pulse" href="/guides/margin/health-factor">
+    Understand how your position health is tracked.
   </Card>
 </CardGroup>
 
 ## How it works
 
-A Margin Account is a per-user smart contract. You own it, and Vanna's risk engine monitors it to ensure your debt stays properly collateralized at all times.
+You deposit collateral (XLM, USDC, or EURC) into your Margin Account and borrow assets against it. Borrowed assets stay inside your Margin Account - they cannot be sent directly to your wallet, but you can deploy them into Farm or Trade from within the account.
 
-You deposit collateral — XLM, USDC, or EURC — and the protocol calculates how much you can borrow based on the current market value of that collateral.
+Your Health Factor - total collateral value divided by total debt value - must stay above 1.1x at all times. If it drops to 1.1x, your account becomes eligible for liquidation.
 
-Your Health Factor — collateral value divided by debt value — must stay above 1.1× at all times. If it drops to 1.1×, your account becomes eligible for liquidation, meaning a liquidator can repay part of your debt and claim a portion of your collateral.
-
-Borrowed assets stay inside your Margin Account. You can deploy them to Farm or Trade from within the account, but they cannot be sent directly to your regular wallet.
-
-There is one Margin Account per user. All your collateral and debt live in that single account, regardless of how many different assets you deposit or borrow.
+You can have one active Margin Account at a time. Closing an account and opening a new one reuses the same on-chain contract.
 
 ## Before you start
 
-- **Wallet connected** — see [Connect Wallet](/guides/connect-wallet) if you haven't set this up yet.
-- **Assets to deposit** — you'll need collateral (XLM, USDC, or EURC) ready in your wallet before you can borrow.
+- **Wallet connected** - see [Connect Wallet](/guides/connect-wallet) if you haven't done this yet.
+- **Assets in your wallet** - you need collateral (XLM, USDC, or EURC) ready before you can borrow.
 
-## Key metrics on the Margin tab
+## Key metrics
 
-Once your Margin Account is created, the Margin tab displays a metrics bar with the following values.
+Once your Margin Account is active, the Margin tab shows a metrics bar with three values.
 
 | Metric | What it means |
 |---|---|
-| **Health Factor** | Collateral value divided by debt value. Must stay above 1.1× to avoid liquidation. |
-| **Net Available Collateral** | How much more you can borrow before your Health Factor reaches 1.1×. |
-| **Collateral Left Before Liquidation** | How much your collateral value can fall before your account becomes eligible for liquidation. |
+| **Health Factor** | Total collateral value divided by total debt value. Must stay above 1.1x to avoid liquidation. |
+| **Net Available Collateral** | Your net equity in the account - total collateral value minus what you owe. |
+| **Collateral Left Before Liquidation** | How much your collateral value can drop before your Health Factor reaches 1.1x and the account becomes eligible for liquidation. |

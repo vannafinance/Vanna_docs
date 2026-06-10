@@ -1,92 +1,136 @@
 ---
 title: "Margin Accounts"
-description: "Isolated smart contract vaults — one per user position — that hold collateral, track debt, and execute external calls under a unified health factor."
+description: "A separately deployed smart contract per user that holds collateral, tracks debt, and executes external protocol calls. The atomic unit of Vanna's risk model."
 mode: "wide"
 ---
+
+A Margin Account is a smart contract, not a record in a shared database. Every user who opens a Margin Account on Vanna gets their own deployed contract instance, with its own storage, its own collateral balances, its own borrow list, and its own external positions. No two accounts share state.
 
 <div style={{ display: "flex", justifyContent: "center", margin: "4px 0 28px" }}>
   <img src="/images/learn/marginAccountArchitecture.png" alt="Margin Account Architecture" style={{ maxWidth: "100%", borderRadius: "16px" }} />
 </div>
 
-A Margin Account is the fundamental primitive of Vanna. It is **a smart contract**, not a database row — each user gets their own deployed contract, with its own storage, its own collateral balances, its own debt entries, and its own external positions. The Risk Engine evaluates the account's [health factor](/learn/health-factor) on this contract's state alone; nothing in another user's account can affect it.
+## The Factory Pattern
 
-## What a Margin Account Holds
+When a user calls `AccountManager.create_account()`, the Account Manager first checks whether the user has any previously closed accounts sitting in the inactive pool:
 
-| State | Description |
-|---|---|
-| **Collateral tokens** | A list of token addresses the account holds as collateral, plus the balance of each. Accepted collateral assets are XLM, USDC, and EURC. |
-| **Borrowed tokens** | A list of token addresses the account has outstanding debt in, plus the *share* balance (not asset balance) for each — see [Lending Pools](/learn/lending-pools) for why shares. |
-| **Owner** | The address authorized to operate the account. Set at creation; not transferable without explicit account migration. |
-| **Activation flag** | Whether the account is currently active. Inactive accounts cannot execute new operations but remain on-chain. |
+```rust
+let mut inactive_accounts = Self::get_inactive_accounts(env, trader_address.clone());
+if inactive_accounts.len() == 0 {
+    // No inactive accounts - deploy a fresh contract
+    let smart_account_hash = registry_client.get_smart_account_hash();
+    smart_account = Self::create_smart_account(env, &trader_address, smart_account_hash);
+    registry_client.add_account(&trader_address, &smart_account);
+} else {
+    // Reuse an existing inactive contract
+    smart_account = inactive_accounts.pop_back().unwrap();
+    Self::set_inactive_accounts(env, trader_address.clone(), inactive_accounts);
+    registry_client.update_account(&trader_address, &smart_account);
+}
+```
 
-The list of *collateral tokens* and *borrowed tokens* grows and shrinks dynamically. Depositing a new asset adds it to the collateral list; repaying a borrow fully removes the token from the borrowed list.
+If no inactive account exists, a new SmartAccount contract is deployed using a deterministic salt derived from `(trader_address, account_manager_address, account_index)`. The address is therefore predictable before deployment. The new account is registered in the [Registry](/learn/registry).
 
-## Why Isolation
+If an inactive account exists, it is reused directly - no new deployment. The Registry entry is updated to point to it. This amortizes deployment cost across the account's lifetime.
 
-There are two common ways to track per-user positions on-chain:
+When an account is closed via `close_account()`, it is swept, deactivated, and pushed back into the user's inactive pool for reuse next time.
 
-- **Shared mapping.** One contract holds a `mapping(address => Position)`. Cheap to deploy, but a bug in the contract logic can cross-contaminate users.
-- **Isolated contract per user.** Each user gets a separately deployed contract. More expensive at creation; impossible for one user's state to corrupt another's.
+## Storage Layout
 
-Vanna chose isolated contracts because **leverage is unforgiving**. A logic bug in a shared-mapping margin protocol can drain every user simultaneously. With isolated accounts, the worst-case blast radius of a single-account bug is one account. The Risk Engine reads each account's state via direct contract calls — it cannot accidentally see or modify another account.
+Every SmartAccount contract stores the following state in persistent storage:
 
-The cost — one contract deployment per account — is amortized using cheap deployment patterns: a beacon proxy on EVM, a deterministic factory deployment on Soroban.
+| Storage Key | Type | Description |
+|---|---|---|
+| `CollateralTokensList` | `Vec<Symbol>` | All token symbols currently held as collateral |
+| `CollateralBalanceWAD(Symbol)` | `U256` | Balance of each collateral token in WAD precision |
+| `BorrowedTokensList` | `Vec<Symbol>` | All token symbols with outstanding debt |
+| `HasDebt` | `bool` | True if any borrowed token entry exists |
+| `IsAccountActive` | `bool` | Whether the account is currently active |
+| `OwnerAddress` | `Address` | The wallet that owns and controls this account |
+| `AccountManager` | `Address` | The AccountManager contract authorized to call this account |
+| `RegistryContract` | `Address` | The Registry used to resolve peer contract addresses |
 
-## Lifecycle
+The `CollateralTokensList` grows when a new asset is deposited and shrinks when a balance is fully withdrawn or swept. `BorrowedTokensList` grows when a borrow is issued and shrinks when the debt for a token is fully repaid. `HasDebt` is set to false automatically when `BorrowedTokensList` becomes empty.
 
-<div style={{ display: "flex", justifyContent: "center", margin: "8px 0 24px" }}>
-  <img src="/images/learn/marginAccountLifecycle.png" alt="Margin Account Lifecycle" style={{ maxWidth: "100%", borderRadius: "16px" }} />
-</div>
+## Account States
 
-<Steps>
-  <Step title="Created">
-    A user calls `AccountManager.open_account()`. The Account Manager deploys a new Margin Account contract addressed deterministically from `(owner, account_index)` and records the owner → account mapping in the [Registry](/learn/registry).
-  </Step>
-  <Step title="Funded">
-    The user deposits one or more collateral assets. The Margin Account's collateral list grows. At this point the account has no debt, so its health factor is effectively infinite.
-  </Step>
-  <Step title="Leveraged">
-    The user borrows from one or more Lending Pools, takes positions via `execute()`, or both. The Risk Engine validates each operation against the 1.1× threshold. Borrowed assets, position tokens (b-tokens, LP shares), and any external claims all live inside the same Margin Account.
-  </Step>
-  <Step title="Repay or close">
-    The user repays outstanding debt — fully or partially. Once debt = 0, the user can call `close_account()`, which sweeps remaining collateral back to the owner and marks the account closed.
-  </Step>
-  <Step title="Liquidation (if applicable)">
-    If the account's health factor falls below 1.1× while debt is outstanding, any address can call `liquidate()`. The protocol sweeps the account's assets, repays the debt to the Lending Pools, and the liquidator earns an incentive. See [Liquidation](/learn/liquidation).
-  </Step>
-</Steps>
+Each SmartAccount contract moves through the following states:
 
-## Health Enforcement
+**Deployed (inactive)** - The constructor sets `IsAccountActive = false`. A freshly deployed contract starts inactive and cannot execute operations.
 
-Every state-changing operation on a Margin Account goes through the Account Manager, and the Account Manager calls the Risk Engine before mutating state. The Risk Engine:
+**Active** - `AccountManager` calls `activate_account()`, which sets `IsAccountActive = true`. The account is now ready for deposits, borrows, and external calls. This happens immediately after creation or reuse.
 
-1. Reads the Margin Account's current collateral and borrowed token lists.
-2. Queries the [Oracle](/learn/oracle-system) for current USD prices of every asset involved.
-3. Computes the **post-operation** health factor — what it would be if the operation succeeded.
-4. Returns `Ok(true)` if the post-operation ratio remains ≥ 1.1×, `Ok(false)` otherwise.
+**Inactive** - `AccountManager` calls `deactivate_account()` when the user closes the account. The contract remains on-chain but cannot execute new operations. It enters the user's inactive pool and will be reactivated if the user opens a new account.
 
-The Account Manager rejects the operation if the Risk Engine returns false. This means:
+## How Operations Flow Through the Account
 
-- A borrow that would push your health to 1.05× is rejected before any tokens move.
-- A withdraw of collateral that would push your health below 1.1× is rejected.
-- A liquidation that would *not* restore the account to health is permitted only if the alternative — letting the account remain insolvent — is worse.
+The SmartAccount contract itself cannot be called directly by users. Every operation goes through the Account Manager, which authenticates the caller, checks with the Risk Engine, and only then calls the SmartAccount to mutate state.
 
-## What Margin Accounts Cannot Do
+```
+User wallet
+  └─ AccountManager.borrow() / withdraw() / execute()
+       ├─ RiskEngine.is_borrow_allowed() or is_withdraw_allowed()
+       │    reads SmartAccount collateral + lending pool borrow shares
+       │    returns true / panics
+       └─ SmartAccount.add_borrowed_token() / set_collateral_token_balance() / execute()
+```
 
-By design, Margin Accounts are restricted:
+The Risk Engine reads the SmartAccount's state to compute the health factor but never writes to it. All writes go through the Account Manager. For the health factor computation and the three guard functions, see [Health Factor](/learn/health-factor).
 
-- **Cannot call arbitrary contracts.** All external calls go through `execute()`, which is gated by the [Controller](/glossary#controller) allowlist. A trader cannot drain their account by interacting with a malicious contract.
-- **Cannot move collateral to another account.** Margin Accounts are owner-locked. To move funds, the owner must withdraw to their wallet and then deposit to the new account.
-- **Cannot bypass the Risk Engine.** Even the Account Manager cannot mutate Margin Account state without first calling `is_borrow_allowed` / `is_withdraw_allowed`. The Risk Engine is the single chokepoint.
+## External Protocol Calls - execute()
 
-## Chain Support
+When a user deploys borrowed capital into an external protocol, the Account Manager calls `SmartAccount.execute()` with an action type drawn from the `SmartAccExternalAction` enum:
 
-<Snippet file="chain-support-table.mdx" />
+| Action | Protocol | Description |
+|---|---|---|
+| `Deposit` | Blend | Supply tokens to a Blend lending pool, receive b-tokens |
+| `Withdraw` | Blend | Withdraw tokens from a Blend lending pool, burn b-tokens |
+| `Swap` | Aquarius | Swap tokens in an Aquarius AMM pool |
+| `AddLiquidity` | Aquarius | Provide liquidity to an Aquarius pool, receive LP tokens |
+| `RemoveLiquidity` | Aquarius | Withdraw liquidity from an Aquarius pool, burn LP tokens |
+
+The SmartAccount executes the call directly against the target protocol contract. It returns `(bool, i128)` where the `i128` is the token delta - positive for tokens received, negative for tokens sent.
+
+The Account Manager reads this delta and mints or burns the corresponding Tracking Token on behalf of the SmartAccount:
+
+```rust
+// In AccountManager.execute() after SmartAccount.execute() returns token_delta:
+if token_delta > 0 {
+    tracking_client.mint(&tracking_symbol, &smart_account, &token_delta);
+} else {
+    tracking_client.burn(&tracking_symbol, &smart_account, &(-token_delta));
+}
+```
+
+Tracking Tokens are how the Risk Engine knows the SmartAccount holds a Blend or Aquarius position. It reads the Tracking Token balance for `BLEND_XLM`, `BLEND_USDC`, `BLEND_EURC`, and `AQ_XLM_USDC`, converts them to their underlying USD value, and includes them in the collateral sum. See [Health Factor](/learn/health-factor) for the collateral valuation detail.
+
+## sweep_to()
+
+`sweep_to(destination)` is called in two places: by `close_account()` (sweeps to the owner) and by `liquidate()` (sweeps to the trader after debt is cleared).
+
+It iterates every token in `CollateralTokensList` and calls `remove_collateral_token_bal_internal()` for each:
+
+- **XLM, USDC, EURC** - the actual token balance is transferred to `destination` via the token contract. The `CollateralBalanceWAD` entry is zeroed and the token is removed from `CollateralTokensList`.
+- **BLEND_XLM, BLEND_USDC, BLEND_EURC, AQ_XLM_USDC** - the `CollateralBalanceWAD` entry is zeroed and the token is removed from `CollateralTokensList`. No token transfer occurs - the underlying b-tokens held in Blend's pool and LP positions in Aquarius remain in the external protocol and are not unwound.
+
+## Why Isolated Contracts
+
+The alternative is a shared mapping: one contract holds all user positions in a `mapping(address => Position)`. It is cheaper to deploy but means a single logic bug can affect every user simultaneously.
+
+With isolated contracts, a bug that corrupts one SmartAccount's storage cannot propagate to another. The Risk Engine calls each account directly - it cannot accidentally read or write the wrong account's state. The blast radius of any single-account failure is bounded to that account.
+
+## Constraints
+
+Every function in SmartAccount begins with `account_manager.require_auth()`. Direct user calls are rejected. The only authorized caller is the AccountManager.
+
+- Users cannot move collateral to another address except through `withdraw_collateral_balance()` (which runs a risk check) or `sweep_to()` (which requires Account Manager authorization).
+- External calls are limited to protocols the AccountManager supports: currently Blend and Aquarius. Calls to arbitrary contracts are not possible through this interface.
+- The owner address is set at deployment and cannot be changed.
 
 ## Related
 
-- [Lending Pools](/learn/lending-pools) — the other side of the market
-- [Health Factor](/learn/health-factor) — what the Risk Engine actually computes
-- [Composable Leverage](/learn/composable-leverage) — how `execute()` puts borrowed assets to work
-- [Account Manager reference](/developers/contracts/account-manager) — the function-level interface
-- [Margin Account reference](/developers/contracts/smart-account) — the contract you don't call directly but should understand
+- [Health Factor](/learn/health-factor) - how the Risk Engine computes solvency using SmartAccount state
+- [Liquidation](/learn/liquidation) - what happens to the SmartAccount when health falls below 1.1x
+- [Lending Pools](/learn/lending-pools) - where borrow shares are stored
+- [Registry](/learn/registry) - how peer contract addresses are resolved at runtime
+- [Oracle System](/learn/oracle-system) - how asset prices enter the collateral calculation

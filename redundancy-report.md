@@ -1,272 +1,231 @@
-# Vanna Protocol Docs — Redundancy & Consolidation Report
+# Content Redundancy Report - Vanna Documentation
 
-> Reviewed by: Senior Technical Editor & Documentation Architect  
-> Date: 2026-06-04  
-> Scope: All `.mdx` files in `Vanna_Docs_Final`
-
----
-
-## Overview
-
-The Vanna docs are well-structured but carry significant content duplication across the User Guide and Core Concepts sections. The most common pattern is **full concept re-explanation** — instead of explaining something once and linking to it, several pages re-derive the same concept from scratch. This inflates maintenance cost (every concept has multiple sources of truth), and creates reader confusion when the two versions differ slightly in wording or emphasis.
-
-Total redundancies identified: **11**  
-Priority breakdown: **4 High · 4 Medium · 3 Low**
+**Scope:** `learn/` (Core Concepts) vs `guides/` (User Guide)  
+**Purpose:** Identify where content is duplicated or overlapping, and how to fix it.
 
 ---
 
-## Redundancy Index
+## How to Read This Report
 
-| # | Title | Files Involved | Priority |
-|---|---|---|---|
-| R1 | Liquidation explained twice end-to-end | `learn/liquidation.mdx` · `guides/margin/liquidation.mdx` | High |
-| R2 | Health Factor formula duplicated | `learn/health-factor.mdx` · `guides/margin/health-factor.mdx` | High |
-| R3 | Lending pool mechanics spread across three files | `learn/lending-pools.mdx` · `learn/lending-pool-mechanics.mdx` · `guides/earn/overview.mdx` | High |
-| R4 | "Why LP yields are higher" written three times | `guides/how-vanna-works.mdx` · `guides/earn/overview.mdx` · `guides/for-liquidity-providers.mdx` | High |
-| R5 | Margin Account capabilities listed in two places | `guides/for-traders.mdx` · `guides/margin/overview.mdx` | Medium |
-| R6 | vToken mechanics re-explained in earn guide | `learn/vtokens.mdx` · `guides/earn/overview.mdx` | Medium |
-| R7 | Permissionless liquidation explained twice | `learn/liquidation.mdx` · `guides/margin/liquidation.mdx` | Medium |
-| R8 | "Borrowed assets stay in Margin Account" repeated | `guides/margin/borrow.mdx` · `guides/margin/overview.mdx` · `guides/for-traders.mdx` | Medium |
-| R9 | LP supply flow described in overview and supply guide | `guides/earn/overview.mdx` · `guides/earn/supply.mdx` | Low |
-| R10 | "1.1× threshold" explanation restated in every margin page | 6+ files across `guides/margin/` | Low |
-| R11 | How to avoid liquidation duplicated | `guides/margin/liquidation.mdx` · `guides/margin/health-factor.mdx` | Low |
+Each issue shows:
+- **Files involved** with the specific sections/lines that overlap
+- **What's duplicated** - the actual repeated content
+- **Fix** - concrete action to take
+
+Severity: `HIGH` = meaningful duplication that confuses the reader | `MEDIUM` = some overlap but distinct enough | `LOW` = minor inconsistency
 
 ---
 
-## Detailed Findings
+## HIGH Severity
 
 ---
 
-### R1 — Liquidation Explained Twice End-to-End (High)
+### 1. Health Factor Formula - Defined Twice
 
-**Files:** `learn/liquidation.mdx` · `guides/margin/liquidation.mdx`
+**Files:**
+- [learn/health-factor.mdx](learn/health-factor.mdx) - Lines 12–15 (LaTeX formula + table)
+- [guides/margin/health-factor.mdx](guides/margin/health-factor.mdx) - Lines 18–22 (code block formula)
+- [guides/margin/overview.mdx](guides/margin/overview.mdx) - Line 57 (inline in table)
 
-**What overlaps:**
-Both pages define what liquidation is, when it triggers (HF < 1.1×), the permissionless nature, the step-by-step process, what happens to the owner's remaining collateral, and how the liquidation fee works. The core explanation is repeated in full.
+**What's duplicated:**  
+The formula `Health Factor = Total Collateral Value / Total Debt Value` and the status table (Safe / Caution / Liquidatable with 1.1× and 1.5× thresholds) appear in full in both the concepts page and the user guide page.
 
-**Why it is a problem:**  
-Two sources of truth for the same process. When liquidation mechanics change (fee structure, threshold, settlement option), both files must be updated. The learn page goes deeper on economic incentives and the mermaid flowchart; the guides page adds the user-facing "how to avoid" section. Currently neither page links to the other.
-
-**Recommended approach — Differentiate, not duplicate:**
-
-| Page | Should contain | Should remove |
-|---|---|---|
-| `learn/liquidation.mdx` | Protocol mechanics, mermaid flow, liquidator economics, settlement concept, bad debt handling, why permissionless | Step-by-step user-facing process (that lives in guides) |
-| `guides/margin/liquidation.mdx` | User-facing steps, "how to avoid," "what to do if imminent," fee impact on users | Re-derivation of the protocol mechanics — add a single link: *"For the full protocol-level liquidation flow, see [Liquidation in Core Concepts](/learn/liquidation)."* |
-
-**Estimated cut:** ~40% of `guides/margin/liquidation.mdx` becomes a cross-reference.
+**Fix:**  
+The `guides/margin/health-factor.mdx` should show the formula once, then link to `learn/health-factor.mdx` for the full mathematical treatment. Remove the status table from the guides page - replace it with a one-line description and a "See Core Concepts for full breakdown →" link. The `guides/margin/overview.mdx` table row showing `Health Factor = collateral / debt` is fine since it's in context of a metrics table.
 
 ---
 
-### R2 — Health Factor Formula Duplicated (High)
+### 2. "What Moves Your Health Factor" - Two Full Lists
 
-**Files:** `learn/health-factor.mdx` · `guides/margin/health-factor.mdx`
+**Files:**
+- [learn/health-factor.mdx](learn/health-factor.mdx) - Lines 122–134 (table with 9 events)
+- [guides/margin/health-factor.mdx](guides/margin/health-factor.mdx) - Lines 45–59 (bullet list split into "goes down / goes up")
 
-**What overlaps:**
-Both pages state the formula (`Collateral Value / Debt Value`), provide worked examples with numbers, and explain what events make it go up or down. The learn page adds the borrow-check formula and a UI visual; the guides page adds the three metrics bar fields. The definitions are nearly identical.
+**What's duplicated:**  
+Both pages enumerate the same set of events (collateral price drop, borrow more, repay debt, collateral price rise, interest accrual) and their effect on health factor. The content is structurally identical, just formatted differently.
 
-**Why it is a problem:**  
-The worked example tables use different numbers but teach the same thing. New users who read both will feel they are reading the same document twice. If the threshold ever changes from 1.1×, it must be updated in both files.
-
-**Recommended approach:**
-
-| Page | Should contain | Should remove |
-|---|---|---|
-| `learn/health-factor.mdx` | Formula, borrow-check formula derivation, withdraw-check, all three check types, visual gauge | Generic "what it means" prose — assume the reader already knows what it is |
-| `guides/margin/health-factor.mdx` | UI metrics bar fields, practical "what moves it" table for users, monitoring advice | Full formula re-derivation — replace with one line: *"The Health Factor equals your total collateral value divided by your total debt value, both in USD. See [Health Factor in Core Concepts](/learn/health-factor) for the full formula."* |
-
-**Estimated cut:** Remove the formula section and worked examples from `guides/margin/health-factor.mdx` (~30% of the file).
+**Fix:**  
+Keep the full table in `learn/health-factor.mdx` (the canonical technical reference). In `guides/margin/health-factor.mdx`, replace the full list with a condensed 2-sentence summary and link: "Your Health Factor changes whenever collateral prices move, you borrow or repay, or interest accrues. [See the full breakdown →](/learn/health-factor#what-moves-your-health-factor)"
 
 ---
 
-### R3 — Lending Pool Mechanics Spread Across Three Files (High)
+### 3. Liquidation Trigger Explanation - Repeated in Three Places
 
-**Files:** `learn/lending-pools.mdx` · `learn/lending-pool-mechanics.mdx` · `guides/earn/overview.mdx`
+**Files:**
+- [learn/liquidation.mdx](learn/liquidation.mdx) - Lines 9–18 (four trigger routes)
+- [guides/margin/liquidation.mdx](guides/margin/liquidation.mdx) - Lines 9–13 (same triggers, prose form)
+- [guides/margin/overview.mdx](guides/margin/overview.mdx) - Lines 40–41 (inline explanation)
 
-**What overlaps:**
+**What's duplicated:**  
+All three pages explain that liquidation is triggered when Health Factor reaches 1.1×, that it's permissionless, and that collateral price drop / interest accrual are the main causes.
 
-| Concept | learn/lending-pools | learn/lending-pool-mechanics | guides/earn/overview |
-|---|---|---|---|
-| What a lending pool is | ✓ | ✓ | ✓ |
-| How interest accrues | ✓ | ✓ | ✓ |
-| vToken exchange rate | ✓ | ✓ | ✓ |
-| Utilization drives APY | ✓ | ✓ | ✓ |
-| Per-asset isolation | ✓ | ✓ | — |
+**Fix:**  
+- `learn/liquidation.mdx` - keep as the full technical reference (this is the canonical page).
+- `guides/margin/liquidation.mdx` - reduce the trigger explanation to 2 sentences, link to learn page: "Liquidation triggers when your Health Factor reaches 1.1×. [What can cause that →](/learn/liquidation#when-liquidation-becomes-possible)"
+- `guides/margin/overview.mdx` - the inline mention is fine in context, no change needed.
 
-`learn/lending-pools.mdx` and `learn/lending-pool-mechanics.mdx` are particularly close — the latter appears to be a deeper technical version of the former, but there is no clear boundary between them. Both live in `learn/` with no explanation of why they are separate pages.
+---
 
-**Recommended approach:**
+### 4. Liquidation Step-by-Step - Duplicated Across Concepts + Guide
 
-1. **Merge** `learn/lending-pools.mdx` and `learn/lending-pool-mechanics.mdx` into a single `learn/lending-pools.mdx` with two clearly separated sections: a conceptual overview up top and a technical mechanics deep-dive below a horizontal rule.
-2. **Shorten** the lending pool explanation in `guides/earn/overview.mdx` to two sentences with a link to the merged learn page. The earn overview's job is to tell LPs what to do, not re-teach pool architecture.
+**Files:**
+- [learn/liquidation.mdx](learn/liquidation.mdx) - Lines 52–68 (`<Steps>` component: Detection → Initiation → Debt repayment → Collateral sweep → Account closure)
+- [guides/margin/liquidation.mdx](guides/margin/liquidation.mdx) - Lines 19–38 (`<Steps>` component: Health Factor touches 1.1× → Liquidator submits → Collateral transferred → Debt repaid → Fee deducted → Remainder returned)
 
-**Proposed shortened earn/overview pool explanation:**
-```mdx
-Vanna's lending pools hold the assets that traders borrow. When you supply, your deposit funds
-active borrows, and the interest traders pay flows back to you automatically via the vToken
-exchange rate. [See how lending pools work →](/learn/lending-pools)
+**What's duplicated:**  
+Both pages have a step-by-step breakdown of the liquidation process. The concepts page is protocol-oriented (contract calls), the guide is user-oriented (what happens to you). Steps 2–4 substantially overlap in what they describe.
+
+**Fix:**  
+These serve genuinely different audiences, so both can exist - but they need explicit differentiation:
+- Add a callout box at the top of `guides/margin/liquidation.mdx`: "This page explains what liquidation means for you as a user. [For the technical contract-level flow →](/learn/liquidation)"
+- Add a callout in `learn/liquidation.mdx`: "For the user-facing perspective (how to avoid it, what to do if imminent), see [Guides: Liquidation →](/guides/margin/liquidation)"
+- This cross-linking is currently absent on both pages.
+
+---
+
+### 5. LP Yield Mechanism - Explained in Both Concepts + Guide
+
+**Files:**
+- [learn/lending-pools.mdx](learn/lending-pools.mdx) - Full page explaining pools, two sides (LP/borrower), isolation, risk
+- [guides/earn/overview.mdx](guides/earn/overview.mdx) - Lines 12–19 explain the same mechanism: supply → vTokens → interest accrues → exchange rate rises → withdraw = original + yield
+
+**What's duplicated:**  
+Both pages explain the core LP mechanic: deposit assets → receive vTokens → borrower interest raises the exchange rate → withdraw more than deposited. The `guides/earn/overview.mdx` already has a cross-link to concepts ("To understand how vTokens, exchange rates, and the interest rate model work in depth, see Lending Pools and vTokens in Core Concepts"), but the explanation before that link duplicates what's in concepts.
+
+**Fix:**  
+In `guides/earn/overview.mdx`, trim the "How lending pools work in Vanna" section to 2–3 sentences of plain-English summary, then immediately point to the concepts cross-link. The current paragraph (Lines 12–19) is too long and overlaps with `learn/lending-pools.mdx` and `learn/vtokens.mdx`.
+
+---
+
+## MEDIUM Severity
+
+---
+
+### 6. The Flywheel Concept - Explained Twice in Guides
+
+**Files:**
+- [guides/how-vanna-works.mdx](guides/how-vanna-works.mdx) - Lines 16–20 (The Vanna Flywheel section with diagram)
+- [guides/earn/overview.mdx](guides/earn/overview.mdx) - Lines 27–31 ("Higher utilization from undercollateralized leverage" + "Dynamic interest rates" sections)
+
+**What's duplicated:**  
+Both pages explain the same economic loop: undercollateralized leverage → higher utilization → higher yields for LPs → more capital → lower borrowing costs → more traders. This isn't concepts vs. guides - it's the same idea repeated twice within the guides section itself.
+
+**Fix:**  
+In `guides/earn/overview.mdx`, replace the utilization explanation under "Key factors driving LP earnings" with a single sentence that links to the flywheel: "Vanna's undercollateralized leverage model structurally keeps utilization - and therefore your yields - higher than standard money markets. [See how the Vanna Flywheel works →](/guides/how-vanna-works#the-vanna-flywheel)" Remove the 3-paragraph "Key factors driving LP earnings" expansion and keep only the liquidation fee point, which is not covered by the flywheel page.
+
+---
+
+### 7. Permissionless Liquidation Explanation - Repeated
+
+**Files:**
+- [learn/liquidation.mdx](learn/liquidation.mdx) - Lines 83–85 ("Why Permissionless" section, detailed)
+- [guides/margin/liquidation.mdx](guides/margin/liquidation.mdx) - Lines 12–13 (one sentence: "It is permissionless... Liquidators are economically incentivized...")
+
+**What's duplicated:**  
+Both pages explain that anyone can liquidate and that liquidators are economically incentivized. The guides page version is brief, but the two-sentence overlap is still redundant given the cross-link fix described in issue #4.
+
+**Fix:**  
+After fixing issue #4 (adding cross-links between the pages), the brief mention in the guides page becomes a deliberate, minimal summary pointing elsewhere. No additional change needed beyond what #4 prescribes.
+
+---
+
+### 8. 1.1× Threshold - Over-Explained Across Pages
+
+**Files:**
+- [learn/health-factor.mdx](learn/health-factor.mdx) - Threshold defined, visualized, explained with "Why 1.1× and Not 1.0×" section
+- [guides/margin/health-factor.mdx](guides/margin/health-factor.mdx) - Threshold explained multiple times in prose
+- [guides/margin/overview.mdx](guides/margin/overview.mdx) - "must stay above 1.1× to avoid liquidation" in table and prose
+- [guides/margin/liquidation.mdx](guides/margin/liquidation.mdx) - threshold restated multiple times
+
+**What's duplicated:**  
+The 1.1× threshold is a key concept but is re-explained from scratch on every page it appears on, rather than being stated once and linked.
+
+**Fix:**  
+The full explanation of why 1.1× belongs only in `learn/health-factor.mdx` (the "Why 1.1× and Not 1.0×" section). All other pages should state the threshold value and link to the concepts page, not explain it again.
+
+---
+
+### 9. Borrow Stays Inside Margin Account - Repeated
+
+**Files:**
+- [guides/margin/overview.mdx](guides/margin/overview.mdx) - Line 42: "Borrowed assets stay inside your Margin Account. You can deploy them to Farm or Trade from within the account, but they cannot be sent directly to your regular wallet."
+- [guides/margin/borrow.mdx](guides/margin/borrow.mdx) - likely restates this constraint in the borrow flow (verify in file)
+
+**What's duplicated:**  
+The constraint that borrowed capital stays in the Margin Account and cannot be sent to your wallet is an important rule that gets re-stated in multiple guide pages.
+
+**Fix:**  
+State it once in `guides/margin/overview.mdx` (already there). In `guides/margin/borrow.mdx`, replace any re-statement with a short note: "Borrowed assets remain in your Margin Account - [learn why →](/guides/margin/overview)"
+
+---
+
+## LOW Severity
+
+---
+
+### 10. Liquidation Fee Wording Inconsistency
+
+**Files:**
+- [guides/earn/overview.mdx](guides/earn/overview.mdx) - Line 30: "**Liquidation penalties shared with LPs**" / "liquidation penalty is distributed to the lending pool"
+- [guides/margin/liquidation.mdx](guides/margin/liquidation.mdx) - Lines 43–46: "liquidation fee is distributed to liquidity providers"
+
+**What's inconsistent:**  
+The user guide for LPs calls it a "liquidation penalty" while the liquidation page (written from the borrower's perspective) calls it a "liquidation fee." These refer to the same thing.
+
+**Fix:**  
+Standardize to **"liquidation fee"** across all pages. Update `guides/earn/overview.mdx` Line 30 to use "fee" not "penalty." "Penalty" implies punishment to the borrower (not neutral enough for a user-facing LP guide); "fee" is more accurate.
+
+---
+
+### 11. Missing Cross-Links - Health Factor ↔ Liquidation
+
+**Files:**
+- [guides/margin/health-factor.mdx](guides/margin/health-factor.mdx) - "Related" section links to `/guides/margin/liquidation` ✓
+- [guides/margin/liquidation.mdx](guides/margin/liquidation.mdx) - "Related" section links to `/guides/margin/health-factor` ✓
+- [learn/health-factor.mdx](learn/health-factor.mdx) - "Related" section links to `/learn/liquidation` ✓
+- [learn/liquidation.mdx](learn/liquidation.mdx) - "Related" section links to `/learn/health-factor` ✓
+
+**But missing:**  
+Neither concepts page links to its corresponding guides page, and neither guides page links to its corresponding concepts page. A reader coming from `guides/margin/health-factor.mdx` has no path to `learn/health-factor.mdx` and vice versa.
+
+**Fix:**  
+Add cross-section links to the "Related" section of each page:
+- In `learn/health-factor.mdx` Related: add "User Guide: Health Factor → /guides/margin/health-factor"
+- In `learn/liquidation.mdx` Related: add "User Guide: Liquidation → /guides/margin/liquidation"
+- In `guides/margin/health-factor.mdx` Related: add "Core Concepts: Health Factor → /learn/health-factor"
+- In `guides/margin/liquidation.mdx` Related: add "Core Concepts: Liquidation → /learn/liquidation"
+
+---
+
+## Summary Table
+
+| # | Issue | Files | Severity | Fix Type |
+|---|---|---|---|---|
+| 1 | Health Factor formula defined twice | `learn/health-factor`, `guides/margin/health-factor` | HIGH | Remove from guide, add link |
+| 2 | "What moves Health Factor" listed twice | Same two files | HIGH | Condense guide version, link to concepts |
+| 3 | Liquidation trigger explained in 3 places | `learn/liquidation`, `guides/margin/liquidation`, `guides/margin/overview` | HIGH | Condense guide versions, cross-link |
+| 4 | Liquidation step-by-step in both sections | `learn/liquidation`, `guides/margin/liquidation` | HIGH | Both are valid - add cross-section callouts |
+| 5 | LP yield mechanism explained twice | `learn/lending-pools`, `guides/earn/overview` | HIGH | Trim guide version, expand cross-link |
+| 6 | Flywheel explained twice within guides | `guides/how-vanna-works`, `guides/earn/overview` | MEDIUM | Replace earn overview section with link |
+| 7 | Permissionless liquidation repeated | `learn/liquidation`, `guides/margin/liquidation` | MEDIUM | Resolved by fix #4 |
+| 8 | 1.1× threshold over-explained everywhere | Multiple files | MEDIUM | Full explanation only in concepts, link elsewhere |
+| 9 | Borrow stays in account - repeated | `guides/margin/overview`, `guides/margin/borrow` | MEDIUM | State once, link on other pages |
+| 10 | "Penalty" vs "Fee" inconsistency | `guides/earn/overview`, `guides/margin/liquidation` | LOW | Standardize to "liquidation fee" |
+| 11 | Missing concepts ↔ guides cross-links | All health factor + liquidation pages | LOW | Add cross-section links to Related sections |
+
+---
+
+## General Principle for Future Content
+
+The pattern causing most redundancy is: **a concept being re-explained from scratch instead of referenced.**
+
+The intended structure is:
+- **`learn/`** = canonical definition, full depth, technical detail. Every page here should read as the single source of truth.
+- **`guides/`** = what the user needs to act. Brief explanation of the concept, then instructions. Should reference `learn/` for depth, not re-explain it.
+
+Guides pages that currently re-explain concepts should follow this template:
 ```
-
----
-
-### R4 — "Why LP Yields Are Higher" Written Three Times (High)
-
-**Files:** `guides/how-vanna-works.mdx` · `guides/earn/overview.mdx` · `guides/for-liquidity-providers.mdx`
-
-**What overlaps:**
-All three pages explain the same structural argument: undercollateralized leverage → higher utilization → higher rates → higher LP yield. `how-vanna-works.mdx` calls it the "Vanna Flywheel." `earn/overview.mdx` calls it "Key factors driving LP earnings." `for-liquidity-providers.mdx` links to the flywheel section.
-
-**Why it is a problem:**  
-The flywheel is one of Vanna's core value propositions. Having it fully written out in three places means any refinement of the argument must be applied in three places, and the three versions are already slightly different in emphasis.
-
-**Recommended approach:**  
-Establish `guides/how-vanna-works.mdx` as the **single canonical home** of the flywheel explanation. Both other pages should reference it:
-
-```mdx
-<!-- guides/earn/overview.mdx — replace the "Key factors" section with: -->
-Yields on Vanna are structurally higher than standard DeFi money markets because of how the
-protocol's leverage model drives utilization. [See the Vanna Flywheel →](/guides/how-vanna-works#the-vanna-flywheel)
+[1 paragraph: plain-English what this is]
+[Link to Core Concepts for the full breakdown]
+[Step-by-step instructions / what to monitor / what to do]
 ```
-
-```mdx
-<!-- guides/for-liquidity-providers.mdx — the existing link is already correct, just remove any inline re-explanation -->
-```
-
----
-
-### R5 — Margin Account Capabilities Listed Twice (Medium)
-
-**Files:** `guides/for-traders.mdx` · `guides/margin/overview.mdx`
-
-**What overlaps:**
-Both pages list the same Pro Mode capabilities: open an account, deposit collateral, borrow up to 10×, deploy across strategies, monitor Health Factor. `for-traders.mdx` introduces the concept; `margin/overview.mdx` re-lists it as the page introduction.
-
-**Recommended approach:**  
-`guides/for-traders.mdx` should remain an **entry-point page** that routes users to the right guide. The capability list belongs in `margin/overview.mdx`. Shorten `for-traders.mdx` Pro Mode description to two sentences and a card link:
-
-```mdx
-## Pro Mode
-
-Pro Mode gives you full control over a Margin Account — your own isolated smart contract for
-borrowing, trading, and yield farming in one place.
-
-<Card title="Margin Account Overview" href="/guides/margin/overview" icon="book-open">
-  Full breakdown of how the Margin Account system works — collateral, borrowing, health
-  factor, and all available actions.
-</Card>
-```
-
----
-
-### R6 — vToken Mechanics Re-Explained in Earn Guide (Medium)
-
-**Files:** `learn/vtokens.mdx` · `guides/earn/overview.mdx`
-
-**What overlaps:**
-`guides/earn/overview.mdx` explains: you receive vTokens, each vToken grows in value as interest accrues, withdraw by redeeming at the current exchange rate. `learn/vtokens.mdx` covers all of this in depth plus the ERC-4626 share model and the exchange rate formula.
-
-**Recommended approach:**  
-The earn overview should explain the **user experience** only ("you receive vTokens that grow in value") and link to `learn/vtokens` for the mechanics. Remove the exchange rate explanation from the earn overview entirely.
-
----
-
-### R7 — Permissionless Liquidation Explained Twice (Medium)
-
-**Files:** `learn/liquidation.mdx` · `guides/margin/liquidation.mdx`
-
-**What overlaps:**
-Both pages explain that anyone can trigger a liquidation, why this is economically correct, and that the liquidator earns a fee. This is a sub-finding of R1 but worth calling out separately because the two versions differ in emphasis — the learn page argues *why* permissionless is the right design; the guides page just states *that* it is permissionless.
-
-**Recommended approach:**  
-Keep the "why permissionless" argument in `learn/liquidation.mdx` only. In `guides/margin/liquidation.mdx`, one sentence is sufficient:
-
-```mdx
-Liquidation is permissionless — any user or automated system on the network can trigger it,
-because the protocol rewards liquidators economically for acting quickly.
-[Why this matters →](/learn/liquidation#why-permissionless)
-```
-
----
-
-### R8 — "Borrowed Assets Stay in Margin Account" Repeated (Medium)
-
-**Files:** `guides/margin/borrow.mdx` · `guides/margin/overview.mdx` · `guides/for-traders.mdx`
-
-**What overlaps:**
-The constraint that borrowed assets cannot be sent to a wallet — they stay inside the Margin Account and must be deployed via `execute()` — is stated in all three files. This is an important user-facing constraint that warrants mention, but three mentions in documents that users often read sequentially creates a "yes, I know" effect.
-
-**Recommended approach:**  
-State it **once** with emphasis in `guides/margin/borrow.mdx` (the most relevant context). Remove from `overview.mdx` and `for-traders.mdx` entirely, or reduce to a one-line reminder in `overview.mdx` only.
-
----
-
-### R9 — LP Supply Flow Described in Overview and Supply Guide (Low)
-
-**Files:** `guides/earn/overview.mdx` · `guides/earn/supply.mdx`
-
-**What overlaps:**
-The overview ends with a card linking to the supply guide, but it also partially describes the supply flow ("supply assets, receive vTokens, earn yield"). The supply guide covers this step-by-step. Minor overlap, but the overview's second paragraph (starting "When you supply assets…") restates what the supply guide already covers in detail.
-
-**Recommended approach:**  
-The overview paragraph is acceptable as orientation. Shorten it to three sentences maximum. The detailed "how to supply" content belongs exclusively in `guides/earn/supply.mdx`.
-
----
-
-### R10 — "1.1× Threshold" Restated in Every Margin Page (Low)
-
-**Files:** `guides/margin/overview.mdx`, `guides/margin/borrow.mdx`, `guides/margin/health-factor.mdx`, `guides/margin/liquidation.mdx`, `guides/margin/transfer-collateral.mdx`, `snippets/risk-notice.mdx`
-
-**What overlaps:**
-Every margin-related page states that the Health Factor must stay above 1.1× or liquidation occurs. This is correct behaviour — it is the most important constraint — but the phrasing is re-introduced from scratch each time rather than being stated once and referenced.
-
-**Recommended approach:**  
-The `snippets/risk-notice.mdx` already contains this warning and is included at the top of margin pages. Pages that already include the snippet should **not** re-state the 1.1× threshold in their body text unless they are the Health Factor or Liquidation page (where it is definitionally relevant). Other margin pages (borrow, deposit, repay, transfer) can rely on the snippet.
-
----
-
-### R11 — "How to Avoid Liquidation" Duplicated (Low)
-
-**Files:** `guides/margin/liquidation.mdx` · `guides/margin/health-factor.mdx`
-
-**What overlaps:**
-`liquidation.mdx` has a full "How to avoid liquidation" section with five bullet points. `health-factor.mdx` has a "What changes your Health Factor" section covering the same levers (repay debt, add collateral, avoid borrowing to maximum). These are structurally identical in purpose.
-
-**Recommended approach:**  
-Keep the full "How to avoid liquidation" section in `guides/margin/liquidation.mdx` — it belongs there. In `health-factor.mdx`, replace the advice section with a two-column table (event → HF direction) and a single cross-reference:
-
-```mdx
-For specific steps to take when your Health Factor is declining,
-see [How to avoid liquidation](/guides/margin/liquidation#how-to-avoid-liquidation).
-```
-
----
-
-## Consolidation Priority Checklist
-
-```
-[ ] R1  — Differentiate learn vs guides liquidation pages; add cross-links
-[ ] R2  — Remove formula re-derivation from guides/margin/health-factor.mdx
-[ ] R3  — Merge learn/lending-pools + learn/lending-pool-mechanics into one file
-[ ] R4  — Make how-vanna-works.mdx the single home of the flywheel; link from others
-[ ] R5  — Shorten for-traders.mdx Pro Mode section to 2 sentences + card
-[ ] R6  — Remove vToken exchange rate explanation from earn/overview.mdx
-[ ] R7  — Collapse permissionless explanation to 1 sentence in guides liquidation
-[ ] R8  — Remove "borrowed assets stay in account" from overview and for-traders
-[ ] R9  — Cap earn/overview supply flow description at 3 sentences
-[ ] R10 — Remove standalone 1.1× re-statements from pages that already use the snippet
-[ ] R11 — Replace health-factor advice section with cross-reference to liquidation page
-```
-
----
-
-## Estimated Impact
-
-| Metric | Current state | After consolidation |
-|---|---|---|
-| Total files with liquidation explanation | 2 full pages | 1 full + 1 referenced |
-| Total files with HF formula | 2 full pages | 1 full + 1 summary |
-| Total files with lending pool explanation | 3 pages | 2 (merged learn + short earn) |
-| Total files with flywheel/yield argument | 3 pages | 1 canonical + 2 links |
-| Maintenance surface for threshold changes | 6+ files | 1 snippet + 2 concept pages |
-
-**Overall:** approximately 20–25% reduction in total word count across the User Guide and Core Concepts, with no loss of information — only removal of repetition and consolidation of scattered explanations into single authoritative sources.

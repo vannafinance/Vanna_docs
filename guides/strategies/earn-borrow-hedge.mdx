@@ -1,6 +1,6 @@
 ---
 title: "Earn + Borrow Hedge"
-description: "Supply XLM to Vanna's Earn pool for yield, then borrow an equal value of XLM and swap it to USDC — creating a delta-neutral position that earns on both sides."
+description: "Supply XLM to Vanna's Earn pool for yield, then borrow an equal value of XLM and swap it to USDC - creating a delta-neutral position that earns on both sides."
 mode: "wide"
 ---
 
@@ -8,12 +8,12 @@ mode: "wide"
   **Sections used:** Earn · Margin · Trade &nbsp;·&nbsp; **Delta exposure:** None (XLM-neutral) &nbsp;·&nbsp; **Risk level:** Medium &nbsp;·&nbsp; **Complexity:** Medium
 </Info>
 
-Supply XLM to Vanna's Earn pool to earn XLM lending yield. Simultaneously, open a Margin Account with USDC collateral, borrow an equal dollar value of XLM, and swap the borrowed XLM to USDC via Spot. The Earn position creates a long exposure to XLM; the borrow-and-swap creates an exact short of the same size. The two cancel out — net XLM delta is zero — while both legs continue to generate yield.
+Supply XLM to Vanna's Earn pool to earn XLM lending yield. Simultaneously, open a Margin Account with USDC collateral, borrow an equal dollar value of XLM, and swap the borrowed XLM to USDC via Spot. The Earn position creates a long exposure to XLM; the borrow-and-swap creates an exact short of the same size. The two cancel out - net XLM delta is zero - while both legs continue to generate yield.
 
 ## Why this is delta-neutral
 
-- **Earn position:** you hold XLM in Vanna's pool. If XLM rises, the USD value of your position rises — gain. If XLM falls, it falls — loss.
-- **Borrow + swap:** you owe XLM debt. If XLM rises, your debt's USD cost rises — loss. If XLM falls, your debt's USD cost falls — gain.
+- **Earn position:** you hold XLM in Vanna's pool. If XLM rises, the USD value of your position rises - gain. If XLM falls, it falls - loss.
+- **Borrow + swap:** you owe XLM debt. If XLM rises, your debt's USD cost rises - loss. If XLM falls, your debt's USD cost falls - gain.
 
 Sized equally in dollar terms, these two effects cancel exactly. What remains is purely the yield arithmetic: XLM Earn APY plus any yield from the swapped USDC, minus XLM borrow cost.
 
@@ -21,16 +21,16 @@ Sized equally in dollar terms, these two effects cancel exactly. What remains is
 
 <Steps>
   <Step title="Supply XLM to Earn">
-    Go to **Earn** → select the XLM pool → **Supply** your XLM. Note the dollar value of your position — you will match this amount in the borrow step.
+    Go to **Earn** → select the XLM pool → **Supply** your XLM. Note the dollar value of your position - you will match this amount in the borrow step.
   </Step>
   <Step title="Open a Margin Account">
     Go to **Margin** → **Open Account** if you don't have one yet.
   </Step>
   <Step title="Deposit USDC as Margin collateral">
-    Go to **Margin** → **Deposit & Borrow** → deposit USDC as collateral. This backs the XLM borrow — your USDC is not exposed to XLM price movement.
+    Go to **Margin** → **Deposit & Borrow** → deposit USDC as collateral. This backs the XLM borrow - your USDC is not exposed to XLM price movement.
   </Step>
   <Step title="Borrow XLM equal to your Earn position">
-    Borrow the same dollar value of XLM that you supplied to Earn. This is the hedge — the borrow offsets the Earn position's price exposure. Keep Health Factor at 1.5× or above.
+    Borrow the same dollar value of XLM that you supplied to Earn. This is the hedge - the borrow offsets the Earn position's price exposure. Keep Health Factor at 1.5× or above.
   </Step>
   <Step title="Swap borrowed XLM to USDC">
     Go to **Trade** → **Spot Swap** → swap the borrowed XLM to USDC. Choose Soroswap or Aquarius, review price impact, and confirm. The USDC lands in your Margin Account.
@@ -55,7 +55,7 @@ Sized equally in dollar terms, these two effects cancel exactly. What remains is
 | **Net XLM price exposure** | **Zero** |
 
 <Note>
-  This strategy is profitable when XLM Earn APY + USDC farm APY exceeds the XLM borrow APR. If borrow costs rise, the net yield narrows — monitor all three rates regularly.
+  This strategy is profitable when XLM Earn APY + USDC farm APY exceeds the XLM borrow APR. If borrow costs rise, the net yield narrows - monitor all three rates regularly.
 </Note>
 
 ## Exiting the position
@@ -92,11 +92,11 @@ Exit in reverse order to avoid leaving open debt:
 
 ## What to monitor
 
-**Rate condition** — The strategy earns positively only when XLM Earn APY + USDC farm APY > XLM borrow APR. If borrow rates spike, exit before the yield goes negative.
+**Rate condition** - The strategy earns positively only when XLM Earn APY + USDC farm APY > XLM borrow APR. If borrow rates spike, exit before the yield goes negative.
 
-**Hedge ratio** — The XLM borrow must equal the Earn position's dollar value. If XLM moves significantly between the two operations, the hedge may be slightly off — rebalance if needed.
+**Hedge ratio** - The XLM borrow must equal the Earn position's dollar value. If XLM moves significantly between the two operations, the hedge may be slightly off - rebalance if needed.
 
-**Health Factor** — Monitor regularly. Accruing borrow interest reduces HF over time even without price movement.
+**Health Factor** - Monitor regularly. Accruing borrow interest reduces HF over time even without price movement.
 
 ## Related
 

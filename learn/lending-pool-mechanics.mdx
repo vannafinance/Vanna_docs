@@ -1,6 +1,6 @@
 ---
 title: "How the Pool Works"
-description: "The internal mechanics of a Vanna Lending Pool — from deposit to interest accrual."
+description: "The internal mechanics of a Vanna Lending Pool - from deposit to interest accrual."
 mode: "wide"
 ---
 
@@ -67,20 +67,20 @@ Every Lending Pool connects four components. Here's how they relate:
   </div>
 </div>
 
-**Lending Pool** sits at the center — it holds the asset, tracks all deposits and borrows, and computes interest. The other three contracts are its dependencies:
+**Lending Pool** sits at the center - it holds the asset, tracks all deposits and borrows, and computes interest. The other three contracts are its dependencies:
 
 | Component | Role |
 |---|---|
 | **vToken Contract** | Mints LP shares on deposit, burns them on withdrawal |
 | **Rate Model** | Returns the current borrow rate per second, based on utilization |
-| **Account Manager** | The only address allowed to call `lend_to()` — no direct user borrows |
+| **Account Manager** | The only address allowed to call `lend_to()` - no direct user borrows |
 | **Risk Engine** | Checks account health before Account Manager approves any borrow |
 
 ---
 
 ## Deposits & Exchange Rate
 
-When an LP deposits, the pool mints **vTokens** — shares that represent their portion of the pool.
+When an LP deposits, the pool mints **vTokens** - shares that represent their portion of the pool.
 
 The number of vTokens minted is:
 
@@ -88,7 +88,7 @@ The number of vTokens minted is:
 vTokens = deposit_amount × total_vToken_supply / total_pool_balance
 ```
 
-On the **first ever deposit**, total supply and balance are both zero — so the rate defaults to 1:1. After that, every new deposit gets fewer vTokens per unit because the existing vTokens are already worth more (interest has accrued into the pool balance).
+On the **first ever deposit**, total supply and balance are both zero - so the rate defaults to 1:1. After that, every new deposit gets fewer vTokens per unit because the existing vTokens are already worth more (interest has accrued into the pool balance).
 
 When an LP redeems:
 
@@ -96,11 +96,11 @@ When an LP redeems:
 USDC returned = vTokens_burned × total_pool_balance / total_vToken_supply
 ```
 
-The LP gets back more than they deposited — the difference is their share of all the interest the pool collected while they held vTokens.
+The LP gets back more than they deposited - the difference is their share of all the interest the pool collected while they held vTokens.
 
 ---
 
-## Borrow Shares — Not Amounts
+## Borrow Shares - Not Amounts
 
 Debt is tracked as **shares**, not asset amounts. Here's why.
 
@@ -110,7 +110,7 @@ Instead:
 
 - When you borrow 1,000 USDC, you receive **borrow shares** (initially equal to 1,000 shares)
 - Your share count never changes
-- As interest accrues, `total_borrows` grows — making each share worth more USDC
+- As interest accrues, `total_borrows` grows - making each share worth more USDC
 
 ```
 Your borrow balance = your_shares × total_borrows / total_shares
@@ -126,13 +126,13 @@ Borrow 1,000 USDC  →  receive 1,000 borrow shares
 Your balance = 1,000 × 1,050 / 1,000 = 1,050 USDC owed
 ```
 
-Your shares stayed at 1,000. The debt grew automatically — without touching your record.
+Your shares stayed at 1,000. The debt grew automatically - without touching your record.
 
 ---
 
-## Interest Accrual — Lazy Update
+## Interest Accrual - Lazy Update
 
-The pool does **not** accrue interest on every block. It uses a lazy pattern — interest is calculated on-demand.
+The pool does **not** accrue interest on every block. It uses a lazy pattern - interest is calculated on-demand.
 
 Before every deposit, withdrawal, borrow, or repay, the pool runs `update_state()`:
 
@@ -144,7 +144,7 @@ Before every deposit, withdrawal, borrow, or repay, the pool runs `update_state(
 5. Update last_updated_timestamp = now
 ```
 
-If two transactions happen in the same ledger, `update_state()` returns immediately — there's nothing to accrue.
+If two transactions happen in the same ledger, `update_state()` returns immediately - there's nothing to accrue.
 
 Between transactions, debt silently grows in the background. When a borrower eventually interacts, all accumulated interest materializes in one step.
 
@@ -158,9 +158,9 @@ Every borrow incurs a **one-time origination fee**, charged at the moment the lo
 Fee = borrow_amount × origination_fee_rate
 ```
 
-- The fee is **deducted before capital reaches the Margin Account** — the borrower receives `amount − fee`
+- The fee is **deducted before capital reaches the Margin Account** - the borrower receives `amount − fee`
 - The fee is transferred directly to the **treasury**
-- This is not ongoing interest — it's a flat cost paid once per borrow
+- This is not ongoing interest - it's a flat cost paid once per borrow
 
 ---
 
@@ -235,13 +235,13 @@ At high utilization, two things happen simultaneously:
 
 If utilization is at 95%, only 5% of deposited funds are available for withdrawal. An LP trying to redeem more than that will get an `InsufficientPoolBalance` error. They must wait until a borrower repays.
 
-This is the primary risk LPs accept — not credit risk (that's handled by liquidations), but **liquidity risk** at high utilization.
+This is the primary risk LPs accept - not credit risk (that's handled by liquidations), but **liquidity risk** at high utilization.
 
 ---
 
 ## Related
 
-- [vTokens](/learn/vtokens) — full detail on LP shares and yield accounting
-- [Interest Rate Model](/learn/interest-rate-model) — how the borrow rate responds to utilization
-- [Health Factor](/learn/health-factor) — the Risk Engine check that gates every borrow
-- [Liquidation](/learn/liquidation) — how the pool is protected when accounts go unhealthy
+- [vTokens](/learn/vtokens) - full detail on LP shares and yield accounting
+- [Interest Rate Model](/learn/interest-rate-model) - how the borrow rate responds to utilization
+- [Health Factor](/learn/health-factor) - the Risk Engine check that gates every borrow
+- [Liquidation](/learn/liquidation) - how the pool is protected when accounts go unhealthy

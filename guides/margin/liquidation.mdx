@@ -4,76 +4,103 @@ description: "What liquidation is, when it happens, and how to avoid it."
 mode: "wide"
 ---
 
-<Snippet file="snippets/health-factor-warning.mdx" />
-
 ## What liquidation is
 
-Liquidation is the automatic process that closes an undercollateralized Margin Account. It is triggered when your Health Factor reaches 1.1× — the point at which the protocol considers your collateral no longer sufficient to safely back your outstanding debt.
+Liquidation triggers when your Health Factor reaches **1.1x** - the point at which your collateral is no longer considered sufficient to safely back your outstanding debt.
 
-It is permissionless: any user on the network, referred to as a liquidator, can trigger the liquidation of an eligible account by submitting a transaction to the protocol. Liquidators are economically incentivized to monitor accounts and act quickly, because they receive a fee for performing the liquidation.
+When liquidation runs, the protocol does two things in order:
 
-Liquidation sweeps all of your collateral to repay all of your debt in a single transaction. It is not a partial process — the entire position is closed at once. If there is any remaining value in your collateral after repaying the full debt balance and deducting the liquidation fee, that remainder is returned to your wallet. There is no guarantee of a remainder; if your Health Factor has dropped significantly below 1.1× by the time liquidation occurs, the remainder may be very small or zero.
+1. **Repays all your debt.** For every token you have borrowed, the full outstanding balance is cleared. The borrowed tokens held in your Margin Account are transferred back to the lending pools.
+2. **Returns remaining collateral to your wallet.** Whatever direct token balances (XLM, USDC, EURC) are still in your Margin Account after debt repayment are sent to your wallet.
 
-## The liquidation process step by step
+All borrowed tokens are cleared in a single transaction. There is no partial liquidation.
+
+Your Margin Account is not closed or deactivated by liquidation - it remains open but empty.
+
+## When your account becomes eligible
+
+Your account becomes eligible for liquidation the moment your Health Factor reaches **1.1x**. This can happen because:
+
+- **Collateral price drops.** The assets you deposited lose value, reducing your collateral relative to your debt.
+- **Borrowed asset price rises.** The token you borrowed becomes more expensive, making your debt worth more in USD terms.
+- **Interest accrues.** Your debt grows over time as interest accumulates, gradually pushing your Health Factor down.
+
+All three scenarios produce the same result: your collateral-to-debt ratio falls to 1.1x and the account is eligible for liquidation.
+
+See [Health Factor](/guides/margin/health-factor) for how your current ratio is calculated and what affects it.
+
+## Who can trigger it
+
+Liquidation requires your authorization. The contract calls `require_auth()` on your wallet address before doing anything - the transaction must carry your signature. This means liquidation is something you initiate on your own unhealthy account, not something an external party can force on you without your involvement.
+
+## What happens step by step
 
 <Steps>
-  <Step title="Your Health Factor touches 1.1×">
-    Due to a drop in collateral value, an increase in your debt balance from accrued interest, or both, your Health Factor reaches 1.1×. Your account is now eligible for liquidation.
+  <Step title="Your Health Factor reaches 1.1x">
+    Due to collateral price movement, debt price movement, or interest accrual, your Health Factor drops to 1.1x. Your account is now eligible for liquidation.
   </Step>
-  <Step title="A liquidator submits a liquidation transaction">
-    A liquidator — any user or automated system monitoring the protocol — notices that your account is eligible and submits a liquidation transaction. You have no control over when this happens. It can occur in the very next block after your Health Factor hits 1.1×.
+  <Step title="You initiate liquidation">
+    You trigger liquidation on your Margin Account. The protocol confirms your account is unhealthy before proceeding - if your Health Factor is above 1.1x at the moment of execution, the transaction reverts and nothing happens.
   </Step>
-  <Step title="The protocol transfers your collateral to the liquidator">
-    The protocol moves your full collateral balance to the liquidator to cover the repayment and fee.
+  <Step title="All debt is repaid">
+    For every token you have borrowed (XLM, USDC, EURC), the protocol reads your full outstanding balance including accrued interest and clears it. The borrowed tokens held in your Margin Account are transferred back to the respective lending pools.
   </Step>
-  <Step title="The liquidator repays your full debt">
-    The liquidator uses your collateral to repay your full outstanding debt to the lending pool on your behalf.
-  </Step>
-  <Step title="The liquidation fee is deducted">
-    A liquidation fee — dynamic, ranging from 0% to 15% depending on position size — is deducted from your remaining collateral and paid to the liquidator as compensation for the service.
-  </Step>
-  <Step title="Remaining collateral is returned to you">
-    Any collateral value left after repaying the full debt and deducting the liquidation fee is returned to your wallet. If the debt plus fees consumed all of your collateral, nothing is returned.
+  <Step title="Remaining collateral goes to your wallet">
+    After debt is cleared, any remaining direct token balances (XLM, USDC, EURC) in your Margin Account are transferred to your wallet. If you held Blend yield positions or Aquarius LP positions as collateral, those tracking records are zeroed in your account but the underlying positions are not automatically unwound from their protocols.
   </Step>
 </Steps>
 
-## The liquidation fee
+## What you recover
 
-The liquidation fee is dynamic and ranges from 0% to 15%, depending on the size of your position. The protocol's `liquidation_fee` parameter determines the exact rate applied at the time of liquidation. The current fee applicable to your position is shown in the Margin metrics bar — check it when you open or manage a position.
+After liquidation:
 
-Larger positions incur higher fees. This structure is designed to ensure that liquidators are always sufficiently incentivized to act quickly on larger, harder-to-close positions, which keeps the protocol solvent.
+- Your full outstanding debt is cleared.
+- Any direct token balances (XLM, USDC, EURC) remaining in your Margin Account after debt repayment are sent to your wallet.
+- There is no liquidation fee - the protocol repays your exact debt balance and returns the full remainder to you.
 
-A portion of the liquidation fee is distributed to liquidity providers who have supplied assets to Vanna's lending pools. This means that users who provide liquidity to the protocol benefit not only from lending interest but also from liquidation activity — earning a share of the fees generated each time an undercollateralized position is closed.
+The amount you recover depends on how far your Health Factor had dropped before liquidation ran. If it was right at 1.1x, you recover approximately 10% of your debt value as a surplus (collateral was 1.1x debt, so 0.1x remains after repaying 1x). If it had dropped further before you acted, the recoverable amount is smaller.
+
+## Settle account - the voluntary path out
+
+If your Health Factor is dropping and you want to exit cleanly before reaching 1.1x, you can use **settle account** instead of waiting for liquidation.
+
+Settling repays all of your outstanding debt without sweeping your collateral. Your collateral stays in the Margin Account. After settling, you close the account normally to recover the collateral.
+
+| | Liquidation | Settle Account |
+|---|---|---|
+| When you can use it | Only when HF is at or below 1.1x | Any time |
+| What happens to collateral | Sent to your wallet | Stays in account |
+| Use case | Cleaning up an unhealthy account | Voluntary full repayment |
+
+Settling voluntarily while your account is still healthy keeps full control of the timing in your hands.
 
 ## How to avoid liquidation
 
-The most reliable way to avoid liquidation is to keep your Health Factor well above 1.1×. A Health Factor of 1.5× or higher gives meaningful cushion against normal market volatility. The closer you are to 1.1×, the less room you have before a routine price swing puts your account at risk.
+Keep your Health Factor well above 1.1x. A Health Factor of 1.5x or higher gives meaningful cushion against normal market volatility. The closer you are to 1.1x, the less room you have before a routine price move puts your account at risk.
 
-Specific steps you can take:
+Specific steps:
 
-- **Monitor collateral prices.** Volatile assets can move quickly. Check your Health Factor when markets are moving.
-- **Repay some debt.** [Repaying debt](/guides/margin/repay) is the fastest way to increase your Health Factor. Even a partial repayment meaningfully improves your position.
-- **Add more collateral.** [Transferring additional collateral](/guides/margin/transfer-collateral) into your Margin Account increases your collateral value and raises your Health Factor.
-- **Avoid borrowing to the maximum.** Net Available Collateral being close to zero means you are already near the threshold. Always leave headroom.
-- **Use stable assets as collateral where possible.** USDC and EURC carry far less price risk than XLM or other volatile assets.
+- **Monitor collateral prices.** Volatile assets can move quickly. Check your Health Factor when markets are active.
+- **Repay some debt.** [Repaying debt](/guides/margin/repay) is the fastest way to raise your Health Factor. Even a partial repayment improves your position.
+- **Add more collateral.** [Transferring additional collateral](/guides/margin/deposit-collateral) into your Margin Account increases your collateral value and raises your Health Factor.
+- **Avoid borrowing close to your maximum.** If your Net Available Collateral is near zero, you are already close to the threshold. Always leave headroom.
+- **Use stable assets where possible.** USDC and EURC carry far less price risk than XLM or other volatile assets.
 
 ## What to do if liquidation is imminent
 
-Act immediately — do not wait to see if the market recovers. Liquidation can happen at any time once your Health Factor hits 1.1×. There is no grace period and no warning beyond what the metrics bar already shows you.
+Act immediately. Once your Health Factor reaches 1.1x, your account is in the danger zone and prices may continue to move against you.
 
 Your options, in order of speed:
 
-1. **Repay debt** — submitting a repay transaction is the fastest way to raise your Health Factor. You do not need to repay in full; even a partial repayment may be enough to move you back above the threshold. See [Repay a Loan](/guides/margin/repay).
-2. **Add collateral** — transfer additional assets from your wallet into your Margin Account to increase your collateral value. See [Transfer Collateral](/guides/margin/transfer-collateral).
-3. **Do both** — if your Health Factor is very close to 1.1×, combining a repayment with a collateral top-up is the safest approach.
+1. **Repay debt** - reduces your outstanding balance and raises your Health Factor right away. You do not need to repay in full; even a partial repayment may be enough to move you back to a safe level. See [Repay a Loan](/guides/margin/repay).
+2. **Add collateral** - transfer additional assets from your wallet into your Margin Account to increase your collateral value. See [Deposit Collateral](/guides/margin/deposit-collateral).
 
 <Warning>
-  There is no grace period before liquidation. Once your Health Factor hits 1.1×, the account can be liquidated in the next block. Do not assume you have time to act after the threshold is reached.
+  Once your Health Factor reaches 1.1x, the account is eligible for liquidation. Do not assume prices will recover. Repaying debt or adding collateral are the only reliable ways to improve your position.
 </Warning>
 
 ## Related
 
-- [Health Factor](/guides/margin/health-factor) — understand how your Health Factor is calculated and what moves it.
-- [Repay a Loan](/guides/margin/repay) — reduce your debt to improve your Health Factor.
-- [Deposit Collateral](/guides/margin/deposit-collateral) — add collateral to strengthen your position.
-- [Fees](/resources/fees) — full fee schedule including liquidation fees.
+- [Health Factor](/guides/margin/health-factor) - understand how your Health Factor is calculated and what moves it.
+- [Repay a Loan](/guides/margin/repay) - reduce your debt to improve your Health Factor.
+- [Deposit Collateral](/guides/margin/deposit-collateral) - add collateral to strengthen your position.

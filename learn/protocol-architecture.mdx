@@ -18,23 +18,23 @@ The **Lender** supplies assets directly to the Lending Pool and earns yield pass
 
 ## The Five Layers
 
-### Entry Layer — Account Manager
+### Entry Layer - Account Manager
 
-The Account Manager is the sole entry point for all trader operations: account creation, collateral deposit and withdrawal, borrow, repay, liquidation, and `execute()`. It resolves all peer contract addresses from the Registry at runtime. No trader call bypasses it.
+The Account Manager is the sole entry point for all trader operations: account creation, collateral deposit and withdrawal, borrow, repay, settle, liquidation, and `execute()`. It resolves all peer contract addresses from the Registry at runtime. No trader call bypasses it.
 
-### Per-User Layer — Margin Account (Smart Account)
+### Per-User Layer - Margin Account (Smart Account)
 
-Each trader gets a separately deployed contract — not a mapping entry in a shared contract. It physically holds the trader's collateral tokens, maintains the borrow list, and is the contract that calls Blend or Aquarius when a trader opens an external position. One account's state cannot affect another's. Closed accounts are pooled and reused to amortize deployment costs.
+Each trader gets a separately deployed contract - not a mapping entry in a shared contract. It physically holds the trader's collateral tokens, maintains the borrow list, and is the contract that calls Blend or Aquarius when a trader opens an external position. One account's state cannot affect another's. Closed accounts are pooled and reused to amortize deployment costs.
 
-### Lending Markets — Pools and vTokens
+### Lending Markets - Pools and vTokens
 
 Three isolated pools: one each for XLM, USDC, and EURC. Each pool accepts LP deposits, lends to Margin Accounts, accrues interest via the Rate Model, and mints or burns its corresponding vToken (vXLM, vUSDC, vEURC). Pool isolation means a borrow shortfall in one asset does not spill into another.
 
-### Risk Layer — Risk Engine and Oracle
+### Risk Layer - Risk Engine and Oracle
 
 The Risk Engine is the protocol's gatekeeper. The Account Manager calls it before every borrow, withdrawal, or liquidation. It reads collateral balances from the Margin Account, borrow shares from each Lending Pool, and live USD prices from the Oracle. It caches prices per symbol within a transaction to avoid duplicate oracle calls. If the post-operation health factor would fall below 1.1x, the operation is rejected.
 
-### Infrastructure — Registry and Tracking Token
+### Infrastructure - Registry and Tracking Token
 
 The **Registry** is the on-chain address book. Every contract resolves peer addresses through it at runtime. Upgrading the Oracle or Rate Model requires updating one registry entry, not redeploying dependents.
 
@@ -48,8 +48,8 @@ Every state-changing operation follows the same sequence:
   <Step title="Call enters Account Manager">
     The Account Manager authenticates the caller, resolves contract addresses from the Registry, and prepares the operation.
   </Step>
-  <Step title="Risk Engine evaluates post-operation health">
-    Before any tokens move, the Account Manager calls the Risk Engine. It computes what the health factor would be after the operation completes. If it falls below 1.1x, the call panics here — nothing else executes.
+  <Step title="Risk Engine evaluates health">
+    Before any tokens move, the Account Manager calls the Risk Engine. For borrows and withdrawals, it computes what the health factor would be after the operation and rejects if it falls below 1.1x. For liquidations, it checks the current health factor and rejects if the account is still above 1.1x. Either way, the call panics here if the check fails - nothing else executes.
   </Step>
   <Step title="Lending Pool or Margin Account processes the operation">
     If approved, the Account Manager calls the Lending Pool (for borrows and repayments) or the Margin Account (for collateral changes and execute calls). The pool calls `update_state()` first to accrue interest since the last operation.

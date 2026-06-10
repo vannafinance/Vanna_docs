@@ -4,7 +4,7 @@ description: "The on-chain address book that maps identifiers to contract addres
 mode: "wide"
 ---
 
-The Registry is the single dependency injection point of Vanna's architecture. Every other contract is discovered through it. Instead of hardcoding seven contract addresses for every integration, an integrator hardcodes one — the Registry address — and resolves everything else at runtime.
+The Registry is the single dependency injection point of Vanna's architecture. Every other contract is discovered through it. Instead of hardcoding seven contract addresses for every integration, an integrator hardcodes one - the Registry address - and resolves everything else at runtime.
 
 This is the same pattern used by Aave's "Address Provider" and the Ethereum Name Service: a small, stable contract that brokers references to a constellation of larger, upgradable contracts behind it.
 
@@ -40,7 +40,7 @@ Everything else flows from there. The Account Manager points to its dependencies
 
 ## Why This Pattern
 
-Consider the alternative — hardcoding every address in every integration:
+Consider the alternative - hardcoding every address in every integration:
 
 ```
 const ACCOUNT_MANAGER = 0xabcd...
@@ -89,13 +89,13 @@ The Registry has admin-gated functions for registering new contracts, updating a
 
 <Snippet file="chain-support-table.mdx" />
 
-The Registry pattern is identical on every chain — the same lookup functions exist on Soroban and EVM. Only the addresses differ.
+The Registry pattern is identical on every chain - the same lookup functions exist on Soroban and EVM. Only the addresses differ.
 
 The canonical Registry addresses for each chain are published in the [Address Registry resource page](/resources/address-registry).
 
 ## Related
 
-- [Address Registry resource](/resources/address-registry) — the canonical list of deployed addresses per chain
-- [Registry reference](/developers/contracts/registry) — the function-level interface
-- [Protocol Architecture](/learn/protocol-architecture) — how the Registry sits in the dependency graph
-- [Smart Accounts](/learn/smart-accounts) — the per-user contracts the Registry tracks
+- [Address Registry resource](/resources/address-registry) - the canonical list of deployed addresses per chain
+- [Registry reference](/developers/contracts/registry) - the function-level interface
+- [Protocol Architecture](/learn/protocol-architecture) - how the Registry sits in the dependency graph
+- [Smart Accounts](/learn/smart-accounts) - the per-user contracts the Registry tracks

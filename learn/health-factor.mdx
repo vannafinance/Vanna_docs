@@ -1,171 +1,139 @@
 ---
 title: "Health Factor"
-description: "The single number that determines whether a Margin Account can borrow, withdraw, or become eligible for liquidation. Vanna enforces a minimum of 1.1×."
+description: "The solvency invariant computed by the Risk Engine before every borrow, withdrawal, and liquidation. Never stored - always derived on demand from live oracle prices and current account state."
 mode: "wide"
 ---
 
-The health factor is Vanna's safety mechanism. Every borrow and withdrawal runs through one check: would the post-operation health factor remain at or above **1.1×**? If yes, the operation proceeds. If no, it is blocked.
+The health factor is the single invariant the Risk Engine enforces across the entire protocol. Before any borrow is issued, any collateral is released, or any liquidation executes, the Risk Engine derives this ratio from live state and either permits or rejects the operation. It is never written to storage - it has no persistent form.
 
 ---
 
-## The Formula
+## The Core Invariant
 
 $$
-\text{Health Factor} = \frac{\text{Total Collateral Value (USD)}}{\text{Total Debt Value (USD)}}
+\text{Health Factor} = \frac{\displaystyle\sum_{i}\ \text{collateral}_i \times \text{price}_i}{\displaystyle\sum_{j}\ \text{debt}_j \times \text{price}_j}
 $$
 
-Both values are computed live — fresh oracle prices, current borrow shares, current collateral balances — at the moment of every operation. The health factor is never stored; it is always re-derived on demand.
+Both sums are denominated in USD using live oracle prices at the moment of computation. The comparison is performed in WAD-precision fixed-point arithmetic - all values scaled to `1e18` - so the on-chain check is:
 
-| Health Factor | Status |
-|---|---|
-| > 1.5× | Safe — comfortable buffer |
-| 1.1× – 1.5× | Caution — monitor closely |
-| ≤ 1.1× | Liquidatable |
+$$
+\frac{\text{balance\_wad} \times 10^{18}}{\text{debt\_wad}} > \underbrace{1.1 \times 10^{18}}_{\texttt{BALANCE\_TO\_BORROW\_THRESHOLD}}
+$$
 
-<div style={{background:"#111111",borderRadius:"16px",padding:"32px 28px 20px",margin:"12px 0 24px",position:"relative",overflow:"hidden"}}>
-  <div style={{position:"absolute",top:"-80px",right:"-60px",width:"200px",height:"200px",background:"radial-gradient(circle,rgba(252,84,87,0.20) 0%,transparent 70%)",pointerEvents:"none"}} />
-  <div style={{position:"absolute",bottom:"-80px",left:"-60px",width:"200px",height:"200px",background:"radial-gradient(circle,rgba(112,58,230,0.22) 0%,transparent 70%)",pointerEvents:"none"}} />
-  <div style={{position:"relative",zIndex:2}}>
-    <div style={{position:"relative",height:"22px",marginBottom:"10px"}}>
-      <div style={{position:"absolute",left:"0",width:"44%",textAlign:"center",fontSize:"11px",color:"rgba(252,84,87,0.82)",fontWeight:600,fontFamily:"system-ui"}}>Liquidatable</div>
-      <div style={{position:"absolute",left:"44%",width:"16%",textAlign:"center",fontSize:"11px",color:"rgba(251,191,36,0.88)",fontWeight:600,fontFamily:"system-ui"}}>Caution</div>
-      <div style={{position:"absolute",left:"60%",width:"40%",textAlign:"center",fontSize:"11px",color:"rgba(52,211,153,0.82)",fontWeight:600,fontFamily:"system-ui"}}>Safe</div>
-    </div>
-    <div style={{position:"relative",height:"16px",borderRadius:"8px",overflow:"hidden"}}>
-      <div style={{position:"absolute",left:"0",top:"0",width:"44%",height:"100%",background:"linear-gradient(90deg,rgba(252,84,87,0.22) 0%,rgba(252,84,87,0.62) 100%)"}} />
-      <div style={{position:"absolute",left:"44%",top:"0",width:"16%",height:"100%",background:"rgba(251,191,36,0.45)"}} />
-      <div style={{position:"absolute",left:"60%",top:"0",width:"40%",height:"100%",background:"linear-gradient(90deg,rgba(52,211,153,0.38) 0%,rgba(52,211,153,0.62) 100%)"}} />
-      <div style={{position:"absolute",left:"44%",top:"0",width:"2px",height:"100%",background:"rgba(255,255,255,0.85)"}} />
-    </div>
-    <div style={{position:"relative",height:"26px",marginTop:"8px",fontSize:"10px",fontFamily:"monospace"}}>
-      <span style={{position:"absolute",left:"0",color:"rgba(255,255,255,0.30)"}}>0×</span>
-      <span style={{position:"absolute",left:"44%",transform:"translateX(-50%)",color:"rgba(255,255,255,0.75)",fontWeight:700}}>1.1×</span>
-      <span style={{position:"absolute",left:"60%",transform:"translateX(-50%)",color:"rgba(255,255,255,0.30)"}}>1.5×</span>
-      <span style={{position:"absolute",left:"80%",transform:"translateX(-50%)",color:"rgba(255,255,255,0.30)"}}>2.0×</span>
-      <span style={{position:"absolute",right:"0",color:"rgba(255,255,255,0.30)"}}>2.5×</span>
-    </div>
-    <p style={{textAlign:"center",fontSize:"0.70rem",color:"rgba(255,255,255,0.28)",margin:"6px 0 0",fontFamily:"system-ui"}}>Accounts at or below 1.1× are eligible for liquidation</p>
-  </div>
-</div>
+If debt is zero, the account is unconditionally solvent - the check returns `true` and no division occurs.
 
 ---
 
-## A Worked Example
+## Collateral Valuation
 
-A Margin Account holds two assets as collateral and has one outstanding borrow:
+The Risk Engine recognizes two classes of collateral and values them differently.
 
-| Component | USD Value |
-|---|---|
-| Collateral asset A | $5,000 |
-| Collateral asset B | $3,000 |
-| **Total collateral** | **$8,000** |
-| Outstanding debt | $4,000 |
-| **Health factor** | **8,000 ÷ 4,000 = 2.0×** ✓ |
+**Direct collateral - XLM, USDC, EURC**
 
-The account is healthy. Now suppose collateral asset B drops 80% in price:
+Balances are read from the Margin Account's on-chain storage and multiplied by their oracle price. One oracle call per unique symbol, cached for the duration of the transaction.
 
-| Component | USD Value |
-|---|---|
-| Collateral asset A | $5,000 |
-| Collateral asset B | $600 |
-| **Total collateral** | **$5,600** |
-| Outstanding debt | $4,000 |
-| **Health factor** | **5,600 ÷ 4,000 = 1.4×** ✓ |
+**Blend yield positions - BLEND\_XLM, BLEND\_USDC, BLEND\_EURC**
 
-Still healthy. If asset B falls to near zero:
+When borrowed capital is deployed into [Blend](https://blend.capital) lending pools, the Margin Account receives b-tokens tracked by Vanna's Tracking Token contract. These are not priced directly - they are first converted to their underlying asset amount via Blend's `b_rate`:
 
-| Component | USD Value |
-|---|---|
-| Collateral asset A | $5,000 |
-| Collateral asset B | ~$0 |
-| **Total collateral** | **~$5,000** |
-| Outstanding debt | **$4,400** *(interest has accrued)* |
-| **Health factor** | **5,000 ÷ 4,400 = 1.14×** — approaching threshold |
+$$
+\text{underlying amount} = \frac{\text{b\_token\_balance} \times \text{b\_rate}}{10^{12}}
+$$
 
-Once the ratio reaches 1.1×, the account becomes liquidation-eligible.
+The resulting underlying amount is then priced via the oracle at the underlying asset's USD price. A Blend USDC position and a direct USDC deposit are treated identically for collateral purposes after this conversion.
+
+For the full detail of how oracle prices enter the protocol and how the price cache works, see [Oracle System](/learn/oracle-system).
 
 ---
 
-## How the Borrow Check Works
+## Debt Valuation
 
-The health check at borrow time is different from what most lending protocols use.
+Debt is read from each Lending Pool as **raw borrow shares**, not as the fully accrued token amount.
 
-**Standard protocol formula:**
-$$
-\frac{\text{Collateral}}{\ \text{Existing Debt} + \text{Borrow Amount}\ } \geq 1.1
-$$
+Borrow shares represent the account's proportional claim on a pool's total outstanding borrows. Converting shares to the actual token amount owed - inclusive of all accrued interest - requires querying the pool's current index, which in turn requires a call chain across Registry, RateModel, and LendingPool contracts. On Soroban, this chain exceeds the per-transaction computation budget for accounts with borrows across multiple pools.
 
-**Vanna's formula:**
-$$
-\frac{\text{Collateral} + \text{Borrow Amount}}{\ \text{Existing Debt} + \text{Borrow Amount}\ } \geq 1.1
-$$
+The consequence: the debt value used in a health check reflects the principal plus interest settled as of the last pool interaction, but excludes interest that has accrued since then. This creates a small understatement of true debt in the window between pool operations.
 
-The borrowed amount is added to **both sides**. This reflects how Vanna accounts work: capital borrowed from a Lending Pool stays inside the Margin Account and is deployed into strategies — those positions then become tracked collateral in the next health check. The protocol treats the borrowed capital as immediately self-collateralizing.
-
-The practical effect is a significantly more permissive first borrow:
-
-| Collateral | Existing Debt | Borrow | Vanna check | Allowed? |
-|---|---|---|---|---|
-| $1,000 | $0 | $5,000 | $6,000 ÷ $5,000 = **1.2×** | ✓ |
-| $1,000 | $0 | $9,000 | $10,000 ÷ $9,000 = **1.11×** | ✓ |
-| $1,000 | $0 | $10,001 | $11,001 ÷ $10,001 = **1.09×** | ✗ |
-| $1,000 | $800 | $300 | $2,100 ÷ $1,100 = **1.9×** | ✓ |
-
-With zero existing debt, you can borrow up to **10× your collateral value** before the check fails.
-
-<Info>
-After borrowing, the ongoing health factor is evaluated using the standard formula — collateral value divided by total debt. The permissive borrow formula only applies at the moment of the borrow request itself.
-</Info>
+This is a deliberate trade-off. The 1.1× threshold provides enough buffer that interest-accrual gaps between settlements do not compromise solvency before the next pool operation normalizes them. When any operation touches a pool - a borrow, a repay, a deposit, a withdrawal - interest is fully settled into shares, and the next health check reflects the true outstanding balance.
 
 ---
 
-## What Moves Your Health Factor
+## The Three Guard Functions
 
-| Event | Effect on Health Factor |
-|---|---|
-| Deposit more collateral | ↑ Ratio improves |
-| Withdraw collateral | ↓ Ratio worsens |
-| Open a new borrow | ↓ Ratio worsens |
-| Repay debt | ↑ Ratio improves |
-| Collateral asset price rises | ↑ Ratio improves |
-| Collateral asset price falls | ↓ Ratio worsens |
-| Borrowed asset price rises | ↓ Ratio worsens (debt costs more) |
-| Time passes (interest accrues) | ↓ Ratio drifts down slowly |
-| Deploy borrowed capital into a tracked position | ↑ Ratio may improve (new collateral recognized) |
+The Risk Engine exposes three distinct health-check entry points. Each uses a different formula suited to the operation it gates.
 
-Interest accrues continuously but is only written to state when a pool operation occurs. Between transactions, your debt is silently growing — even if no on-chain event has happened.
+### Borrow Guard
+
+$$
+\frac{C + B}{D + B} \geq 1.1
+$$
+
+where $C$ = current collateral value, $D$ = current debt value, $B$ = USD value of the requested borrow amount.
+
+The borrow amount appears on **both sides**. This is the self-collateralization principle: capital borrowed from a Lending Pool cannot leave the Margin Account - it is immediately available as deployed collateral in the same account. The protocol therefore treats the incoming borrow as simultaneously increasing both the asset base and the debt, rather than only the debt.
+
+This is asymmetric with how standard overcollateralized lending protocols handle borrows, where borrowed capital leaves the account and the formula is $C / (D + B)$.
+
+### Withdraw Guard
+
+$$
+\frac{C - W}{D} \geq 1.1
+$$
+
+where $W$ = USD value of the requested withdrawal.
+
+Standard collateral subtraction. The self-collateralization rationale does not apply - a withdrawal removes value from the account permanently. If the account carries no debt, `has_debt()` returns false and this check is skipped entirely.
+
+### Liquidation Guard
+
+$$
+\frac{C}{D} \leq 1.1
+$$
+
+Liquidation is permitted when `is_account_healthy()` returns `false` - i.e., the standard collateral-to-debt ratio has fallen below the threshold. The same function used for ongoing health assessment is the condition for liquidation eligibility, evaluated with the inverse outcome.
 
 ---
 
-## The Three Checks
+## Maximum Leverage
 
-The Risk Engine runs a health check before three types of operations:
+The borrow guard's formula directly determines the maximum leverage achievable from a clean account (zero existing debt, $D = 0$):
 
-| Check | When it runs | Formula used |
-|---|---|---|
-| **Borrow guard** | Before any borrow is issued | `(Collateral + Borrow) / (Debt + Borrow) ≥ 1.1` |
-| **Withdraw guard** | Before any collateral withdrawal | `(Collateral − Withdrawal) / Debt ≥ 1.1` |
-| **Liquidation guard** | Before liquidation is executed | `Collateral / Debt ≤ 1.1` (account must already be unhealthy) |
+$$
+\frac{C + B}{B} \geq 1.1
+$$
 
-If an account has no debt, the withdraw guard is skipped entirely — there is no risk to check.
+$$
+C + B \geq 1.1B
+$$
+
+$$
+C \geq 0.1B
+$$
+
+$$
+B \leq 10C
+$$
+
+An account with no outstanding debt can borrow up to 10× its deposited collateral value before the borrow guard blocks. With existing debt ($D > 0$), the remaining borrow capacity is lower - the formula must be evaluated with the current debt balance to find the remaining room.
 
 ---
 
-## Why 1.1× and Not 1.0×
+## The 1.1× Threshold
 
-A threshold of 1.0× would mean an account becomes liquidatable exactly when debt equals collateral — leaving no surplus to cover the cost of unwinding the position. By the time a liquidation executes, a price movement could leave the protocol with unrecoverable losses.
+A threshold of 1.0× would render an account liquidatable precisely when collateral equals debt - leaving zero surplus. A liquidation executed at zero surplus faces three cost sources with no cover:
 
-The 1.1× buffer (10%) provides:
+- **Slippage** - selling collateral on-chain to repay debt incurs market impact. The larger the position, the higher the slippage relative to the mid-price.
+- **Oracle lag** - prices update on Reflector's cadence (approximately every 5 minutes). The on-chain price at liquidation time may lag the true market price by one or more ledger intervals.
 
-- **Headroom for costs** — there is always a surplus available to cover the cost of closing positions
-- **Grace for volatility** — a brief oracle spike to 1.09× does not immediately result in liquidation; the account needs to remain below threshold
-- **Predictability** — traders know exactly when their position is at risk and can manage leverage accordingly
+The 1.1× floor (10% overcollateralization minimum) provides a fixed surplus at the liquidation trigger point. This surplus covers all three cost sources in ordinary market conditions. In extreme conditions - collateral price collapses faster than liquidations can clear - the surplus may be insufficient and a bad debt position arises. In that case, the affected pool's `total_assets` decreases, reducing the vToken exchange rate and distributing the shortfall proportionally across LP positions. See [vTokens](/learn/vtokens) for the exchange rate mechanics.
 
 ---
 
 ## Related
 
-- [Liquidation](/learn/liquidation) — what happens when health drops below 1.1×
-- [Oracle System](/learn/oracle-system) — the price source for the formula
-- [Lending Pools](/learn/lending-pools) — where debt is issued and tracked
-- [Interest Rate Model](/learn/interest-rate-model) — how interest accrues and slowly erodes health
+- [Liquidation](/learn/liquidation) - what happens when an account falls below 1.1×
+- [Oracle System](/learn/oracle-system) - how prices enter the protocol and the price cache works
+- [Lending Pools](/learn/lending-pools) - where borrow shares are stored and interest accrues
+- [Margin Accounts](/learn/smart-accounts) - the isolated contract whose state the Risk Engine reads
+- [vTokens](/learn/vtokens) - how LP positions absorb bad debt via exchange rate dilution
+- [Interest Rate Model](/learn/interest-rate-model) - the rate that determines how fast debt grows toward the threshold

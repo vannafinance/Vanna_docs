@@ -1,128 +1,163 @@
 ---
 title: "Liquidation"
-description: "The permissionless enforcement mechanism that closes an unhealthy account. Any address can trigger it once an account's health factor drops below 1.1×."
+description: "The debt clearance mechanism that runs when an account's health factor falls to or below 1.1x. Repays all outstanding debt and returns remaining direct token collateral to the account owner."
 mode: "wide"
 ---
 
-Liquidation is what keeps Vanna solvent. The protocol does not run a trusted keeper to watch positions; it relies on **economic incentives** — any address that detects an unhealthy account and submits a liquidation transaction earns a reward. As long as it's profitable, liquidations will happen. As long as liquidations happen, the protocol's LPs are protected.
+Liquidation is the enforcement mechanism that resolves an unhealthy account. When an account's health factor drops below the 1.1x threshold, the owner can call `AccountManager.liquidate()` to clear all outstanding debt and recover any remaining collateral value. The protocol blocks this call when the account is healthy - it is an emergency exit only.
 
-## When Liquidation Becomes Possible
+---
 
-The moment an account's [health factor](/learn/health-factor) drops below **1.1×**, the account becomes liquidation-eligible. This can happen via several routes:
+## The Liquidation Guard
 
-1. **Collateral price decline.** A user's WETH collateral drops 30%; the position is now under-collateralized relative to debt.
-2. **Debt price increase.** A user's USDC borrow becomes more valuable in collateral terms — less common but possible during stablecoin volatility.
-3. **Interest accrual.** A long-dormant borrow accumulates enough interest that the debt grows past the collateral buffer.
-4. **External position loss.** A Blend or Aquarius position the account holds as collateral loses value due to underlying protocol changes.
+Liquidation is gated by the same `is_account_healthy()` function described in [Health Factor](/learn/health-factor):
 
-All four collapse into the same on-chain check: `is_account_healthy(account)` returns false.
+$$
+\frac{\text{total collateral value}}{\text{total debt value}} < 1.1
+$$
 
-## The Liquidation Flow
+The `liquidate()` function calls the Risk Engine directly before taking any action:
 
-```mermaid
-sequenceDiagram
-    participant Liquidator as Liquidator (any address)
-    participant AM as AccountManager
-    participant RE as RiskEngine
-    participant SA as SmartAccount
-    participant LP as Lending Pools
-    participant Reg as Registry
-
-    Liquidator->>AM: liquidate(account)
-    AM->>RE: is_account_healthy(account)
-    RE-->>AM: false (health < 1.1×)
-
-    Note over AM,SA: Liquidation proceeds
-
-    AM->>SA: enumerate collateral and debt
-    SA-->>AM: [(token, amount)], [(token, shares)]
-
-    loop For each debt
-        AM->>LP: collect_from(account, shares)
-        LP-->>AM: debt cleared
-    end
-
-    AM->>SA: sweep remaining collateral
-    SA-->>Liquidator: liquidation incentive (portion of recovered assets)
-    SA-->>Reg: mark account closed
+```rust
+if risk_engine_client.is_account_healthy(
+    &risk_engine_client.get_current_total_balance(&smart_account),
+    &risk_engine_client.get_current_total_borrows(&smart_account),
+) {
+    panic!("Cannot liquidate when account is healthy!!");
+}
 ```
 
-*Figure: Liquidation flow. The liquidator initiates; the protocol enumerates positions, clears debt, sweeps collateral, and pays the incentive.*
+If the account is healthy, the call panics and reverts. Liquidation can only proceed when `is_account_healthy()` returns `false`.
 
-<Steps>
-  <Step title="Detection">
-    A liquidator monitors accounts off-chain (via Mercury on Stellar, via The Graph or direct RPC on EVM) and identifies one whose health factor is below 1.1×.
-  </Step>
-  <Step title="Initiation">
-    The liquidator calls `AccountManager.liquidate(account_address)`. There is no permission check — anyone can call this. The Account Manager re-verifies the account is unhealthy via the Risk Engine before proceeding.
-  </Step>
-  <Step title="Debt repayment">
-    For every token the account has borrowed, the Account Manager calls `LendingPool.collect_from(account, shares)` to clear the debt. The borrowed asset is transferred from the Smart Account back to the pool.
-  </Step>
-  <Step title="Collateral sweep and incentive">
-    Any remaining collateral in the Smart Account is swept. A portion is paid to the liquidator as their incentive; the remainder, if any, returns to the original owner.
-  </Step>
-  <Step title="Account closure">
-    The Smart Account is marked closed in the Registry. The position is fully unwound.
-  </Step>
-</Steps>
+---
 
-## What Happens to the Original Owner
+## Authorization
 
-Liquidation does not destroy all of the owner's value. The order of operations is:
+The `liquidate()` function requires the account owner's authorization:
 
-1. **Debt is cleared first** using the account's collateral. The Lending Pools are made whole (the LP side of the market is protected).
-2. **The liquidator is paid** their incentive, typically a fixed percentage of the recovered value.
-3. **The remainder, if positive, returns to the owner.**
+```rust
+let trader_address = Self::get_trader_address(&env, &smart_account);
+trader_address.require_auth();
+```
 
-In the typical case (price moved against the trader but not catastrophically), the owner recovers some value. In the extreme case (collateral is worth less than debt + incentive — "bad debt"), the LPs of the affected pool absorb the shortfall by way of a reduced [vToken](/learn/vtokens) exchange rate.
+`require_auth()` on the trader address means the transaction must include a valid authorization entry from the account owner. This is not a permissionless operation - it requires the trader's direct participation or a pre-signed delegation. The protocol uses this model because the collateral is swept back to the owner, not to an external caller.
 
-## Why Permissionless
+---
 
-Vanna does not run a "liquidation bot" as a privileged actor for two reasons:
+## Debt Repayment
 
-- **Trust minimization.** A privileged liquidator is a single point of failure. If it goes offline, accounts go unliquidated, bad debt accumulates, LPs lose. Permissionless liquidation means the protocol functions as long as *anyone* is watching — and many parties watch in their own self-interest.
-- **Economic correctness.** A liquidator's incentive is calibrated so that competition keeps prices honest. If the incentive is too high, multiple liquidators race and the protocol overpays. If too low, liquidations are skipped and bad debt accrues. Permissionless liquidation lets the market discover the right level.
+For every token the account has borrowed, the Account Manager:
 
-## Settlement: The Voluntary Alternative
+1. Reads the full outstanding balance from the Lending Pool:
 
-A trader who realizes their position is in trouble has a softer option than waiting for liquidation: **settlement**.
+   ```rust
+   let liquidate_amount = xlm_client.get_borrow_balance(&smart_account);
+   ```
 
-Settlement is a controlled close where the owner:
+   Unlike the health check (which uses raw borrow shares), liquidation uses `get_borrow_balance()` - the full outstanding amount including all accrued interest settled as of the current state.
 
-1. Repays as much debt as their wallet can cover.
-2. Sells remaining collateral on-chain (via `execute()` to an AMM) to repay the rest.
-3. Closes the account voluntarily.
+2. Clears the debt on the Lending Pool side:
 
-The advantage is that the owner controls the swap rate, avoids the liquidator's incentive, and keeps any leftover collateral. The disadvantage is that settlement requires the account to actually be healthy at the moment of close — which means the trader must act *before* the ratio breaches 1.1×.
+   ```rust
+   xlm_client.collect_from(&liquidate_amount, &smart_account);
+   ```
 
-Settlement is just the normal repay + close flow, executed quickly. There is no special on-chain "settle" function — only the discipline to act ahead of a forced close.
+3. Transfers the corresponding tokens from the Smart Account to the pool and updates internal accounting:
 
-## Liquidator Economics
+   ```rust
+   smart_account_client.remove_borrowed_token_balance(&XLM_SYMBOL, &amount_wad_u128);
+   ```
 
-A would-be liquidator weighs:
+4. Removes the token from the account's borrowed token list if the debt is fully cleared.
 
-| Income | Cost |
-|---|---|
-| Liquidation incentive (% of recovered collateral) | Gas / transaction fee on the chain |
-| Any positive remainder of swap slippage | Slippage from selling collateral on the open market |
-| | Capital required to front-run other liquidators |
+This loop runs for every token in the account's borrowed token list: XLM, USDC, and EURC. All debt positions are closed in a single transaction - partial liquidation is not supported.
 
-Profitable liquidations happen when the incentive exceeds gas + slippage. Vanna's incentive parameter is set so that ordinary liquidations are profitable to single-transaction bots while not over-rewarding extreme cases.
+---
 
-## What Liquidation Doesn't Do
+## Collateral Sweep
 
-- **It does not free other accounts.** Each Smart Account is isolated. Liquidating one has no effect on any other.
-- **It does not change pool rates.** The pool's `total_assets` and `total_borrows` both decrease in the typical case, leaving utilization roughly unchanged.
-- **It does not punish the owner beyond the incentive paid.** There is no penalty fee, no protocol fine, no slashing. The owner pays the liquidator's incentive and any residual value returns to them.
+After all debt is cleared, the Account Manager calls:
 
-## Chain Support
+```rust
+smart_account_client.sweep_to(&trader_address);
+```
 
-<Snippet file="chain-support-table.mdx" />
+`sweep_to()` iterates over every token in the Smart Account's collateral list and transfers the full balance to the specified address - in this case, the account owner.
+
+### Tokens covered by sweep
+
+`sweep_to()` calls `remove_collateral_token_bal_internal()` for each collateral token. This function contains explicit handlers for XLM, USDC, and EURC, which transfer the actual token balances:
+
+```rust
+if token_symbol == XLM_SYMBOL {
+    xlm_token.transfer(&this_account, &user_address, &amount_scaled);
+} else if token_symbol == USDC_SYMBOL {
+    usdc_token.transfer(&this_account, &user_address, &amount_scaled);
+} else if token_symbol == EURC_SYMBOL {
+    eurc_token.transfer(&this_account, &user_address, &amount_scaled);
+}
+```
+
+For Blend yield positions (`BLEND_XLM`, `BLEND_USDC`, `BLEND_EURC`) and Aquarius LP tracking positions (`AQ_XLM_USDC`), the internal collateral balance is zeroed and the token is removed from the collateral list. However, no token transfer occurs for these positions - the underlying b-tokens held in Blend's pool and LP positions in Aquarius are not unwound. Their tracking records are cleared from the Smart Account but the assets remain in the external protocols.
+
+---
+
+## No Liquidation Fee
+
+The current implementation contains no fee mechanism. The `collect_from()` call transfers exactly the amount needed to repay the debt. The `sweep_to()` call transfers the full remaining collateral balance to the trader. No percentage is deducted for any party.
+
+---
+
+## Account State After Liquidation
+
+The `liquidate()` function does not call `deactivate_account()` or `registry.close_account()`. After liquidation completes:
+
+- All borrowed token entries are removed from the Smart Account
+- `has_debt` is set to false when the last borrowed token is removed
+- All collateral balances are zeroed
+- The Smart Account remains in its current activation state in the registry
+
+This differs from `close_account()`, which explicitly deactivates the Smart Account and updates the Registry. `liquidate()` is not an account closure - it is a position clear.
+
+---
+
+## `settle_account()` - The Voluntary Alternative
+
+`settle_account()` provides a voluntary path to repay all debt without sweeping collateral:
+
+```rust
+pub fn settle_account(env: Env, smart_account: Address) -> Result<bool, AccountManagerError> {
+    let trader_address = Self::get_trader_address(&env, &smart_account);
+    trader_address.require_auth();
+
+    let borrowed_tokens = smart_account_contract_client.get_all_borrowed_tokens();
+    for tokenx in borrowed_tokens.iter() {
+        let token_debt = smart_account_contract_client.get_borrowed_token_debt(&tokenx.clone());
+        Self::repay(env.clone(), token_debt, tokenx, smart_account.clone())...
+    }
+}
+```
+
+`settle_account()` calls `repay()` for each borrowed token. Unlike `liquidate()`, it does not check whether the account is healthy or unhealthy - it can be called at any time. Collateral remains in the Smart Account after settlement; the owner must then call `close_account()` to recover it.
+
+| | `liquidate()` | `settle_account()` |
+|---|---|---|
+| Health check | Account must be unhealthy | No check |
+| Debt cleared | All borrowed tokens | All borrowed tokens |
+| Collateral returned | Swept to owner immediately | Stays in Smart Account |
+| Account deactivated | No | No |
+
+---
+
+## Full Execution Flow
+
+<img src="/images/learn/liquidationExecutionFlow.png" alt="Liquidation execution flow" style={{ maxWidth: "100%", borderRadius: "16px" }} />
+
+---
 
 ## Related
 
-- [Health Factor](/learn/health-factor) — what triggers liquidation
-- [Smart Accounts](/learn/smart-accounts) — the unit being liquidated
-- [Risk Model](/security/risk-model) — full risk treatment, including bad-debt scenarios
-- [Liquidation Flow](/developers/flows/liquidation) — the developer-side step-by-step
+- [Health Factor](/learn/health-factor) - the invariant that determines when liquidation becomes possible
+- [Smart Accounts](/learn/smart-accounts) - the isolated contract that holds collateral and debt
+- [Lending Pools](/learn/lending-pools) - where borrow shares are stored and debt is cleared on repayment
+- [Liquidation Guide](/guides/margin/liquidation) - user-facing explanation of what liquidation means for a position
