@@ -23,7 +23,7 @@
     "primary": {
       "type": "button",
       "label": "Launch App",
-      "href": "https://app.vanna.finance"
+      "href": "https://test-stellar.vanna.finance/"
     }
   },
   "navigation": {
@@ -160,60 +160,9 @@
         "icon": "code",
         "groups": [
           {
-            "group": "Getting Started",
+            "group": "Developers",
             "pages": [
-              "developers/overview",
-              "developers/quickstart/stellar",
-              "developers/quickstart/evm",
-              "developers/local-setup"
-            ]
-          },
-          {
-            "group": "Contract Reference",
-            "pages": [
-              "developers/contracts/account-manager",
-              "developers/contracts/smart-account",
-              "developers/contracts/lending-pool",
-              "developers/contracts/risk-engine",
-              "developers/contracts/oracle",
-              "developers/contracts/registry",
-              "developers/contracts/rate-model",
-              "developers/contracts/vtoken"
-            ]
-          },
-          {
-            "group": "Protocol Flows",
-            "pages": [
-              "developers/flows/borrow",
-              "developers/flows/repay",
-              "developers/flows/liquidation",
-              "developers/flows/deposit",
-              "developers/flows/trade"
-            ]
-          },
-          {
-            "group": "Stellar / Soroban",
-            "pages": [
-              "developers/chains/stellar/overview",
-              "developers/chains/stellar/soroban-model",
-              "developers/chains/stellar/contracts",
-              "developers/chains/stellar/integrations",
-              "developers/chains/stellar/deployments"
-            ]
-          },
-          {
-            "group": "EVM / Base",
-            "pages": [
-              "developers/chains/evm/overview",
-              "developers/chains/evm/contracts",
-              "developers/chains/evm/integrations",
-              "developers/chains/evm/deployments"
-            ]
-          },
-          {
-            "group": "Reference",
-            "pages": [
-              "developers/errors"
+              "developers/coming-soon"
             ]
           }
         ]
@@ -225,11 +174,7 @@
           {
             "group": "Security",
             "pages": [
-              "security/overview",
-              "security/audits",
-              "security/risk-model",
-              "security/emergency-mechanisms",
-              "security/bug-bounty"
+              "security/coming-soon"
             ]
           }
         ]
@@ -239,14 +184,9 @@
         "icon": "circle-info",
         "groups": [
           {
-            "group": "Reference",
+            "group": "Resources",
             "pages": [
-              "resources/glossary",
-              "resources/supported-assets",
-              "resources/fees",
-              "resources/address-registry",
-              "resources/faq",
-              "resources/changelog"
+              "resources/coming-soon"
             ]
           }
         ]
