@@ -1,0 +1,146 @@
+---
+title: "Registry"
+description: "On-chain address book for all Vanna Protocol contracts. Every protocol contract resolves peer addresses here at runtime."
+mode: "wide"
+---
+
+The `Registry` is a central address book. Every protocol contract resolves peer contract addresses through the Registry at runtime rather than storing them as constructor constants. This enables safe protocol upgrades — updating a Registry entry propagates to all contracts automatically.
+
+**Testnet address:** `CC35XWCH7SCQROTNW7PA6HZKP4JMNSVV2K7CX3HY2PSI2MI2ZQQH73ID`
+
+---
+
+## Stored Addresses
+
+The Registry stores addresses for every protocol component:
+
+| Key | Description |
+|---|---|
+| `LendingPoolXLM` | XLM lending pool contract |
+| `LendingPoolUSDC` | USDC lending pool contract |
+| `LendingPoolEURC` | EURC lending pool contract |
+| `LendingPoolAquariusUSDC` | Aquarius USDC lending pool |
+| `LendingPoolSoroswapUSDC` | Soroswap USDC lending pool |
+| `RiskEngineContract` | Risk Engine contract |
+| `RateModelContract` | Rate Model contract |
+| `OracleContract` | Oracle (Reflector passthrough) |
+| `AccountManagerContract` | Account Manager |
+| `SmartAccountContractHash` | WASM hash used to deploy new SmartAccounts |
+| `NativeXLMAddress` | XLM Stellar Asset Contract (SAC) |
+| `USDCAddress` | USDC token contract |
+| `EURCAddress` | EURC token contract |
+| `BlendPoolAddress` | External: Blend Capital pool |
+| `TrackingTokenAddress` | Tracking Token contract |
+| `AquariusRouterAddress` | External: Aquarius router |
+| `AquariusPoolIndex` | Aquarius pool pool_index |
+| `Treasury` | Protocol treasury address |
+
+---
+
+## Account Management Functions
+
+The Registry also stores user account data.
+
+### add_account
+
+```rust
+fn add_account(env: Env, trader: Address, smart_account: Address) -> ()
+```
+
+Records a new SmartAccount for `trader`. Called by AccountManager during `create_account()`.
+
+**Authorization:** AccountManager only
+
+---
+
+### update_account
+
+```rust
+fn update_account(env: Env, trader: Address, smart_account: Address) -> ()
+```
+
+Updates the active SmartAccount address for `trader`. Called when reusing an inactive account.
+
+---
+
+### get_accounts
+
+```rust
+fn get_accounts(env: Env, trader: Address) -> Vec<Address>
+```
+
+Returns all SmartAccount addresses ever associated with `trader` (active and historical).
+
+**This is the primary way to look up a user's margin account address.**
+
+---
+
+### get_smart_account_hash
+
+```rust
+fn get_smart_account_hash(env: Env) -> BytesN<32>
+```
+
+Returns the WASM hash used to deploy new SmartAccount instances.
+
+---
+
+## Address Getter Functions
+
+Each stored address has a corresponding getter:
+
+```rust
+fn get_lending_pool_xlm(env: Env) -> Address
+fn get_lending_pool_usdc(env: Env) -> Address
+fn get_lending_pool_eurc(env: Env) -> Address
+fn get_risk_engine(env: Env) -> Address
+fn get_rate_model(env: Env) -> Address
+fn get_oracle(env: Env) -> Address
+fn get_account_manager(env: Env) -> Address
+fn get_tracking_token(env: Env) -> Address
+fn get_treasury(env: Env) -> Address
+fn get_native_xlm(env: Env) -> Address
+fn get_usdc(env: Env) -> Address
+fn get_eurc(env: Env) -> Address
+fn get_blend_pool(env: Env) -> Address
+// ... and corresponding has_*_address() booleans
+```
+
+---
+
+## Address Setter Functions
+
+Each stored address has a setter callable by the admin:
+
+```rust
+fn set_lending_pool_xlm(env: Env, address: Address) -> ()
+fn set_lending_pool_usdc(env: Env, address: Address) -> ()
+// ... etc.
+```
+
+All setters require admin authorization.
+
+---
+
+## Querying the Registry (TypeScript Example)
+
+```typescript
+import { Contract, SorobanRpc } from '@stellar/stellar-sdk';
+
+const REGISTRY = 'CC35XWCH7SCQROTNW7PA6HZKP4JMNSVV2K7CX3HY2PSI2MI2ZQQH73ID';
+const server = new SorobanRpc.Server('https://soroban-testnet.stellar.org');
+
+// Find a user's margin account
+const result = await server.simulateTransaction(
+  buildTransaction(userAddress, REGISTRY, 'get_accounts', [userAddressArg])
+);
+
+const accounts = scValToNative(result.result.retval); // Address[]
+```
+
+---
+
+## Related
+
+- [Deployed Contracts](/developers/deployed-contracts) — all current testnet addresses
+- [Architecture](/developers/architecture) — why centralized address resolution matters for upgrades

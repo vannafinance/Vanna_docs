@@ -1,0 +1,338 @@
+---
+title: "SmartAccount"
+description: "Per-user deployed contract that holds collateral, tracks debt, and routes capital to external protocols. Function reference with external protocol actions."
+mode: "wide"
+---
+
+`SmartAccount` is a per-user deployed contract — each margin account is a separate on-chain instance. It stores all collateral balances, records which assets have been borrowed, and executes external protocol calls on behalf of its owner.
+
+**Important:** SmartAccount functions cannot be called directly by users. All calls must originate from the registered `AccountManager`. Every function begins with `account_manager.require_auth()`.
+
+<Note>
+Individual SmartAccount addresses are determined at account creation time. Use `Registry.get_accounts(trader_address)` or listen for `AccountCreationEvent` to find a user's SmartAccount address.
+</Note>
+
+---
+
+## Account State
+
+### activate_account
+
+```rust
+fn activate_account(env: Env) -> ()
+```
+
+Sets `IsAccountActive = true`. Called by AccountManager immediately after deploying or reusing a SmartAccount.
+
+---
+
+### deactivate_account
+
+```rust
+fn deactivate_account(env: Env) -> ()
+```
+
+Sets `IsAccountActive = false`. Called by AccountManager when the account is closed and pushed to the inactive pool.
+
+---
+
+### has_debt
+
+```rust
+fn has_debt(env: Env) -> bool
+```
+
+Returns `true` if any borrowed tokens are listed in `BorrowedTokensList`.
+
+---
+
+### set_has_debt
+
+```rust
+fn set_has_debt(env: Env, has_debt: bool) -> ()
+```
+
+Sets the `HasDebt` flag. Called by AccountManager when the debt list transitions from empty to non-empty or vice versa.
+
+---
+
+## Collateral Management
+
+### get_all_collateral_tokens
+
+```rust
+fn get_all_collateral_tokens(env: Env) -> Vec<Symbol>
+```
+
+Returns the list of all token symbols currently held as collateral. Used by RiskEngine to enumerate assets when computing health factor.
+
+---
+
+### add_collateral_token
+
+```rust
+fn add_collateral_token(env: Env, symbol: Symbol) -> ()
+```
+
+Appends `symbol` to `CollateralTokensList` if not already present. Called by AccountManager on first deposit of a new token type.
+
+---
+
+### get_collateral_token_balance
+
+```rust
+fn get_collateral_token_balance(env: Env, symbol: Symbol) -> U256
+```
+
+Returns the balance of `symbol` held in this account, in WAD format.
+
+---
+
+### set_collateral_token_balance
+
+```rust
+fn set_collateral_token_balance(env: Env, symbol: Symbol, amount: U256) -> ()
+```
+
+Overwrites the stored balance for `symbol`. Called by AccountManager after deposit or withdrawal.
+
+---
+
+### remove_collateral_token_balance
+
+```rust
+fn remove_collateral_token_balance(
+    env: Env,
+    trader: Address,
+    symbol: Symbol,
+    amount: u128,
+) -> ()
+```
+
+Transfers `amount` (in native decimals) of `symbol` to `trader`, subtracts from stored `CollateralBalanceWAD`, and removes the token from `CollateralTokensList` if balance reaches zero.
+
+---
+
+### sweep_to
+
+```rust
+fn sweep_to(env: Env, to_address: Address) -> ()
+```
+
+Transfers all collateral tokens to `to_address`. Called in two scenarios:
+- **`close_account()`** — sweeps to owner
+- **`liquidate()`** — sweeps remaining collateral (after debt repayment) to trader
+
+**For XLM, USDC, EURC:** actual token balances are transferred.  
+**For tracking tokens (BLEND_XLM, AQ_XLM_USDC, etc.):** the internal balance record is zeroed but the underlying position in the external protocol (Blend pool, Aquarius pool) is not unwound. The external position remains.
+
+---
+
+## Debt Management
+
+### get_all_borrowed_tokens
+
+```rust
+fn get_all_borrowed_tokens(env: Env) -> Vec<Symbol>
+```
+
+Returns the list of all token symbols with outstanding debt.
+
+---
+
+### add_borrowed_token
+
+```rust
+fn add_borrowed_token(env: Env, symbol: Symbol) -> ()
+```
+
+Appends `symbol` to `BorrowedTokensList`. Called by AccountManager after a successful borrow.
+
+---
+
+### remove_borrowed_token
+
+```rust
+fn remove_borrowed_token(env: Env, symbol: Symbol) -> ()
+```
+
+Removes `symbol` from `BorrowedTokensList`. Called when debt is fully repaid.
+
+---
+
+### get_borrowed_token_debt
+
+```rust
+fn get_borrowed_token_debt(env: Env, symbol: Symbol) -> U256
+```
+
+Queries the corresponding LendingPool for the current outstanding debt (in WAD) for this account and `symbol`.
+
+---
+
+### remove_borrowed_token_balance
+
+```rust
+fn remove_borrowed_token_balance(
+    env: Env,
+    symbol: Symbol,
+    amount: u128,
+) -> ()
+```
+
+Repays `amount` of `symbol` debt to the LendingPool. Called during repayment or liquidation.
+
+---
+
+## External Protocol Execution
+
+### execute
+
+```rust
+fn execute(
+    env: Env,
+    target_protocol: Address,
+    action: SmartAccExternalAction,
+    trader: Address,
+    tokens: Vec<Symbol>,
+    amounts: Vec<u128>,
+) -> (bool, i128)
+```
+
+Routes a call to an external protocol (Blend, Aquarius, or Soroswap).
+
+**Returns:** `(success: bool, token_delta: i128)` where `token_delta` is the net token change (positive = received, negative = sent). AccountManager uses this delta to mint or burn TrackingTokens.
+
+### Action Types
+
+```rust
+enum SmartAccExternalAction {
+    Deposit,          // Supply tokens to Blend pool
+    Withdraw,         // Withdraw tokens from Blend pool
+    Swap,             // Swap tokens via Aquarius or Soroswap
+    AddLiquidity,     // Add liquidity to Aquarius pool
+    RemoveLiquidity,  // Remove liquidity from Aquarius pool
+}
+```
+
+---
+
+### Blend Deposit
+
+```
+execute(blend_pool, Deposit, trader, ["XLM"], [1000_0000000])
+```
+
+1. Reads current b-token positions from Blend
+2. Authorizes native XLM transfer to Blend pool
+3. Calls `BlendPool.submit([{request_type: 0, address: xlm_address, amount: 1000_0000000}])`
+4. Reads updated positions
+5. `token_delta = positions_after - positions_before` (b-tokens received)
+6. AccountManager mints `TrackingToken(BLEND_XLM)` for the SmartAccount
+
+```
+b_rate = blend_reserve.data.b_rate    // from Blend pool reserve
+b_tokens_minted = token_delta
+```
+
+---
+
+### Blend Withdraw
+
+```
+execute(blend_pool, Withdraw, trader, ["XLM"], [500_0000000])
+```
+
+Inverse of deposit. Submits a withdrawal request to Blend, receives underlying XLM, burns TrackingTokens.
+
+---
+
+### Aquarius Add Liquidity
+
+```
+execute(aquarius_pool, AddLiquidity, trader, ["XLM", "USDC"], [500_0000000, 300_000000])
+```
+
+1. Fetches pool reserves
+2. Computes optimal amounts (see [Math Reference](/developers/math-reference#optimal-liquidity-amount))
+3. Authorizes token transfers to pool
+4. Calls `Pool.deposit(desired_a, desired_b, min_a, min_b)`
+5. `token_delta` = LP tokens received
+6. AccountManager mints `TrackingToken(AQ_XLM_USDC)`
+
+---
+
+### Aquarius Remove Liquidity
+
+```
+execute(aquarius_pool, RemoveLiquidity, trader, ["XLM", "USDC"], [lp_amount])
+```
+
+Burns LP tokens, receives XLM and USDC back into SmartAccount. AccountManager burns TrackingTokens.
+
+---
+
+### Soroswap Swap
+
+```
+execute(soroswap_pair, Swap, trader, ["XLM"], [100_0000000])
+```
+
+Swaps XLM for USDC (or the pair's other asset):
+1. Reads pair reserves
+2. Computes output via constant-product formula (0.3% fee)
+3. Authorizes XLM transfer to pair
+4. Calls `Pair.swap(amount_out, 0, smart_account)`
+5. `token_delta` = USDC received
+
+---
+
+## Storage Layout
+
+| Key | Type | Description |
+|---|---|---|
+| `CollateralTokensList` | `Vec<Symbol>` | All symbols with non-zero collateral |
+| `CollateralBalanceWAD(symbol)` | `U256` | Collateral balance in WAD |
+| `BorrowedTokensList` | `Vec<Symbol>` | All symbols with outstanding debt |
+| `HasDebt` | `bool` | True if any debt exists |
+| `IsAccountActive` | `bool` | Whether account is active |
+| `OwnerAddress` | `Address` | Wallet that owns this account |
+| `AccountManager` | `Address` | Only address authorized to call this contract |
+| `RegistryContract` | `Address` | Registry for resolving peer addresses |
+
+---
+
+## Events
+
+```
+SmartAccountActivationEvent {
+    margin_account: Address,
+    activated_time: u64
+}
+
+SmartAccountDeactivationEvent {
+    margin_account: Address,
+    deactivate_time: u64
+}
+```
+
+---
+
+## Error Codes
+
+```rust
+enum SmartAccountError {
+    TokenNotFound,          // Symbol not in token list
+    IntegerConversion,      // u128/i128 conversion failed
+    ProtocolMismatch,       // Target address not a recognized protocol
+}
+```
+
+---
+
+## Related
+
+- [AccountManager](/developers/contracts/account-manager) — the only authorized caller of SmartAccount
+- [Tracking Tokens](/developers/contracts/tracking-tokens) — how external positions are represented
+- [Risk Engine](/developers/contracts/risk-engine) — reads SmartAccount state to compute health factor
+- [Architecture](/developers/architecture) — full call graph showing how SmartAccount fits in the system

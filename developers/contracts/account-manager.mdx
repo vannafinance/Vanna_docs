@@ -1,0 +1,341 @@
+---
+title: "AccountManager"
+description: "The single entry point for all margin account operations. Function reference with parameters, return values, errors, and events."
+mode: "wide"
+---
+
+`AccountManager` is the first contract a user or integrator calls for any margin operation. It authenticates callers, coordinates with `RiskEngine` and `LendingPool`, and delegates state mutations to the user's `SmartAccount`.
+
+**Testnet address:** `CAK2IJIO2SKZWUODY4G7ZRIUUIIMJUUAIXE3I5YTQ5QYNSS2RYJ3P4CV`
+
+---
+
+## Account Lifecycle
+
+### create_account
+
+```rust
+fn create_account(env: Env, trader_addr: Address) -> Address
+```
+
+Deploys a new `SmartAccount` contract for `trader_addr` (or reuses a closed one from the inactive pool) and marks it as active.
+
+**Authorization:** `trader_addr.require_auth()`
+
+**Returns:** Address of the new (or reused) SmartAccount
+
+**Storage written:**
+- `UsersList` — appends `trader_addr` if not already present
+- `SmartAccounts(trader_addr)` — stores the active SmartAccount address
+- `TraderAddress(smart_account)` — reverse mapping from SmartAccount → trader
+- Registry is updated with the new account
+
+**Events emitted:**
+```
+AccountCreationEvent {
+    smart_account: Address,
+    creation_time: u64
+}
+```
+
+**Reuse logic:** If the user previously closed an account, the closed contract is reactivated instead of deploying a new one. Deployment cost is amortized across the account's lifetime.
+
+---
+
+### close_account
+
+```rust
+fn close_account(env: Env, smart_account: Address) -> bool
+```
+
+Closes an active margin account. Sweeps all collateral to the owner, deactivates the contract, and pushes it to the inactive pool for reuse.
+
+**Authorization:** Trader (owner of `smart_account`) must sign
+
+**Panics if:** The account has any outstanding debt (`has_debt == true`)
+
+**Returns:** `true` on success
+
+**Events emitted:**
+```
+AccountDeletionEvent {
+    smart_account: Address,
+    deletion_time: u64
+}
+```
+
+---
+
+## Collateral Operations
+
+### deposit_collateral_tokens
+
+```rust
+fn deposit_collateral_tokens(
+    env: Env,
+    smart_account: Address,
+    symbol: Symbol,
+    amount: U256,
+) -> ()
+```
+
+Transfers `amount` (in WAD) of the token identified by `symbol` from the caller's wallet to the SmartAccount.
+
+**Authorization:** Trader must sign; caller must approve token transfer
+
+**Parameters:**
+
+| Parameter | Type | Description |
+|---|---|---|
+| `smart_account` | `Address` | The user's margin account |
+| `symbol` | `Symbol` | Token symbol (e.g., `"XLM"`, `"USDC"`, `"EURC"`) |
+| `amount` | `U256` | Amount in WAD (10¹⁸ = 1 token) |
+
+**Events emitted:**
+```
+TraderDepositEvent {
+    smart_account: Address,
+    token_symbol: Symbol,
+    amount: U256
+}
+```
+
+---
+
+### withdraw_collateral_balance
+
+```rust
+fn withdraw_collateral_balance(
+    env: Env,
+    smart_account: Address,
+    symbol: Symbol,
+    amount: U256,
+) -> ()
+```
+
+Withdraws collateral from a SmartAccount back to the owner's wallet.
+
+**Authorization:** Trader must sign
+
+**Risk check:** `RiskEngine.is_withdraw_allowed(symbol, amount, smart_account)` must return `true`
+
+**Panics if:** Health factor would drop below 1.1× after withdrawal
+
+---
+
+## Borrow Operations
+
+### borrow
+
+```rust
+fn borrow(
+    env: Env,
+    smart_account: Address,
+    amount: U256,
+    symbol: Symbol,
+) -> ()
+```
+
+Borrows `amount` of `symbol` from the corresponding LendingPool into the SmartAccount.
+
+**Authorization:** Trader must sign
+
+**Risk check:** `RiskEngine.is_borrow_allowed(symbol, amount, smart_account)` must return `true`
+
+**Parameters:**
+
+| Parameter | Type | Description |
+|---|---|---|
+| `smart_account` | `Address` | The user's margin account |
+| `amount` | `U256` | Amount to borrow in WAD |
+| `symbol` | `Symbol` | Asset to borrow (`"XLM"`, `"USDC"`, `"EURC"`) |
+
+**What happens internally:**
+1. RiskEngine validates the borrow
+2. LendingPool accrues interest (`update_state()`)
+3. Origination fee is deducted and sent to treasury
+4. Borrowed amount is transferred to SmartAccount
+5. SmartAccount records the new borrow in `BorrowedTokensList`
+
+**Events emitted:**
+```
+TraderBorrowEvent {
+    smart_account: Address,
+    token_symbol: Symbol,
+    token_amount: U256
+}
+```
+
+---
+
+### deposit_and_borrow
+
+```rust
+fn deposit_and_borrow(
+    env: Env,
+    smart_account: Address,
+    deposit_amt: U256,
+    borrow_amt: U256,
+    symbol: Symbol,
+) -> ()
+```
+
+Atomically deposits collateral and borrows the same asset in a single transaction.
+
+---
+
+### deposit_and_borrow_cross
+
+```rust
+fn deposit_and_borrow_cross(
+    env: Env,
+    smart_account: Address,
+    deposit_amt: U256,
+    deposit_symbol: Symbol,
+    borrow_amt: U256,
+    borrow_symbol: Symbol,
+) -> ()
+```
+
+Atomically deposits one asset as collateral and borrows a different asset. Useful for cross-collateral strategies (e.g., deposit XLM, borrow USDC).
+
+---
+
+### deposit_borrow_and_deploy_blend
+
+```rust
+fn deposit_borrow_and_deploy_blend(
+    env: Env,
+    smart_account: Address,
+    deposit_amt: U256,
+    borrow_amt: U256,
+    symbol: Symbol,
+    blend_bytes: Bytes,
+) -> ()
+```
+
+Three-step atomic operation: deposit collateral, borrow, then forward borrowed funds to Blend — all in one transaction. Minimizes round-trips for leverage strategies.
+
+---
+
+## Repay
+
+### repay
+
+```rust
+fn repay(
+    env: Env,
+    repay_amt: U256,
+    symbol: Symbol,
+    smart_account: Address,
+) -> ()
+```
+
+Repays `repay_amt` of `symbol` debt. Caller (trader) transfers funds back to the LendingPool. If the full debt is repaid, the symbol is removed from `BorrowedTokensList`.
+
+**Authorization:** Trader must sign
+
+**Events emitted:**
+```
+TraderRepayEvent {
+    smart_account: Address,
+    token_amount: U256,
+    timestamp: u64,
+    token_symbol: Symbol
+}
+```
+
+---
+
+## Liquidation
+
+### liquidate
+
+```rust
+fn liquidate(env: Env, smart_account: Address) -> ()
+```
+
+Liquidates an undercollateralized margin account. Repays all debt by drawing from the SmartAccount's collateral, then sweeps remaining collateral back to the account owner.
+
+**Authorization:** None — anyone can call this function
+
+**Condition:** `RiskEngine.is_account_healthy(collateral_usd, debt_usd)` must return `false`
+
+**What happens:**
+1. Validates the account is unhealthy
+2. For each borrowed token: reads outstanding debt, calls `LendingPool.collect_from()` to repay it
+3. Calls `SmartAccount.sweep_to(trader_address)` to return remaining collateral
+4. Emits event
+
+**Liquidation incentive:** Currently, the protocol repays debt directly from collateral. The trader gets back whatever collateral remains after debt is cleared. There is no explicit liquidation bonus — liquidators earn value by keeping the protocol solvent. Incentive structure may be updated in future versions.
+
+**Events emitted:**
+```
+TraderLiquidateEvent {
+    smart_account: Address,
+    timestamp: u64
+}
+```
+
+---
+
+### settle_account
+
+```rust
+fn settle_account(env: Env, smart_account: Address) -> bool
+```
+
+Repays all outstanding debt without closing the account. Unlike `liquidate()`, this is intended for voluntary debt settlement by the account owner.
+
+---
+
+## External Protocol Execution
+
+### execute (via SmartAccount routing)
+
+External protocol calls are routed through the SmartAccount's `execute()` function. The AccountManager orchestrates:
+1. Auth of the trader
+2. SmartAccount executes the external call (Blend, Aquarius, Soroswap)
+3. AccountManager mints/burns TrackingTokens based on the returned token delta
+
+See [SmartAccount](/developers/contracts/smart-account) for the action types and routing details.
+
+---
+
+## Supported Assets
+
+| Symbol | Asset | Pool |
+|---|---|---|
+| `XLM` | Stellar Lumens (native) | LendingPoolXLM |
+| `USDC` | USD Coin | LendingPoolUSDC |
+| `EURC` | EUR Coin | LendingPoolEURC |
+| `BLUSDC` | Blend-wrapped USDC | LendingPoolUSDC |
+| `AQUSDC` | Aquarius-wrapped USDC | LendingPoolAquariusUSDC |
+| `SOUSDC` | Soroswap-wrapped USDC | LendingPoolSoroswapUSDC |
+
+---
+
+## Error Codes
+
+```rust
+enum AccountManagerError {
+    TokenNotFound,          // Symbol not recognized
+    MarginAccountNotFound,  // SmartAccount not in registry
+    ConversionError,        // Integer conversion failed
+}
+```
+
+---
+
+## Key Storage
+
+| Key | Type | Description |
+|---|---|---|
+| `UsersList` | `Vec<Address>` | All traders with accounts |
+| `SmartAccounts(trader)` | `Address` | Trader's active SmartAccount |
+| `InactiveAccountOf(trader)` | `Vec<Address>` | Closed accounts available for reuse |
+| `TraderAddress(account)` | `Address` | Reverse: SmartAccount → trader |
+| `IsCollateralAllowed(symbol)` | `bool` | Whether symbol is accepted as collateral |
+| `AssetCap` | `U256` | Maximum total asset cap for the protocol |
+| `Admin` | `Address` | Admin address |
+| `RegistryContract` | `Address` | Registry address |

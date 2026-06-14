@@ -1,0 +1,256 @@
+---
+title: "Architecture"
+description: "How Vanna's 14 Soroban smart contracts fit together: layers, call graphs, and data flows for deposits, borrows, and liquidations."
+mode: "wide"
+---
+
+## Contract Map
+
+Vanna Protocol is composed of 14 Soroban smart contracts divided into five functional groups.
+
+| Group | Contracts | Role |
+|---|---|---|
+| **Entry** | AccountManager, LendingPoolXLM, LendingPoolUSDC, LendingPoolEURC | User-facing entry points |
+| **Per-User State** | SmartAccount (one per user) | Holds collateral, debt, and external positions |
+| **Risk** | RiskEngine, RateModel | Health checks and interest rate computation |
+| **Infrastructure** | Registry, Oracle, TrackingToken, vXLM, vUSDC, vEURC | Address resolution, price feeds, position tokens |
+| **Deployment** | DeployerContract, DeployerLPoolContract | Factory contracts for new SmartAccount instances |
+
+---
+
+## Layer Diagram
+
+```
+                         ┌──────────────────────────────┐
+                         │           USER                │
+                         └──────────────┬───────────────┘
+                                        │
+              ┌─────────────────────────┼──────────────────────┐
+              │                         │                       │
+    ┌─────────▼──────────┐   ┌──────────▼────────┐   ┌────────▼─────────┐
+    │   AccountManager   │   │  LendingPool XLM  │   │ LendingPool USDC │
+    │ (margin lifecycle) │   │  (LP supply/earn) │   │ (LP supply/earn) │
+    └──────┬─────────────┘   └──────────┬────────┘   └────────┬─────────┘
+           │                            │                      │
+           │  ┌─────────────────────────┤                      │
+           │  │                         ▼                      │
+    ┌──────▼──▼──────────┐   ┌──────────────────┐             │
+    │    RiskEngine       │   │    RateModel     │             │
+    │ (health factor      │   │ (borrow rate     │◄────────────┘
+    │  borrow/withdraw    │   │  per second)     │
+    │  liquidation gates) │   └──────────────────┘
+    └──────┬─────────────┘
+           │
+    ┌──────▼─────────────┐
+    │    SmartAccount     │
+    │ (per-user contract) │
+    │  collateral balances│
+    │  borrowed tokens    │
+    │  external positions │
+    └──────┬─────────────┘
+           │
+    ┌──────┼──────────────────────────┐
+    │      │                          │
+    ▼      ▼                          ▼
+  Blend  Aquarius               Soroswap
+  Pool   AMM Pool               DEX Pair
+```
+
+---
+
+## Contract Descriptions
+
+### AccountManager
+
+The single entry point for all margin operations. Users never call SmartAccount directly — every operation passes through AccountManager, which:
+
+1. Authenticates the caller
+2. Asks the RiskEngine whether the operation is allowed
+3. Calls the appropriate LendingPool to issue or collect debt
+4. Calls the SmartAccount to update balances and execute external protocol calls
+5. Emits events
+
+**Key functions:** `create_account`, `borrow`, `repay`, `deposit_collateral_tokens`, `withdraw_collateral_balance`, `liquidate`, `close_account`
+
+---
+
+### SmartAccount (Per-User)
+
+Each user who opens a margin account gets their own deployed SmartAccount contract — a separate on-chain instance with its own storage. This isolates risk: a bug in one account cannot affect another.
+
+The AccountManager deploys SmartAccounts via the DeployerContract using a deterministic salt. Closed accounts are recycled into an inactive pool and reused on next open to save deployment cost.
+
+SmartAccount stores:
+- `CollateralTokensList` and `CollateralBalanceWAD(symbol)` — raw collateral
+- `BorrowedTokensList` — symbols with outstanding debt
+- `IsAccountActive`, `HasDebt` — account state flags
+- External positions are tracked via TrackingTokens (not stored here)
+
+**External protocol routing** is handled by `execute(target, action, ...)` which routes to Blend, Aquarius, or Soroswap based on action type.
+
+---
+
+### LendingPools (XLM · USDC · EURC)
+
+Three separate pool contracts, one per asset. Each pool:
+
+- Accepts deposits and mints vTokens (vXLM, vUSDC, vEURC) proportional to share of pool
+- Tracks outstanding borrows using a **borrow shares** model
+- Calls `update_state()` before every borrow/repay to accrue interest
+- Has two privileged functions only callable by AccountManager: `lend_to()` and `collect_from()`
+
+Pool assets are fully isolated — a problem in one pool cannot affect another.
+
+---
+
+### RiskEngine
+
+A stateless contract that reads position data from SmartAccount and LendingPools, prices everything via Oracle, and returns a boolean (allowed / not allowed) for every gated operation.
+
+Three guard functions:
+- `is_borrow_allowed(symbol, amount, account)` — gross-asset model
+- `is_withdraw_allowed(symbol, amount, account)` — net-asset model
+- `is_account_healthy(balance, debt)` — raw comparator (1.1× threshold)
+
+The RiskEngine caches oracle prices within a single call to avoid duplicate cross-contract calls.
+
+---
+
+### RateModel
+
+Computes the per-second borrow rate given current pool utilization. Uses a smooth polynomial curve (not a kinked two-slope model):
+
+```
+util = borrows / (liquidity + borrows)
+rate_per_sec = 3.5 × (util×0.1 + util³²×0.1 + util⁶⁴×0.3) / SECS_PER_YEAR
+```
+
+Called by each LendingPool during `update_state()`.
+
+---
+
+### Registry
+
+An on-chain address book. Every protocol contract resolves peer addresses through the Registry at runtime — no hardcoded addresses in business logic. This makes upgrades safe: update the Registry entry, not every contract.
+
+---
+
+### Oracle
+
+A thin passthrough to the **Reflector** oracle. Exposes `get_price_latest(symbol)` returning `(price: u128, decimals: u32)`. The RiskEngine converts these to WAD format for collateral valuation.
+
+---
+
+### TrackingToken
+
+A single contract that tracks balances for synthetic position tokens — one per tracked position type:
+
+| Symbol | Represents |
+|---|---|
+| `BLEND_XLM` | XLM deposited into Blend pool |
+| `BLEND_USDC` | USDC deposited into Blend pool |
+| `BLEND_EURC` | EURC deposited into Blend pool |
+| `AQ_XLM_USDC` | Aquarius XLM/USDC LP position |
+| `SS_XLM_USDC` | Soroswap XLM/USDC LP position |
+
+When a SmartAccount deploys capital to Blend or Aquarius, the AccountManager mints TrackingTokens on the SmartAccount. The RiskEngine reads these to value the positions.
+
+---
+
+### vTokens (vXLM · vUSDC · vEURC)
+
+Standard fungible tokens representing LP share in a lending pool. Exchange rate grows over time as borrowers repay interest. Holders earn yield passively by holding vTokens.
+
+---
+
+## Key Data Flows
+
+### Deposit Flow (LP Supply)
+
+```
+User.deposit_xlm(lender, amount)
+  → LendingPool.update_state()       [accrue pending interest]
+  → LendingPool.convert_xlm_to_vtoken(amount)  [compute share]
+  → NativeXLM.transfer(lender → pool)
+  → vXLM.mint(lender, vtoken_amount)
+  → emit deposit_event
+```
+
+### Borrow Flow (Margin Account)
+
+```
+User.borrow(smart_account, amount, symbol)
+  → AccountManager.borrow()
+      → RiskEngine.is_borrow_allowed()
+          → SmartAccount.get_all_collateral_tokens()
+          → SmartAccount.get_collateral_token_balance() × n
+          → Oracle.get_price_latest() × n   [cached]
+          → LendingPool.get_borrow_balance() × n
+          → returns true / panics
+      → LendingPool.lend_to(smart_account, amount)
+          → update_state()
+          → compute borrow shares
+          → transfer origination_fee → treasury
+          → transfer amount → smart_account
+      → SmartAccount.add_borrowed_token(symbol)
+      → SmartAccount.set_has_debt(true)
+      → emit TraderBorrowEvent
+```
+
+### Liquidation Flow
+
+```
+Bot.liquidate(smart_account)
+  → AccountManager.liquidate()
+      → RiskEngine.is_account_healthy(collateral_usd, debt_usd)
+          → returns false (account is unhealthy)
+      → for each borrowed_token:
+          → LendingPool.get_borrow_balance()
+          → SmartAccount.remove_borrowed_token_balance()
+              → LendingPool.collect_from()  [repay all debt]
+      → SmartAccount.sweep_to(trader_address)  [return all collateral]
+      → emit TraderLiquidateEvent
+```
+
+### External Protocol Deployment (Blend)
+
+```
+User executes AccountManager.execute(smart_account, Deposit, XLM, [1000])
+  → AccountManager.execute()
+      → SmartAccount.execute(blend_pool, Deposit, trader, [XLM], [1000])
+          → get positions_before from Blend
+          → auth XLM transfer to Blend
+          → BlendPool.submit([deposit_request])
+          → get positions_after from Blend
+          → b_tokens_minted = positions_after - positions_before
+          → returns (true, b_tokens_minted)
+      → TrackingToken.mint(BLEND_XLM, smart_account, b_tokens_minted)
+```
+
+---
+
+## Authorization Model
+
+| Caller | Can call |
+|---|---|
+| User wallet | AccountManager, LendingPool (deposit/redeem) |
+| AccountManager | SmartAccount (all write functions), LendingPool (lend_to, collect_from) |
+| SmartAccount | TrackingToken (mint/burn), external protocols (Blend, Aquarius, Soroswap) |
+| Anyone | AccountManager.liquidate() — no auth required, anyone can liquidate |
+
+SmartAccount rejects all calls that don't originate from its registered AccountManager. Users cannot call SmartAccount functions directly.
+
+---
+
+## Fixed-Point Arithmetic
+
+All balances, prices, and rates are stored in **WAD format** (10¹⁸ = 1.0). Asset amounts are converted to WAD at protocol boundaries:
+
+```
+WAD ← native:  wad = native_amount × 10¹⁸ / 10^decimals
+native ← WAD:  native = wad × 10^decimals / 10¹⁸
+```
+
+All intermediate math uses `mul_wad_down` and `div_wad_down` (floor division) to prevent rounding in the protocol's favor.
+
+For the full formula reference, see [Math Reference](/developers/math-reference).

@@ -1,0 +1,418 @@
+---
+title: "Integrate Margin Accounts"
+description: "End-to-end guide for integrating Vanna margin accounts: create accounts, deposit collateral, borrow assets, deploy to external protocols, repay, and close."
+mode: "wide"
+---
+
+This guide walks through the complete margin account lifecycle: creating an account, depositing collateral, borrowing, deploying capital to external protocols (Blend, Aquarius), repaying, and closing.
+
+---
+
+## Account Lifecycle
+
+```
+create_account()
+    ↓
+deposit_collateral_tokens()
+    ↓
+borrow()
+    ↓
+SmartAccount.execute()  [Blend deposit / Aquarius LP]
+    ↓
+repay()
+    ↓
+withdraw_collateral_balance()
+    ↓
+close_account()   [optional]
+```
+
+---
+
+## Prerequisites
+
+- User has a Freighter wallet with testnet XLM
+- SDK setup from [Getting Started](/developers/sdk/getting-started)
+- `invokeContract` utility from [Transaction Flow](/developers/sdk/transaction-flow)
+
+---
+
+## Step 1: Create a Margin Account
+
+```typescript
+const ACCOUNT_MANAGER = 'CAK2IJIO2SKZWUODY4G7ZRIUUIIMJUUAIXE3I5YTQ5QYNSS2RYJ3P4CV';
+
+async function createMarginAccount(userAddress: string): Promise<string> {
+  // Submit the create_account transaction
+  const txHash = await invokeContract(
+    userAddress,
+    ACCOUNT_MANAGER,
+    'create_account',
+    [nativeToScVal(userAddress, { type: 'address' })],
+  );
+
+  // After confirmation, find the account address in Registry
+  const REGISTRY = 'CC35XWCH7SCQROTNW7PA6HZKP4JMNSVV2K7CX3HY2PSI2MI2ZQQH73ID';
+  const accounts = await readContract(
+    REGISTRY,
+    'get_accounts',
+    [nativeToScVal(userAddress, { type: 'address' })],
+  ) as string[];
+
+  return accounts[accounts.length - 1]; // newest account
+}
+```
+
+<Note>
+If the user already has a closed account, `create_account()` will reuse it. The same Registry call will return the reactivated address.
+</Note>
+
+---
+
+## Step 2: Check Health Factor Before Any Operation
+
+Always check health factor before borrows and withdrawals:
+
+```typescript
+const RISK_ENGINE = 'CBL7RCG5H4VIZCNF7BRM2FQFXK7N5KRQKW7ZVEQZJKNXHA6FEU4OXK5I';
+const WAD = 10n ** 18n;
+
+async function getHealthFactor(smartAccount: string): Promise<number | null> {
+  const [collateralScVal, debtScVal] = await Promise.all([
+    readContract(
+      RISK_ENGINE, 'get_current_total_balance',
+      [nativeToScVal(smartAccount, { type: 'address' })],
+    ),
+    readContract(
+      RISK_ENGINE, 'get_current_total_borrows',
+      [nativeToScVal(smartAccount, { type: 'address' })],
+    ),
+  ]);
+
+  const collateralUsd = collateralScVal as bigint;
+  const debtUsd       = debtScVal as bigint;
+
+  if (debtUsd === 0n) return null; // no debt, infinite HF
+
+  const hf = Number(collateralUsd * WAD / debtUsd) / 1e18;
+  return hf; // e.g., 1.5 = 150% collateralization
+}
+```
+
+**Liquidation threshold:** `HF < 1.1`
+
+---
+
+## Step 3: Deposit Collateral
+
+```typescript
+async function depositCollateral(
+  userAddress: string,
+  smartAccount: string,
+  symbol: 'XLM' | 'USDC' | 'EURC',
+  amount: number,  // human-readable
+): Promise<string> {
+  const amountWad = BigInt(Math.floor(amount * 1e18));
+
+  return await invokeContract(
+    userAddress,
+    ACCOUNT_MANAGER,
+    'deposit_collateral_tokens',
+    [
+      nativeToScVal(smartAccount, { type: 'address' }),
+      nativeToScVal(symbol,       { type: 'symbol' }),
+      nativeToScVal(amountWad,    { type: 'u256' }),
+    ],
+  );
+}
+```
+
+---
+
+## Step 4: Borrow
+
+```typescript
+async function borrowAsset(
+  userAddress: string,
+  smartAccount: string,
+  symbol: 'XLM' | 'USDC' | 'EURC',
+  amount: number,
+): Promise<string> {
+  const amountWad = BigInt(Math.floor(amount * 1e18));
+
+  return await invokeContract(
+    userAddress,
+    ACCOUNT_MANAGER,
+    'borrow',
+    [
+      nativeToScVal(smartAccount, { type: 'address' }),
+      nativeToScVal(amountWad,    { type: 'u256' }),
+      nativeToScVal(symbol,       { type: 'symbol' }),
+    ],
+  );
+}
+```
+
+The RiskEngine runs a health check before the borrow. If the transaction would drop HF below 1.1×, it panics and the transaction fails. Check current health factor and available borrow capacity before calling.
+
+**Maximum borrow capacity:**
+```
+max_borrow_usd ≈ (collateral_usd / 1.1) - current_debt_usd
+```
+
+---
+
+## Step 5: Atomic Deposit + Borrow
+
+For better UX, combine deposit and borrow in a single transaction:
+
+```typescript
+// Same-asset: deposit XLM, borrow XLM
+async function depositAndBorrow(
+  userAddress: string,
+  smartAccount: string,
+  symbol: string,
+  depositAmount: number,
+  borrowAmount: number,
+): Promise<string> {
+  return await invokeContract(
+    userAddress,
+    ACCOUNT_MANAGER,
+    'deposit_and_borrow',
+    [
+      nativeToScVal(smartAccount,                               { type: 'address' }),
+      nativeToScVal(BigInt(Math.floor(depositAmount * 1e18)),   { type: 'u256' }),
+      nativeToScVal(BigInt(Math.floor(borrowAmount * 1e18)),    { type: 'u256' }),
+      nativeToScVal(symbol,                                     { type: 'symbol' }),
+    ],
+  );
+}
+
+// Cross-asset: deposit XLM, borrow USDC
+async function depositAndBorrowCross(
+  userAddress: string,
+  smartAccount: string,
+  depositSymbol: string,
+  depositAmount: number,
+  borrowSymbol: string,
+  borrowAmount: number,
+): Promise<string> {
+  return await invokeContract(
+    userAddress,
+    ACCOUNT_MANAGER,
+    'deposit_and_borrow_cross',
+    [
+      nativeToScVal(smartAccount,                               { type: 'address' }),
+      nativeToScVal(BigInt(Math.floor(depositAmount * 1e18)),   { type: 'u256' }),
+      nativeToScVal(depositSymbol,                              { type: 'symbol' }),
+      nativeToScVal(BigInt(Math.floor(borrowAmount * 1e18)),    { type: 'u256' }),
+      nativeToScVal(borrowSymbol,                               { type: 'symbol' }),
+    ],
+  );
+}
+```
+
+---
+
+## Step 6: Deploy to External Protocols
+
+After borrowing, the SmartAccount holds the borrowed assets. Route them to Blend or Aquarius via `AccountManager.execute()`.
+
+<Note>
+The `execute()` function routes through AccountManager → SmartAccount → external protocol. This is how the protocol tracks external positions via TrackingTokens.
+</Note>
+
+### Deploy to Blend (Earn Yield on Borrowed XLM)
+
+```typescript
+import { xdr, Address } from '@stellar/stellar-sdk';
+
+const BLEND_POOL = 'CCEBVDYM32YNYCVNRXQKDFFPISJJCV557CDZEIRBEE4NCV4KHPQ44HGF';
+
+// SmartAccExternalAction enum values
+const ACTION = {
+  Deposit:         { tag: 'Deposit',         values: undefined },
+  Withdraw:        { tag: 'Withdraw',         values: undefined },
+  Swap:            { tag: 'Swap',             values: undefined },
+  AddLiquidity:    { tag: 'AddLiquidity',     values: undefined },
+  RemoveLiquidity: { tag: 'RemoveLiquidity',  values: undefined },
+};
+
+async function deployToBlend(
+  userAddress: string,
+  smartAccount: string,
+  symbol: 'XLM' | 'USDC',
+  amount: number,   // in native decimals (stroops for XLM)
+): Promise<string> {
+  return await invokeContract(
+    userAddress,
+    ACCOUNT_MANAGER,
+    'execute',
+    [
+      nativeToScVal(smartAccount, { type: 'address' }),
+      nativeToScVal(BLEND_POOL,   { type: 'address' }),   // target protocol
+      xdr.ScVal.scvVec([xdr.ScVal.scvSymbol('Deposit')]), // action
+      nativeToScVal(userAddress,  { type: 'address' }),   // trader
+      xdr.ScVal.scvVec([xdr.ScVal.scvSymbol(symbol)]),    // tokens
+      xdr.ScVal.scvVec([nativeToScVal(BigInt(amount), { type: 'u128' })]), // amounts
+    ],
+  );
+}
+```
+
+### Add Liquidity to Aquarius
+
+```typescript
+const AQUARIUS_POOL = 'CD3LFMMLBQ6RBJUD3Z2LFDFE6544WDRMWHEZYPI5YDVESYRSO2TT32BX';
+
+async function addAquariusLiquidity(
+  userAddress: string,
+  smartAccount: string,
+  xlmAmount: number,   // in stroops
+  usdcAmount: number,  // in microUSDC (6 decimals)
+): Promise<string> {
+  return await invokeContract(
+    userAddress,
+    ACCOUNT_MANAGER,
+    'execute',
+    [
+      nativeToScVal(smartAccount,   { type: 'address' }),
+      nativeToScVal(AQUARIUS_POOL,  { type: 'address' }),
+      xdr.ScVal.scvVec([xdr.ScVal.scvSymbol('AddLiquidity')]),
+      nativeToScVal(userAddress,    { type: 'address' }),
+      xdr.ScVal.scvVec([
+        xdr.ScVal.scvSymbol('XLM'),
+        xdr.ScVal.scvSymbol('USDC'),
+      ]),
+      xdr.ScVal.scvVec([
+        nativeToScVal(BigInt(xlmAmount),  { type: 'u128' }),
+        nativeToScVal(BigInt(usdcAmount), { type: 'u128' }),
+      ]),
+    ],
+  );
+}
+```
+
+---
+
+## Step 7: Read Outstanding Debt
+
+```typescript
+const POOL_XLM = 'CBA4E4ZMXUKCDTNT7LDKSO3LGNGKHRCE4GUVPSRCAKU3TKAONUY7SVOB';
+
+async function getOutstandingDebt(
+  smartAccount: string,
+): Promise<{ xlm: bigint; usdc: bigint }> {
+  const [xlmDebt, usdcDebt] = await Promise.all([
+    readContract(
+      POOL_XLM,
+      'get_borrow_balance',
+      [nativeToScVal(smartAccount, { type: 'address' })],
+    ) as Promise<bigint>,
+    readContract(
+      POOL_USDC,
+      'get_borrow_balance',
+      [nativeToScVal(smartAccount, { type: 'address' })],
+    ) as Promise<bigint>,
+  ]);
+  return { xlm: xlmDebt, usdc: usdcDebt };
+}
+```
+
+---
+
+## Step 8: Repay
+
+```typescript
+async function repayDebt(
+  userAddress: string,
+  smartAccount: string,
+  symbol: 'XLM' | 'USDC',
+  amount: number,
+): Promise<string> {
+  const amountWad = BigInt(Math.floor(amount * 1e18));
+
+  return await invokeContract(
+    userAddress,
+    ACCOUNT_MANAGER,
+    'repay',
+    [
+      nativeToScVal(amountWad,    { type: 'u256' }),
+      nativeToScVal(symbol,       { type: 'symbol' }),
+      nativeToScVal(smartAccount, { type: 'address' }),
+    ],
+  );
+}
+```
+
+---
+
+## Step 9: Withdraw Collateral
+
+```typescript
+async function withdrawCollateral(
+  userAddress: string,
+  smartAccount: string,
+  symbol: string,
+  amount: number,
+): Promise<string> {
+  const amountWad = BigInt(Math.floor(amount * 1e18));
+
+  return await invokeContract(
+    userAddress,
+    ACCOUNT_MANAGER,
+    'withdraw_collateral_balance',
+    [
+      nativeToScVal(smartAccount, { type: 'address' }),
+      nativeToScVal(symbol,       { type: 'symbol' }),
+      nativeToScVal(amountWad,    { type: 'u256' }),
+    ],
+  );
+}
+```
+
+The RiskEngine validates the withdrawal. If it would drop HF below 1.1×, the transaction fails.
+
+---
+
+## Step 10: Close Account
+
+```typescript
+async function closeAccount(
+  userAddress: string,
+  smartAccount: string,
+): Promise<string> {
+  // Account must have zero debt before closing
+  return await invokeContract(
+    userAddress,
+    ACCOUNT_MANAGER,
+    'close_account',
+    [nativeToScVal(smartAccount, { type: 'address' })],
+  );
+}
+```
+
+**Panics if:** the account still has outstanding debt. Repay all debt first.
+
+---
+
+## Common Pitfalls
+
+<Warning>
+**Health factor check**: always read the current HF before borrows and withdrawals. Transactions that would violate the 1.1× threshold will panic and you'll lose gas.
+</Warning>
+
+| Mistake | Fix |
+|---|---|
+| Depositing less than origination fee | Borrow amounts above `origination_fee_rate` × borrow |
+| Not accounting for interest growth | Borrow balance grows over time — read `get_borrow_balance()` fresh before repay |
+| Closing account with debt | Call `settle_account()` or `repay()` for each borrowed token first |
+| Trying to call SmartAccount directly | All operations must go through AccountManager |
+
+---
+
+## Related
+
+- [AccountManager Reference](/developers/contracts/account-manager) — full function reference
+- [Risk Engine Reference](/developers/contracts/risk-engine) — health factor computation
+- [Math Reference](/developers/math-reference#health-factor) — health factor formula
+- [Liquidation Bots](/developers/guides/liquidation-bots) — monitor accounts you built
