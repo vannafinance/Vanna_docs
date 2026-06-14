@@ -123,7 +123,7 @@ Transfers all collateral tokens to `to_address`. Called in two scenarios:
 - **`close_account()`** — sweeps to owner
 - **`liquidate()`** — sweeps remaining collateral (after debt repayment) to trader
 
-**For XLM, USDC, EURC:** actual token balances are transferred.  
+**For XLM, USDC:** actual token balances are transferred.  
 **For tracking tokens (BLEND_XLM, AQ_XLM_USDC, etc.):** the internal balance record is zeroed but the underlying position in the external protocol (Blend pool, Aquarius pool) is not unwound. The external position remains.
 
 ---

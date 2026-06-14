@@ -67,7 +67,7 @@ topic1: "TraderDepositEvent"
 topic2: <smart_account_address>
 data: {
   smart_account: Address,
-  token_symbol:  Symbol,    // "XLM", "USDC", "EURC"
+  token_symbol:  Symbol,    // "XLM", "USDC"
   amount:        U256       // in WAD (10^18)
 }
 ```
@@ -139,7 +139,7 @@ data: {
 
 ## LendingPool Events
 
-Applies to LendingPoolXLM, LendingPoolUSDC, and LendingPoolEURC.
+Applies to LendingPoolXLM and LendingPoolUSDC.
 
 ### deposit_event (LendingDepositEvent)
 
@@ -152,7 +152,7 @@ data: {
   lender:       Address,
   amount:       U256,       // deposited amount in WAD
   timestamp:    u64,
-  asset_symbol: Symbol      // "XLM", "USDC", "EURC"
+  asset_symbol: Symbol      // "XLM", "USDC"
 }
 ```
 
@@ -185,7 +185,7 @@ data: {
   lender:       Address,
   token_amount: U256,       // vTokens minted
   timestamp:    u64,
-  token_symbol: Symbol      // "vXLM", "vUSDC", "vEURC"
+  token_symbol: Symbol      // "vXLM", "vUSDC"
 }
 ```
 
@@ -233,7 +233,7 @@ data: {
 
 ## vToken Events (MintEvent, BurnEvent, TransferEvent)
 
-Standard token events on vXLM, vUSDC, vEURC contracts.
+Standard token events on vXLM and vUSDC contracts.
 
 ```
 MintEvent:      { admin: Address, to: Address, amount: i128 }

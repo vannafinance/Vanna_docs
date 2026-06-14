@@ -28,7 +28,7 @@ Each trader gets a separately deployed contract - not a mapping entry in a share
 
 ### Lending Markets - Pools and vTokens
 
-Three isolated pools: one each for XLM, USDC, and EURC. Each pool accepts LP deposits, lends to Margin Accounts, accrues interest via the Rate Model, and mints or burns its corresponding vToken (vXLM, vUSDC, vEURC). Pool isolation means a borrow shortfall in one asset does not spill into another.
+Two isolated pools: one each for XLM and USDC. Each pool accepts LP deposits, lends to Margin Accounts, accrues interest via the Rate Model, and mints or burns its corresponding vToken (vXLM, vUSDC). Pool isolation means a borrow shortfall in one asset does not spill into another.
 
 ### Risk Layer - Risk Engine and Oracle
 
@@ -69,8 +69,7 @@ Every state-changing operation follows the same sequence:
 | Oracle | Risk | Live asset price feeds |
 | LendingPool (XLM) | Markets | XLM lending and borrowing |
 | LendingPool (USDC) | Markets | USDC lending and borrowing |
-| LendingPool (EURC) | Markets | EURC lending and borrowing |
-| vXLM / vUSDC / vEURC | Markets | LP receipt tokens |
+| vXLM / vUSDC | Markets | LP receipt tokens |
 | RateModel | Markets | Polynomial interest rate curve |
 | Registry | Infrastructure | On-chain address book |
 | TrackingToken | Infrastructure | External position receipts |

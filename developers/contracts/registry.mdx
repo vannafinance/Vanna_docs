@@ -18,7 +18,6 @@ The Registry stores addresses for every protocol component:
 |---|---|
 | `LendingPoolXLM` | XLM lending pool contract |
 | `LendingPoolUSDC` | USDC lending pool contract |
-| `LendingPoolEURC` | EURC lending pool contract |
 | `LendingPoolAquariusUSDC` | Aquarius USDC lending pool |
 | `LendingPoolSoroswapUSDC` | Soroswap USDC lending pool |
 | `RiskEngineContract` | Risk Engine contract |
@@ -28,7 +27,6 @@ The Registry stores addresses for every protocol component:
 | `SmartAccountContractHash` | WASM hash used to deploy new SmartAccounts |
 | `NativeXLMAddress` | XLM Stellar Asset Contract (SAC) |
 | `USDCAddress` | USDC token contract |
-| `EURCAddress` | EURC token contract |
 | `BlendPoolAddress` | External: Blend Capital pool |
 | `TrackingTokenAddress` | Tracking Token contract |
 | `AquariusRouterAddress` | External: Aquarius router |
@@ -92,7 +90,7 @@ Each stored address has a corresponding getter:
 ```rust
 fn get_lending_pool_xlm(env: Env) -> Address
 fn get_lending_pool_usdc(env: Env) -> Address
-fn get_lending_pool_eurc(env: Env) -> Address
+
 fn get_risk_engine(env: Env) -> Address
 fn get_rate_model(env: Env) -> Address
 fn get_oracle(env: Env) -> Address
@@ -101,7 +99,7 @@ fn get_tracking_token(env: Env) -> Address
 fn get_treasury(env: Env) -> Address
 fn get_native_xlm(env: Env) -> Address
 fn get_usdc(env: Env) -> Address
-fn get_eurc(env: Env) -> Address
+
 fn get_blend_pool(env: Env) -> Address
 // ... and corresponding has_*_address() booleans
 ```

@@ -56,14 +56,14 @@ The price cache is scoped to one transaction. Every transaction starts fresh - p
 
 ## Pricing Blend Pool Positions
 
-Smart Margin Accounts can deposit into [Blend](https://blend.capital) lending pools to earn yield while keeping collateral in Vanna. These positions are held as Blend receipt tokens (bXLM, bUSDC, bEURC) rather than the underlying asset directly.
+Smart Margin Accounts can deposit into [Blend](https://blend.capital) lending pools to earn yield while keeping collateral in Vanna. These positions are held as Blend receipt tokens (bXLM, bUSDC) rather than the underlying asset directly.
 
 The Risk Engine handles these specially:
-- It detects Blend tracking tokens by their symbol (`BLEND_XLM`, `BLEND_USDC`, `BLEND_EURC`)
+- It detects Blend tracking tokens by their symbol (`BLEND_XLM`, `BLEND_USDC`)
 - It reads the account's tracking token balance for that symbol
 - It queries Blend's pool for the current `b_rate` (Blend's exchange rate between b_tokens and the underlying asset)
 - It converts: `underlying_amount = b_token_balance × b_rate / 1e12`
-- It then prices the resulting underlying amount at the XLM, USDC, or EURC oracle price
+- It then prices the resulting underlying amount at the XLM or USDC oracle price
 
 This means Blend yield accrual is automatically reflected in collateral value - as Blend's b_rate rises, the same b_token balance converts to more underlying, increasing the account's collateral value without any action from the trader.
 

@@ -14,7 +14,7 @@ This documentation is for developers who want to integrate with, extend, or buil
 
 <CardGroup cols={3}>
   <Card title="Lending Integrations" icon="bank">
-    Supply liquidity to XLM, USDC, or EURC pools. Read pool state (utilization, APY, exchange rate). Integrate vToken minting and redemption into your own interface.
+    Supply liquidity to XLM or USDC pools. Read pool state (utilization, APY, exchange rate). Integrate vToken minting and redemption into your own interface.
   </Card>
   <Card title="Margin Account Apps" icon="chart-line">
     Create margin accounts on behalf of users, deposit collateral, issue borrows, and route capital to external protocols — all from your own frontend.
@@ -64,7 +64,7 @@ Vanna's contracts are organized into four layers. You interact with the top laye
 ┌─────────────────────────▼───────────────────────────────────┐
 │                   ENTRY LAYER                                 │
 │   AccountManager — single entry point for all margin ops     │
-│   LendingPools (XLM · USDC · EURC) — LP deposit/withdraw    │
+│   LendingPools (XLM · USDC) — LP deposit/withdraw           │
 └──────┬────────────────────────────────────────┬─────────────┘
        │                                        │
 ┌──────▼──────────────┐              ┌──────────▼──────────────┐

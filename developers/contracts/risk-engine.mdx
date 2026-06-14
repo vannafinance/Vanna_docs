@@ -105,8 +105,8 @@ Returns the sum of all collateral held by `margin_account`, in USD WAD. Iterates
 
 | Token type | Valuation method |
 |---|---|
-| XLM, USDC, EURC | `balance_wad × oracle_price_wad / WAD` |
-| BLEND_XLM, BLEND_USDC, BLEND_EURC | `b_tokens × b_rate / 10¹²` → scale to WAD → × oracle price |
+| XLM, USDC | `balance_wad × oracle_price_wad / WAD` |
+| BLEND_XLM, BLEND_USDC | `b_tokens × b_rate / 10¹²` → scale to WAD → × oracle price |
 | AQ_XLM_USDC, SS_XLM_USDC (LP tokens) | `$0` — tracked but not counted as collateral |
 
 ---
@@ -151,7 +151,7 @@ Before querying Oracle prices, the RiskEngine maps wrapped token symbols to thei
 | `SOROSWAP_USDC` | → `USDC` |
 | `BLEND_XLM` | → `XLM` |
 | `BLEND_USDC` | → `USDC` |
-| `BLEND_EURC` | → `EURC` |
+
 
 LP tracking tokens (`AQ_XLM_USDC`, `SS_XLM_USDC`, `AQ_XLM_AQUA`, `AQ_XLM_USDT`) have no oracle feed and are valued at $0.
 
@@ -196,7 +196,7 @@ The RiskEngine reads from, but never writes to, other contracts:
 | Contract | What it reads |
 |---|---|
 | `SmartAccount` | `get_all_collateral_tokens()`, `get_collateral_token_balance(symbol)`, `get_all_borrowed_tokens()` |
-| `LendingPool XLM/USDC/EURC` | `get_borrow_balance(margin_account)` |
+| `LendingPool XLM/USDC` | `get_borrow_balance(margin_account)` |
 | `TrackingToken` | `balance(margin_account, symbol)` for Blend/LP position sizes |
 | `Oracle` | `get_price_latest(symbol)` |
 | `Blend Pool` | Reserve data including `b_rate` |

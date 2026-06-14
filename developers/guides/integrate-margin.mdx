@@ -108,7 +108,7 @@ async function getHealthFactor(smartAccount: string): Promise<number | null> {
 async function depositCollateral(
   userAddress: string,
   smartAccount: string,
-  symbol: 'XLM' | 'USDC' | 'EURC',
+  symbol: 'XLM' | 'USDC',
   amount: number,  // human-readable
 ): Promise<string> {
   const amountWad = BigInt(Math.floor(amount * 1e18));
@@ -134,7 +134,7 @@ async function depositCollateral(
 async function borrowAsset(
   userAddress: string,
   smartAccount: string,
-  symbol: 'XLM' | 'USDC' | 'EURC',
+  symbol: 'XLM' | 'USDC',
   amount: number,
 ): Promise<string> {
   const amountWad = BigInt(Math.floor(amount * 1e18));

@@ -1,6 +1,6 @@
 ---
 title: "Lending Pools"
-description: "Function reference for LendingPoolXLM, LendingPoolUSDC, and LendingPoolEURC — deposit, vToken redemption, borrow, repay, and interest state functions."
+description: "Function reference for LendingPoolXLM and LendingPoolUSDC — deposit, vToken redemption, borrow, repay, and interest state functions."
 mode: "wide"
 ---
 
@@ -10,7 +10,7 @@ Vanna runs three isolated lending pool contracts, one per supported asset. Each 
 |---|---|---|
 | LendingPoolXLM | Stellar Lumens (XLM) | `CBA4E4ZMXUKCDTNT7LDKSO3LGNGKHRCE4GUVPSRCAKU3TKAONUY7SVOB` |
 | LendingPoolUSDC | USD Coin (USDC) | `CABLEI2ZPCWLO2FQRHJJYR7JW75BCCPN2ZIV5BX7CHPXZT4CZVTGUOBU` |
-| LendingPoolEURC | EUR Coin (EURC) | *(see [Deployed Contracts](/developers/deployed-contracts))* |
+
 
 All three pools share the same interface — only the underlying asset differs.
 
@@ -18,7 +18,7 @@ All three pools share the same interface — only the underlying asset differs.
 
 ## Liquidity Provider Functions
 
-### deposit_xlm / deposit_usdc / deposit_eurc
+### deposit_xlm / deposit_usdc
 
 ```rust
 fn deposit_xlm(env: Env, lender: Address, amount_wad: U256) -> ()
@@ -60,7 +60,7 @@ mint_event (LendingTokenMintEvent) {
 
 ---
 
-### redeem_vxlm / redeem_vusdc / redeem_veurc
+### redeem_vxlm / redeem_vusdc
 
 ```rust
 fn redeem_vxlm(env: Env, lender: Address, tokens_to_redeem: U256) -> ()

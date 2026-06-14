@@ -88,7 +88,7 @@ Transfers `amount` (in WAD) of the token identified by `symbol` from the caller'
 | Parameter | Type | Description |
 |---|---|---|
 | `smart_account` | `Address` | The user's margin account |
-| `symbol` | `Symbol` | Token symbol (e.g., `"XLM"`, `"USDC"`, `"EURC"`) |
+| `symbol` | `Symbol` | Token symbol (e.g., `"XLM"`, `"USDC"`) |
 | `amount` | `U256` | Amount in WAD (10¹⁸ = 1 token) |
 
 **Events emitted:**
@@ -148,7 +148,7 @@ Borrows `amount` of `symbol` from the corresponding LendingPool into the SmartAc
 |---|---|---|
 | `smart_account` | `Address` | The user's margin account |
 | `amount` | `U256` | Amount to borrow in WAD |
-| `symbol` | `Symbol` | Asset to borrow (`"XLM"`, `"USDC"`, `"EURC"`) |
+| `symbol` | `Symbol` | Asset to borrow (`"XLM"`, `"USDC"`) |
 
 **What happens internally:**
 1. RiskEngine validates the borrow
@@ -308,7 +308,7 @@ See [SmartAccount](/developers/contracts/smart-account) for the action types and
 |---|---|---|
 | `XLM` | Stellar Lumens (native) | LendingPoolXLM |
 | `USDC` | USD Coin | LendingPoolUSDC |
-| `EURC` | EUR Coin | LendingPoolEURC |
+
 | `BLUSDC` | Blend-wrapped USDC | LendingPoolUSDC |
 | `AQUSDC` | Aquarius-wrapped USDC | LendingPoolAquariusUSDC |
 | `SOUSDC` | Soroswap-wrapped USDC | LendingPoolSoroswapUSDC |

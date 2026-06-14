@@ -202,12 +202,12 @@ HF = (total_collateral_usd × WAD) / total_debt_usd
 
 Different collateral types are valued differently:
 
-**Raw tokens (XLM, USDC, EURC):**
+**Raw tokens (XLM, USDC):**
 ```
 collateral_usd = balance_wad × price_wad / WAD
 ```
 
-**Blend b-tokens (BLEND_XLM, BLEND_USDC, BLEND_EURC):**
+**Blend b-tokens (BLEND_XLM, BLEND_USDC):**
 ```
 underlying    = floor(b_tokens × b_rate / 10¹²)
 underlying_wad = underlying × WAD / 10^decimals
@@ -288,7 +288,7 @@ Before price lookup, the RiskEngine maps wrapped token symbols to their underlyi
 | `AQUARIUS_USDC`, `SOROSWAP_USDC` | `USDC` | USDC/USD |
 | `BLEND_XLM` | `XLM` | XLM/USD |
 | `BLEND_USDC` | `USDC` | USDC/USD |
-| `BLEND_EURC` | `EURC` | EURC/USD |
+
 
 ---
 
