@@ -1,0 +1,333 @@
+---
+title: "Lending Pools"
+description: "Function reference for LendingPoolXLM and LendingPoolUSDC — deposit, vToken redemption, borrow, repay, and interest state functions."
+mode: "wide"
+---
+
+Vanna runs three isolated lending pool contracts, one per supported asset. Each pool manages LP deposits (issuing vTokens), borrow issuance (via AccountManager), and interest accrual.
+
+| Pool | Asset | Address |
+|---|---|---|
+| LendingPoolXLM | Stellar Lumens (XLM) | `CBA4E4ZMXUKCDTNT7LDKSO3LGNGKHRCE4GUVPSRCAKU3TKAONUY7SVOB` |
+| LendingPoolUSDC | USD Coin (USDC) | `CABLEI2ZPCWLO2FQRHJJYR7JW75BCCPN2ZIV5BX7CHPXZT4CZVTGUOBU` |
+
+
+All three pools share the same interface — only the underlying asset differs.
+
+---
+
+## Liquidity Provider Functions
+
+### deposit_xlm / deposit_usdc
+
+```rust
+fn deposit_xlm(env: Env, lender: Address, amount_wad: U256) -> ()
+```
+
+Deposits `amount_wad` of the pool's native asset from `lender`, mints vTokens proportional to the LP's share of the pool.
+
+**Authorization:** `lender.require_auth()`
+
+**Parameters:**
+
+| Parameter | Type | Description |
+|---|---|---|
+| `lender` | `Address` | The depositor's wallet address |
+| `amount_wad` | `U256` | Deposit amount in WAD (10¹⁸ = 1 token) |
+
+**What happens:**
+1. Calls `update_state()` to accrue pending interest
+2. Computes vToken amount: `floor(amount × vtoken_supply / total_assets)`
+3. Transfers native asset from lender to pool
+4. Mints vTokens to lender
+
+**Events emitted:**
+```
+deposit_event (LendingDepositEvent) {
+    lender: Address,
+    amount: U256,
+    timestamp: u64,
+    asset_symbol: Symbol
+}
+
+mint_event (LendingTokenMintEvent) {
+    lender: Address,
+    token_amount: U256,
+    timestamp: u64,
+    token_symbol: Symbol
+}
+```
+
+---
+
+### redeem_vxlm / redeem_vusdc
+
+```rust
+fn redeem_vxlm(env: Env, lender: Address, tokens_to_redeem: U256) -> ()
+```
+
+Burns `tokens_to_redeem` vTokens and transfers the underlying asset back to the lender.
+
+**Authorization:** `lender.require_auth()`
+
+**What happens:**
+1. Calls `update_state()` to accrue pending interest
+2. Computes underlying: `floor(vtoken_amount × total_assets / vtoken_supply)`
+3. Burns vTokens from lender
+4. Transfers underlying asset to lender
+
+**Panics if:** Pool balance is insufficient to cover the redemption
+
+**Events emitted:**
+```
+withdraw_event (LendingWithdrawEvent) {
+    lender: Address,
+    vtoken_amount: U256,
+    timestamp: u64,
+    asset_symbol: Symbol
+}
+
+burn_event (LendingTokenBurnEvent) {
+    lender: Address,
+    token_amount: U256,
+    timestamp: u64,
+    token_symbol: Symbol
+}
+```
+
+---
+
+## Borrow Functions (AccountManager Only)
+
+These functions are restricted to the registered AccountManager. Direct calls from other addresses will panic.
+
+### lend_to
+
+```rust
+fn lend_to(env: Env, smart_account: Address, amount_wad: U256) -> bool
+```
+
+Issues a borrow from the pool to `smart_account`. Called by AccountManager after RiskEngine approval.
+
+**Authorization:** `AccountManager.require_auth()`
+
+**What happens:**
+1. `update_state()` — accrue interest
+2. Convert `amount_wad` to borrow shares and add to `UserBorrowSharesWAD(smart_account)`
+3. Deduct origination fee: `fee = floor(amount × origination_fee_rate / WAD)` → send to treasury
+4. Transfer `amount_wad` worth of assets to `smart_account`
+
+**Returns:** `true` on success
+
+---
+
+### collect_from
+
+```rust
+fn collect_from(env: Env, amount_wad: U256, smart_account: Address) -> bool
+```
+
+Accepts a repayment from `smart_account`. Called by AccountManager during repay or liquidation.
+
+**Authorization:** `AccountManager.require_auth()`
+
+**What happens:**
+1. `update_state()` — accrue interest
+2. Convert `amount_wad` to borrow shares and subtract from `UserBorrowSharesWAD(smart_account)`
+3. Decrease `BorrowsWAD` by `amount_wad`
+
+**Returns:** `true` on success
+
+---
+
+## State & Query Functions
+
+### update_state
+
+```rust
+fn update_state(env: Env) -> ()
+```
+
+Accrues interest since last update. Must be called before any borrow or repayment.
+
+```
+elapsed = now - last_updated
+rate_factor = elapsed × rate_per_sec
+interest = floor(borrows_wad × rate_factor / WAD)
+borrows_wad += interest
+last_updated = now
+```
+
+No-op if called in the same ledger as the last update.
+
+---
+
+### get_borrow_balance
+
+```rust
+fn get_borrow_balance(env: Env, trader: Address) -> U256
+```
+
+Returns the current outstanding debt (in WAD) for `trader`, including accrued interest.
+
+```
+user_debt = floor(user_borrow_shares × borrows_wad / total_borrow_shares)
+```
+
+This is the primary function used by RiskEngine and AccountManager to read outstanding debt.
+
+---
+
+### get_total_liquidity_in_pool
+
+```rust
+fn get_total_liquidity_in_pool(env: Env) -> U256
+```
+
+Returns the pool's current native asset balance in WAD (physical tokens held, not including outstanding borrows).
+
+---
+
+### get_borrows
+
+```rust
+fn get_borrows(env: Env) -> U256
+```
+
+Returns the total outstanding borrows in WAD (including interest accrued since last update, but not yet written to state).
+
+```
+borrows_live = borrows_wad + floor(borrows_wad × rate_factor_since_last_update / WAD)
+```
+
+---
+
+### total_assets
+
+```rust
+fn total_assets(env: Env) -> U256
+```
+
+Returns `liquidity + borrows` — the pool's theoretical total, including outstanding debt.
+
+```
+total_assets = pool_balance_wad + borrows_wad
+```
+
+This is the denominator for vToken exchange rate calculations.
+
+---
+
+### get_rate_factor
+
+```rust
+fn get_rate_factor(env: Env) -> U256
+```
+
+Returns `(now - last_updated) × rate_per_sec` in WAD — the accrual factor since the last state update.
+
+---
+
+## Conversion Functions
+
+### convert_xlm_to_vtoken
+
+```rust
+fn convert_xlm_to_vtoken(env: Env, amount: U256) -> U256
+```
+
+Computes how many vTokens `amount` of the underlying asset would mint at current exchange rate.
+
+```
+vtokens = floor(amount × vtoken_supply / total_assets)
+```
+
+---
+
+### convert_vtoken_to_xlm
+
+```rust
+fn convert_vtoken_to_xlm(env: Env, vtoken_amount: U256) -> U256
+```
+
+Computes how much underlying `vtoken_amount` vTokens would redeem to at current exchange rate.
+
+```
+underlying = floor(vtoken_amount × total_assets / vtoken_supply)
+```
+
+---
+
+### convert_asset_borrow_shares
+
+```rust
+fn convert_asset_borrow_shares(env: Env, amount: U256) -> U256
+```
+
+Converts a raw asset amount to borrow shares at current rates.
+
+```
+shares = floor(amount × total_borrow_shares / borrows_live)
+```
+
+---
+
+### convert_borrow_shares_asset
+
+```rust
+fn convert_borrow_shares_asset(env: Env, shares: U256) -> U256
+```
+
+Converts borrow shares to the underlying asset amount.
+
+```
+amount = floor(shares × borrows_wad / total_borrow_shares)
+```
+
+---
+
+## Pool Storage
+
+| Key | Type | Description |
+|---|---|---|
+| `BorrowsWAD` | `U256` | Total outstanding debt (stored, not live) |
+| `TotalBorrowSharesWAD` | `U256` | Sum of all borrow shares |
+| `UserBorrowSharesWAD(Address)` | `U256` | Per-account borrow shares |
+| `LastUpdatedTime` | `u64` | Timestamp of last `update_state()` call |
+| `TotalTokensMintedWAD(Symbol)` | `U256` | Cumulative vTokens minted |
+| `TotalTokensBurntWAD(Symbol)` | `U256` | Cumulative vTokens burned |
+| `VTokenContractAddress(Symbol)` | `Address` | vToken contract address |
+
+---
+
+## Pool Configuration
+
+| Parameter | Description |
+|---|---|
+| `origination_fee` | Per-borrow fee rate in WAD (testnet: 10^16 = 1%) |
+| `RateModel` | Address of the RateModel contract |
+| `AccountManager` | Address of the AccountManager (only authorized caller for lend_to/collect_from) |
+| `Treasury` | Destination for origination fees |
+
+---
+
+## Error Codes
+
+```rust
+enum LendingError {
+    AdminError,
+    InsufficientBalance,        // Depositor balance too low
+    InsufficientPoolBalance,    // Pool can't cover withdrawal
+    PoolAlreadyInitialized,
+    InterestRateError,          // Forwarded from RateModel
+}
+```
+
+---
+
+## Related
+
+- [vTokens](/developers/contracts/vtokens) — the fungible tokens minted by lending pools
+- [Rate Model](/developers/contracts/rate-model) — the interest rate curve
+- [Math Reference](/developers/math-reference) — vToken exchange rate and borrow share formulas
+- [Integrate Lending](/developers/guides/integrate-lending) — end-to-end guide for supply/withdraw integration

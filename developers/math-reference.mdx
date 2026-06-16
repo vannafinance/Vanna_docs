@@ -1,0 +1,334 @@
+---
+title: "Math Reference"
+description: "Complete formula reference for Vanna Protocol: WAD arithmetic, interest accrual, vToken exchange rates, borrow shares, health factor, and the rate model polynomial."
+mode: "wide"
+---
+
+All Vanna contracts use **WAD fixed-point arithmetic** with 10¹⁸ as the representation of 1.0. This page documents every formula used in the protocol.
+
+---
+
+## WAD Arithmetic
+
+### Constants
+
+| Constant | Value | Meaning |
+|---|---|---|
+| `WAD` | `10¹⁸` | Fixed-point 1.0 |
+| `SCALAR_12` | `10¹²` | Blend b_rate divisor |
+| `SECS_PER_YEAR` | `31,556,952 × 10¹⁸` | Seconds in a year in WAD |
+
+### Core Operations
+
+```
+mul_wad_down(a, b) = floor(a × b / 10¹⁸)
+div_wad_down(a, b) = floor(a × 10¹⁸ / b)
+rpow_wad(x, n)    = x^n  (via repeated squaring, preserving WAD scale)
+```
+
+All intermediate math uses floor division (`mul_wad_down`, `div_wad_down`). This means rounding errors accumulate against the protocol, not in the protocol's favor.
+
+### Decimal Conversion
+
+Every asset has native decimals (XLM: 7, USDC: 6). Balances are converted to WAD at protocol entry and back to native decimals at exit.
+
+```
+native → WAD:   wad_amount = native_amount × 10¹⁸ / 10^decimals
+WAD → native:   native_amount = floor(wad_amount × 10^decimals / 10¹⁸)
+```
+
+**Example (XLM, 7 decimals):**
+```
+11 XLM → WAD:   11 × 10⁷ (stroops) × 10¹⁸ / 10⁷ = 11 × 10¹⁸
+WAD → stroops:  floor(11 × 10¹⁸ × 10⁷ / 10¹⁸) = 11 × 10⁷ stroops
+```
+
+---
+
+## Interest Rate Model
+
+### Utilization Ratio
+
+```
+util = borrows_wad / (liquidity_wad + borrows_wad)
+```
+
+Where `liquidity_wad` is the pool's current asset balance in WAD.
+
+### Borrow Rate Per Second
+
+Vanna uses a smooth polynomial curve (not a kinked two-slope model):
+
+```
+rate_per_sec = c3 × (util×c1 + util^32×c1 + util^64×c2) / SECS_PER_YEAR
+```
+
+With:
+
+| Coefficient | Value | Decimal |
+|---|---|---|
+| `c1` | `10^17` | 0.1 |
+| `c2` | `3 × 10^17` | 0.3 |
+| `c3` | `35 × 10^17` | 3.5 |
+
+The `util^32` and `util^64` terms are computed via WAD exponentiation (`rpow_wad`). At low utilization the curve is nearly linear. At high utilization the polynomial terms dominate, pushing rates up sharply.
+
+### Annual Rate Derivation
+
+To get the annualized rate for display:
+```
+borrow_rate_annual = rate_per_sec × SECS_PER_YEAR
+```
+
+---
+
+## Interest Accrual
+
+### Rate Factor
+
+Computed at every borrow or repayment (`update_state()`):
+
+```
+elapsed = now - last_updated_timestamp
+rate_factor = elapsed × rate_per_sec    (in WAD)
+```
+
+### State Update
+
+```
+interest = floor(borrows_wad × rate_factor / WAD)
+borrows_wad += interest
+last_updated = now
+```
+
+If `now == last_updated` the function exits early — no double-accrual within the same ledger.
+
+### Live (Preview) Borrows
+
+When computing health factors, the protocol uses live borrows (including interest that has accrued since the last state update but not yet written to storage):
+
+```
+rate_factor_live = (now - last_updated) × rate_per_sec
+interest_live    = floor(borrows_wad × rate_factor_live / WAD)
+borrows_live     = borrows_wad + interest_live
+```
+
+This ensures borrow shares issued right now correctly reflect the current debt level.
+
+---
+
+## Borrow Share Accounting
+
+Borrows are tracked via shares, not raw amounts. This lets interest accrue globally without updating each user's record.
+
+### Issuing Shares (on Borrow)
+
+```
+if total_borrow_shares == 0:
+    new_shares = borrow_amount           # first borrower, 1:1
+else:
+    new_shares = floor(borrow_amount × total_borrow_shares / borrows_live)
+```
+
+### Burning Shares (on Repay)
+
+```
+shares_to_burn = floor(repay_amount × total_borrow_shares / borrows_live)
+```
+
+### Computing User Debt
+
+```
+user_debt = floor(user_borrow_shares × borrows_wad / total_borrow_shares)
+```
+
+Note: user debt is computed from `borrows_wad` (stored, slightly stale), while share issuance uses `borrows_live` (fresh). This is intentional — it prevents over-issuance of shares.
+
+### Origination Fee
+
+On every borrow, a one-time fee is charged:
+
+```
+origination_fee = floor(borrow_amount × origination_fee_rate / WAD)
+```
+
+The fee is sent from the pool to the protocol treasury. The borrower receives `borrow_amount - origination_fee`.
+
+---
+
+## vToken Exchange Rate
+
+vTokens represent a proportional share of a pool's total assets (`pool_balance + borrows_wad`).
+
+### Minting on Deposit
+
+```
+if total_assets == 0 or vtoken_supply == 0:
+    vTokens = deposit_amount             # first depositor, 1:1
+else:
+    vTokens = floor(deposit_amount × vtoken_supply / total_assets)
+```
+
+### Redeeming on Withdrawal
+
+```
+underlying = floor(vtoken_amount × total_assets / vtoken_supply)
+```
+
+### Exchange Rate
+
+The implicit exchange rate grows as interest accrues:
+
+```
+exchange_rate = total_assets / vtoken_supply
+```
+
+As `borrows_wad` grows with interest, `total_assets` grows, and each vToken is worth more underlying.
+
+---
+
+## Health Factor
+
+The health factor is a ratio of total collateral value to total debt value.
+
+```
+HF = (total_collateral_usd × WAD) / total_debt_usd
+```
+
+**Healthy:** `HF > 1.1 × WAD` (strictly greater than)  
+**Liquidatable:** `HF ≤ 1.1 × WAD`
+
+### Collateral Valuation
+
+Different collateral types are valued differently:
+
+**Raw tokens (XLM, USDC):**
+```
+collateral_usd = balance_wad × price_wad / WAD
+```
+
+**Blend b-tokens (BLEND_XLM, BLEND_USDC):**
+```
+underlying    = floor(b_tokens × b_rate / 10¹²)
+underlying_wad = underlying × WAD / 10^decimals
+collateral_usd = underlying_wad × price_wad / WAD
+```
+
+Where `b_rate` is fetched from the Blend pool's reserve data.
+
+**LP tracking tokens (AQ_XLM_USDC, SS_XLM_USDC):**
+```
+collateral_usd = 0   # LP positions are tracked but not counted as collateral
+```
+
+### Borrow-Time Check (Gross-Asset Model)
+
+When evaluating a new borrow, both the new borrow and existing borrows count as assets:
+
+```
+gross_assets = collateral_usd + existing_debt_usd + new_borrow_usd
+new_total_debt = existing_debt_usd + new_borrow_usd
+
+allowed = gross_assets × WAD / new_total_debt > BALANCE_TO_BORROW_THRESHOLD
+```
+
+This means same-asset leverage (borrow XLM, deploy to Blend XLM) correctly shows `HF > 1` instead of near zero.
+
+### Withdraw-Time Check
+
+```
+new_collateral = collateral_usd - withdraw_value_usd
+
+allowed = withdraw_value_usd ≤ collateral_usd
+       AND new_collateral × WAD / existing_debt_usd > BALANCE_TO_BORROW_THRESHOLD
+```
+
+### Liquidation Check
+
+Uses pure collateral (not gross-asset model):
+
+```
+liquidatable = collateral_usd × WAD / existing_debt_usd ≤ BALANCE_TO_BORROW_THRESHOLD
+```
+
+### Constants
+
+| Constant | Value | Description |
+|---|---|---|
+| `BALANCE_TO_BORROW_THRESHOLD` | `1.1 × 10¹⁸` | Minimum health factor (110%) |
+| `dust_debt_threshold` | `10^16` | Debts below this are ignored in health checks |
+
+---
+
+## Oracle Price Conversion
+
+Prices from the Reflector oracle come as `(price: u128, decimals: u32)`. The RiskEngine converts to WAD:
+
+```
+price_wad = oracle_price × (10¹⁸ / 10^oracle_decimals)
+```
+
+**Example:**
+```
+Oracle price: 4,000,000 (7 decimals) = $0.40
+wad_scale  = 10¹⁸ / 10⁷ = 10¹¹
+price_wad  = 4,000,000 × 10¹¹ = 4 × 10¹⁷  (= 0.4 in WAD)
+
+XLM balance: 5 × 10¹⁸ WAD
+USD value:   floor(5 × 10¹⁸ × 4 × 10¹⁷ / 10¹⁸) = 2 × 10¹⁸  (= $2.00)
+```
+
+### Token Symbol Canonicalization
+
+Before price lookup, the RiskEngine maps wrapped token symbols to their underlying asset:
+
+| Input symbol | Canonical symbol | Price feed |
+|---|---|---|
+| `BLUSDC`, `AQUSDC`, `SOUSDC` | `USDC` | USDC/USD |
+| `AQUARIUS_USDC`, `SOROSWAP_USDC` | `USDC` | USDC/USD |
+| `BLEND_XLM` | `XLM` | XLM/USD |
+| `BLEND_USDC` | `USDC` | USDC/USD |
+
+
+---
+
+## Soroswap/Aquarius AMM Formulas
+
+### Optimal Liquidity Amount (Add Liquidity)
+
+Given pool reserves `(R_a, R_b)` and desired inputs `(A_desired, B_desired)`:
+
+```
+B_optimal = floor(A_desired × R_b / R_a)
+
+if B_optimal ≤ B_desired:
+    use (A_desired, B_optimal)
+else:
+    A_optimal = floor(B_desired × R_a / R_b)
+    use (A_optimal, B_desired)
+```
+
+### Swap Output (Soroswap, 0.3% fee)
+
+```
+amount_out = floor(amount_in × 997 / 1000)   # simplified (before reserves)
+```
+
+Actual output from reserves (constant product, `x × y = k`):
+
+```
+amount_out = floor((amount_in × 997 × reserve_out) / (reserve_in × 1000 + amount_in × 997))
+```
+
+---
+
+## Storage TTL
+
+All persistent storage keys are extended with a TTL to prevent ledger entry expiry:
+
+| Key type | TTL |
+|---|---|
+| Contract data (short) | 6,307,200 ledgers (~1 year) |
+| Contract data (long) | 63,072,000 ledgers (~10 years) |
+
+Extensions are applied on every write and on reads for frequently accessed keys.

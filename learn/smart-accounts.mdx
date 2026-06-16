@@ -102,7 +102,7 @@ if token_delta > 0 {
 }
 ```
 
-Tracking Tokens are how the Risk Engine knows the SmartAccount holds a Blend or Aquarius position. It reads the Tracking Token balance for `BLEND_XLM`, `BLEND_USDC`, `BLEND_EURC`, and `AQ_XLM_USDC`, converts them to their underlying USD value, and includes them in the collateral sum. See [Health Factor](/learn/health-factor) for the collateral valuation detail.
+Tracking Tokens are how the Risk Engine knows the SmartAccount holds a Blend or Aquarius position. It reads the Tracking Token balance for `BLEND_XLM`, `BLEND_USDC`, and `AQ_XLM_USDC`, converts them to their underlying USD value, and includes them in the collateral sum. See [Health Factor](/learn/health-factor) for the collateral valuation detail.
 
 ## sweep_to()
 
@@ -110,8 +110,8 @@ Tracking Tokens are how the Risk Engine knows the SmartAccount holds a Blend or 
 
 It iterates every token in `CollateralTokensList` and calls `remove_collateral_token_bal_internal()` for each:
 
-- **XLM, USDC, EURC** - the actual token balance is transferred to `destination` via the token contract. The `CollateralBalanceWAD` entry is zeroed and the token is removed from `CollateralTokensList`.
-- **BLEND_XLM, BLEND_USDC, BLEND_EURC, AQ_XLM_USDC** - the `CollateralBalanceWAD` entry is zeroed and the token is removed from `CollateralTokensList`. No token transfer occurs - the underlying b-tokens held in Blend's pool and LP positions in Aquarius remain in the external protocol and are not unwound.
+- **XLM, USDC** - the actual token balance is transferred to `destination` via the token contract. The `CollateralBalanceWAD` entry is zeroed and the token is removed from `CollateralTokensList`.
+- **BLEND_XLM, BLEND_USDC, AQ_XLM_USDC** - the `CollateralBalanceWAD` entry is zeroed and the token is removed from `CollateralTokensList`. No token transfer occurs - the underlying b-tokens held in Blend's pool and LP positions in Aquarius remain in the external protocol and are not unwound.
 
 ## Why Isolated Contracts
 

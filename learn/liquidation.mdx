@@ -70,7 +70,7 @@ For every token the account has borrowed, the Account Manager:
 
 4. Removes the token from the account's borrowed token list if the debt is fully cleared.
 
-This loop runs for every token in the account's borrowed token list: XLM, USDC, and EURC. All debt positions are closed in a single transaction - partial liquidation is not supported.
+This loop runs for every token in the account's borrowed token list: XLM and USDC. All debt positions are closed in a single transaction - partial liquidation is not supported.
 
 ---
 
@@ -86,19 +86,17 @@ smart_account_client.sweep_to(&trader_address);
 
 ### Tokens covered by sweep
 
-`sweep_to()` calls `remove_collateral_token_bal_internal()` for each collateral token. This function contains explicit handlers for XLM, USDC, and EURC, which transfer the actual token balances:
+`sweep_to()` calls `remove_collateral_token_bal_internal()` for each collateral token. This function contains explicit handlers for XLM and USDC, which transfer the actual token balances:
 
 ```rust
 if token_symbol == XLM_SYMBOL {
     xlm_token.transfer(&this_account, &user_address, &amount_scaled);
 } else if token_symbol == USDC_SYMBOL {
     usdc_token.transfer(&this_account, &user_address, &amount_scaled);
-} else if token_symbol == EURC_SYMBOL {
-    eurc_token.transfer(&this_account, &user_address, &amount_scaled);
 }
 ```
 
-For Blend yield positions (`BLEND_XLM`, `BLEND_USDC`, `BLEND_EURC`) and Aquarius LP tracking positions (`AQ_XLM_USDC`), the internal collateral balance is zeroed and the token is removed from the collateral list. However, no token transfer occurs for these positions - the underlying b-tokens held in Blend's pool and LP positions in Aquarius are not unwound. Their tracking records are cleared from the Smart Account but the assets remain in the external protocols.
+For Blend yield positions (`BLEND_XLM`, `BLEND_USDC`) and Aquarius LP tracking positions (`AQ_XLM_USDC`), the internal collateral balance is zeroed and the token is removed from the collateral list. However, no token transfer occurs for these positions - the underlying b-tokens held in Blend's pool and LP positions in Aquarius are not unwound. Their tracking records are cleared from the Smart Account but the assets remain in the external protocols.
 
 ---
 

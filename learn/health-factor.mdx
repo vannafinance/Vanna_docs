@@ -28,11 +28,11 @@ If debt is zero, the account is unconditionally solvent - the check returns `tru
 
 The Risk Engine recognizes two classes of collateral and values them differently.
 
-**Direct collateral - XLM, USDC, EURC**
+**Direct collateral - XLM, USDC**
 
 Balances are read from the Margin Account's on-chain storage and multiplied by their oracle price. One oracle call per unique symbol, cached for the duration of the transaction.
 
-**Blend yield positions - BLEND\_XLM, BLEND\_USDC, BLEND\_EURC**
+**Blend yield positions - BLEND\_XLM, BLEND\_USDC**
 
 When borrowed capital is deployed into [Blend](https://blend.capital) lending pools, the Margin Account receives b-tokens tracked by Vanna's Tracking Token contract. These are not priced directly - they are first converted to their underlying asset amount via Blend's `b_rate`:
 

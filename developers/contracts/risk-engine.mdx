@@ -1,0 +1,212 @@
+---
+title: "RiskEngine"
+description: "Stateless health-check contract. Function reference for borrow gates, withdrawal gates, health factor computation, and collateral valuation."
+mode: "wide"
+---
+
+The `RiskEngine` is a stateless contract — it stores no user positions. On every call it reads position data from the caller's `SmartAccount` and `LendingPools`, prices everything via `Oracle`, and returns a boolean. It never modifies state in those contracts; it only reads.
+
+**Testnet address:** `CBL7RCG5H4VIZCNF7BRM2FQFXK7N5KRQKW7ZVEQZJKNXHA6FEU4OXK5I`
+
+---
+
+## Guard Functions
+
+These are the three functions that gate every state-changing operation in the protocol. AccountManager calls the appropriate guard before every borrow, withdrawal, or liquidation.
+
+### is_borrow_allowed
+
+```rust
+fn is_borrow_allowed(
+    env: Env,
+    symbol: Symbol,
+    borrow_amt: U256,
+    margin_account: Address,
+) -> bool
+```
+
+Returns `true` if borrowing `borrow_amt` of `symbol` from the pool would leave the account healthy. Uses the **gross-asset model** — new borrows count as both an asset (purchased) and a liability simultaneously.
+
+**Gross-asset borrow check:**
+```
+collateral_usd = sum of all priced collateral (raw tokens + b-tokens)
+debt_usd       = sum of all outstanding borrows (in USD)
+new_borrow_usd = borrow_amt × price_wad / WAD
+
+gross_assets   = collateral_usd + debt_usd + new_borrow_usd
+new_total_debt = debt_usd + new_borrow_usd
+
+allowed = (gross_assets × WAD / new_total_debt) > BALANCE_TO_BORROW_THRESHOLD
+```
+
+**Why gross-asset:** If you borrow XLM and immediately deposit it into a Blend pool, your collateral increases by the same amount you borrowed. Without gross-asset accounting, this would look like infinite leverage.
+
+---
+
+### is_withdraw_allowed
+
+```rust
+fn is_withdraw_allowed(
+    env: Env,
+    symbol: Symbol,
+    withdraw_amt: U256,
+    margin_account: Address,
+) -> bool
+```
+
+Returns `true` if withdrawing `withdraw_amt` of `symbol` collateral would leave the account healthy.
+
+**Withdraw check:**
+```
+withdraw_usd = withdraw_amt × price_wad / WAD
+
+allowed = withdraw_usd ≤ collateral_usd
+       AND (collateral_usd + debt_usd - withdraw_usd) × WAD / debt_usd
+           > BALANCE_TO_BORROW_THRESHOLD
+```
+
+---
+
+### is_account_healthy
+
+```rust
+fn is_account_healthy(
+    env: Env,
+    total_balance: U256,
+    total_debt: U256,
+) -> bool
+```
+
+Low-level comparator. Returns `true` if:
+```
+(total_balance × WAD) / total_debt > BALANCE_TO_BORROW_THRESHOLD
+```
+
+Where `BALANCE_TO_BORROW_THRESHOLD = 1.1 × 10¹⁸`.
+
+Used internally by `is_borrow_allowed`, `is_withdraw_allowed`, and by liquidation callers to check if an account is eligible for liquidation.
+
+---
+
+## Portfolio Query Functions
+
+### get_current_total_balance
+
+```rust
+fn get_current_total_balance(
+    env: Env,
+    margin_account: Address,
+) -> U256
+```
+
+Returns the sum of all collateral held by `margin_account`, in USD WAD. Iterates every token in `SmartAccount.get_all_collateral_tokens()` and prices each one.
+
+**Collateral valuation by type:**
+
+| Token type | Valuation method |
+|---|---|
+| XLM, USDC | `balance_wad × oracle_price_wad / WAD` |
+| BLEND_XLM, BLEND_USDC | `b_tokens × b_rate / 10¹²` → scale to WAD → × oracle price |
+| AQ_XLM_USDC, SS_XLM_USDC (LP tokens) | `$0` — tracked but not counted as collateral |
+
+---
+
+### get_current_total_borrows
+
+```rust
+fn get_current_total_borrows(
+    env: Env,
+    margin_account: Address,
+) -> U256
+```
+
+Returns the sum of all outstanding debt held by `margin_account`, in USD WAD. Queries each LendingPool's `get_borrow_balance()` for each symbol in `BorrowedTokensList`.
+
+---
+
+## Blend b-Token Valuation
+
+When SmartAccount holds Blend b-tokens (received by depositing into Blend pool), the RiskEngine values them using the Blend pool's `b_rate`:
+
+```
+underlying_amount = floor(b_tokens × b_rate / 10¹²)
+underlying_wad    = underlying_amount × WAD / 10^decimals
+usd_value         = floor(underlying_wad × oracle_price_wad / WAD)
+```
+
+`b_rate` is read directly from Blend's pool reserve data. It represents the exchange rate from b-tokens to the underlying asset.
+
+---
+
+## Symbol Canonicalization
+
+Before querying Oracle prices, the RiskEngine maps wrapped token symbols to their underlying asset for pricing:
+
+| Input symbol | Canonical → Oracle feed |
+|---|---|
+| `BLUSDC` | → `USDC` |
+| `AQUSDC` | → `USDC` |
+| `SOUSDC` | → `USDC` |
+| `AQUARIUS_USDC` | → `USDC` |
+| `SOROSWAP_USDC` | → `USDC` |
+| `BLEND_XLM` | → `XLM` |
+| `BLEND_USDC` | → `USDC` |
+
+
+LP tracking tokens (`AQ_XLM_USDC`, `SS_XLM_USDC`, `AQ_XLM_AQUA`, `AQ_XLM_USDT`) have no oracle feed and are valued at $0.
+
+---
+
+## Price Caching
+
+Within a single `is_borrow_allowed` or `get_current_total_balance` call, oracle prices are fetched once per symbol and cached in a local `Map<Symbol, u128>`. This avoids duplicate cross-contract oracle calls when the same symbol appears multiple times (e.g., both as collateral and debt).
+
+---
+
+## Dust Threshold
+
+Debts below `10^16 WAD` (0.01 token in 18-decimal terms) are ignored during health checks. This prevents rounding-dust positions from blocking otherwise-healthy accounts.
+
+---
+
+## Constants
+
+| Constant | Value | Description |
+|---|---|---|
+| `BALANCE_TO_BORROW_THRESHOLD` | `1.1 × 10¹⁸` | Minimum health factor |
+| `dust_debt_threshold` | `10^16` | Minimum meaningful debt |
+| `SCALAR_12` | `10¹²` | Blend b_rate divisor |
+
+---
+
+## Error Codes
+
+```rust
+enum RiskEngineError {
+    RiskEngineNotInitialized,
+}
+```
+
+---
+
+## Cross-Contract Reads
+
+The RiskEngine reads from, but never writes to, other contracts:
+
+| Contract | What it reads |
+|---|---|
+| `SmartAccount` | `get_all_collateral_tokens()`, `get_collateral_token_balance(symbol)`, `get_all_borrowed_tokens()` |
+| `LendingPool XLM/USDC` | `get_borrow_balance(margin_account)` |
+| `TrackingToken` | `balance(margin_account, symbol)` for Blend/LP position sizes |
+| `Oracle` | `get_price_latest(symbol)` |
+| `Blend Pool` | Reserve data including `b_rate` |
+| `Registry` | Contract addresses |
+
+---
+
+## Related
+
+- [Math Reference](/developers/math-reference#health-factor) — complete health factor formula with worked examples
+- [AccountManager](/developers/contracts/account-manager) — the only contract that calls RiskEngine guards
+- [Oracle](/developers/contracts/oracle) — price feed source
+- [Health Factor](/learn/health-factor) — user-facing explanation of the 1.1× invariant

@@ -1,0 +1,292 @@
+---
+title: "Transaction Flow"
+description: "How to build, simulate, sign with Freighter, and submit a Soroban transaction to Vanna Protocol contracts."
+mode: "wide"
+---
+
+Every state-changing operation on Vanna follows the same four-step pattern: **build → simulate → sign → submit**. This page explains each step and provides reusable utilities.
+
+---
+
+## The Four Steps
+
+<Steps>
+  <Step title="Build the transaction">
+    Create an `InvokeHostFunction` operation that calls the target contract and method with encoded arguments.
+  </Step>
+  <Step title="Simulate">
+    Send the unsigned transaction to the Soroban RPC's `simulateTransaction` endpoint. This returns the required authorization entries, computed resource fees, and the expected return value — without submitting to the network.
+  </Step>
+  <Step title="Sign with Freighter">
+    Attach the simulation's auth entries and fees to the transaction, then ask Freighter to sign the XDR-encoded transaction.
+  </Step>
+  <Step title="Submit and wait">
+    Submit the signed transaction via `sendTransaction()`. Poll with `getTransaction()` until the status is `SUCCESS` or `FAILED`.
+  </Step>
+</Steps>
+
+---
+
+## Core Utility
+
+```typescript
+import {
+  Contract,
+  TransactionBuilder,
+  Account,
+  SorobanRpc,
+  assembleTransaction,
+  xdr,
+  Networks,
+} from '@stellar/stellar-sdk';
+import { signTransaction } from '@stellar/freighter-api';
+
+const NETWORK = Networks.TESTNET;
+const RPC_URL = 'https://soroban-testnet.stellar.org';
+const server = new SorobanRpc.Server(RPC_URL);
+
+/**
+ * Build, simulate, sign, and submit a Soroban contract call.
+ */
+async function invokeContract(
+  callerAddress: string,
+  contractAddress: string,
+  method: string,
+  args: xdr.ScVal[] = [],
+): Promise<string> {
+  // 1. Load the caller's current sequence number
+  const accountData = await server.getAccount(callerAddress);
+  const account = new Account(callerAddress, accountData.sequence);
+
+  // 2. Build the transaction
+  const contract = new Contract(contractAddress);
+  const tx = new TransactionBuilder(account, {
+    fee: '100',
+    networkPassphrase: NETWORK,
+  })
+    .addOperation(contract.call(method, ...args))
+    .setTimeout(30)
+    .build();
+
+  // 3. Simulate to get auth entries + resource fees
+  const simResult = await server.simulateTransaction(tx);
+
+  if (SorobanRpc.Api.isSimulationError(simResult)) {
+    throw new Error(`Simulation failed: ${simResult.error}`);
+  }
+
+  // 4. Assemble: attach sim result (auth + fees) to the transaction
+  const preparedTx = assembleTransaction(tx, simResult).build();
+
+  // 5. Sign with Freighter
+  const signedXdr = await signTransaction(preparedTx.toEnvelope().toXDR('base64'), {
+    networkPassphrase: NETWORK,
+  });
+
+  // 6. Submit
+  const submitResult = await server.sendTransaction(
+    TransactionBuilder.fromXDR(signedXdr, NETWORK)
+  );
+
+  if (submitResult.status === 'ERROR') {
+    throw new Error(`Submit failed: ${submitResult.errorResult}`);
+  }
+
+  const txHash = submitResult.hash;
+
+  // 7. Poll for confirmation
+  return await waitForTransaction(txHash);
+}
+
+async function waitForTransaction(txHash: string): Promise<string> {
+  const MAX_POLLS = 20;
+  const POLL_INTERVAL_MS = 2000;
+
+  for (let i = 0; i < MAX_POLLS; i++) {
+    await new Promise(r => setTimeout(r, POLL_INTERVAL_MS));
+    const status = await server.getTransaction(txHash);
+
+    if (status.status === SorobanRpc.Api.GetTransactionStatus.SUCCESS) {
+      return txHash;
+    }
+    if (status.status === SorobanRpc.Api.GetTransactionStatus.FAILED) {
+      throw new Error(`Transaction failed: ${txHash}`);
+    }
+    // PENDING or NOT_FOUND — keep polling
+  }
+
+  throw new Error(`Transaction not confirmed after ${MAX_POLLS} polls: ${txHash}`);
+}
+```
+
+---
+
+## Encoding Arguments
+
+Soroban contract arguments are `xdr.ScVal` values. The Stellar SDK provides `nativeToScVal` to convert JavaScript primitives:
+
+```typescript
+import { nativeToScVal, Address } from '@stellar/stellar-sdk';
+
+// Address
+nativeToScVal(userAddress, { type: 'address' })
+
+// Symbol (Rust Symbol type)
+nativeToScVal('XLM', { type: 'symbol' })
+
+// u128 / U256 (passed as BigInt)
+nativeToScVal(1_000_000_000_000_000_000n, { type: 'u128' })
+nativeToScVal(5_000_000_000_000_000_000n, { type: 'u256' })
+
+// i128
+nativeToScVal(-500n, { type: 'i128' })
+
+// bool
+nativeToScVal(true, { type: 'bool' })
+
+// String
+nativeToScVal('hello', { type: 'string' })
+```
+
+---
+
+## Decoding Return Values
+
+```typescript
+import { scValToNative } from '@stellar/stellar-sdk';
+
+// After simulation:
+const retval = simResult.result?.retval;
+const decoded = scValToNative(retval);
+
+// bigint for u128/U256/i128
+// string for addresses, symbols
+// boolean for bool
+// array for Vec
+// object for structs/maps
+```
+
+---
+
+## Example: Deposit XLM Into Lending Pool
+
+```typescript
+import { nativeToScVal } from '@stellar/stellar-sdk';
+
+const POOL_XLM = 'CBA4E4ZMXUKCDTNT7LDKSO3LGNGKHRCE4GUVPSRCAKU3TKAONUY7SVOB';
+const WAD = 10n ** 18n;
+
+// Deposit 10 XLM (in WAD: 10 * 10^18)
+const depositAmountWad = 10n * WAD;
+
+await invokeContract(
+  userWalletAddress,
+  POOL_XLM,
+  'deposit_xlm',
+  [
+    nativeToScVal(userWalletAddress, { type: 'address' }),  // lender
+    nativeToScVal(depositAmountWad, { type: 'u256' }),      // amount_wad
+  ],
+);
+```
+
+---
+
+## Example: Borrow XLM via AccountManager
+
+```typescript
+const ACCOUNT_MANAGER = 'CAK2IJIO2SKZWUODY4G7ZRIUUIIMJUUAIXE3I5YTQ5QYNSS2RYJ3P4CV';
+
+// Borrow 5 XLM (in WAD)
+const borrowAmountWad = 5n * WAD;
+
+await invokeContract(
+  userWalletAddress,
+  ACCOUNT_MANAGER,
+  'borrow',
+  [
+    nativeToScVal(smartAccountAddress, { type: 'address' }),  // smart_account
+    nativeToScVal(borrowAmountWad, { type: 'u256' }),         // amount
+    nativeToScVal('XLM', { type: 'symbol' }),                 // symbol
+  ],
+);
+```
+
+---
+
+## Example: Read-Only (Simulation Only)
+
+For pure reads you don't need to sign or submit — just simulate with any dummy account:
+
+```typescript
+import { Account } from '@stellar/stellar-sdk';
+
+async function readContract(
+  contractAddress: string,
+  method: string,
+  args: xdr.ScVal[] = [],
+) {
+  const dummyAccount = new Account(
+    'GAAZI4TCR3TY5OJHCTJC2A4QSY6CJWJH5IAJTGKIN2ER7LBNVKOCCWN',
+    '0',
+  );
+  const contract = new Contract(contractAddress);
+  const tx = new TransactionBuilder(dummyAccount, {
+    fee: '100',
+    networkPassphrase: NETWORK,
+  })
+    .addOperation(contract.call(method, ...args))
+    .setTimeout(30)
+    .build();
+
+  const result = await server.simulateTransaction(tx);
+  if (SorobanRpc.Api.isSimulationError(result)) {
+    throw new Error(result.error);
+  }
+  return scValToNative(result.result!.retval);
+}
+```
+
+---
+
+## Handling Token Approvals
+
+Most Soroban token operations require the caller to pre-authorize token transfers. For the Stellar SDK, this is handled automatically via the simulation's auth entries — `assembleTransaction` attaches them.
+
+However, some operations require an explicit `approve()` call on the token contract before the main transaction:
+
+```typescript
+// Approve AccountManager to pull USDC for repayment
+await invokeContract(
+  userWalletAddress,
+  CONTRACTS.USDC,
+  'approve',
+  [
+    nativeToScVal(userWalletAddress, { type: 'address' }),
+    nativeToScVal(CONTRACTS.ACCOUNT_MANAGER, { type: 'address' }),
+    nativeToScVal(repayAmountI128, { type: 'i128' }),
+    nativeToScVal(ledgerDeadline, { type: 'u32' }),
+  ],
+);
+```
+
+---
+
+## Resource Limits and Fee Estimation
+
+Soroban transactions have CPU, memory, and ledger entry limits. The simulation returns resource estimates — `assembleTransaction` applies them. If a transaction is consistently failing with resource errors, increase the fee budget:
+
+```typescript
+const tx = new TransactionBuilder(account, {
+  fee: '10000',   // higher base fee for complex multi-contract calls
+  networkPassphrase: NETWORK,
+})
+```
+
+---
+
+## Next Steps
+
+- [Integrate Lending](/developers/guides/integrate-lending) — supply and withdraw with full code
+- [Integrate Margin](/developers/guides/integrate-margin) — full margin account lifecycle
+- [Liquidation Bots](/developers/guides/liquidation-bots) — monitor and liquidate unhealthy accounts

@@ -1,0 +1,371 @@
+---
+title: "Events & Indexing"
+description: "Complete reference for all Vanna Protocol contract events with XDR schemas, Mercury integration patterns, and real-time streaming."
+mode: "wide"
+---
+
+This page is the definitive reference for all events emitted by Vanna Protocol contracts, their XDR structure, and how to consume them via Mercury.
+
+---
+
+## Event Architecture
+
+Soroban events have up to 4 topic fields and a data field, all encoded as XDR `ScVal`. Vanna events use:
+
+- **topic1**: Event name (string/symbol)  
+- **topic2**: Primary key (usually smart_account or lender address)  
+- **data**: Struct payload with the event fields
+
+---
+
+## AccountManager Events
+
+Contract: `CAK2IJIO2SKZWUODY4G7ZRIUUIIMJUUAIXE3I5YTQ5QYNSS2RYJ3P4CV`
+
+### AccountCreationEvent
+
+Emitted when a new (or reused) SmartAccount is activated.
+
+```
+topic1: "AccountCreationEvent"
+data: {
+  smart_account: Address,
+  creation_time: u64        // Unix timestamp (ledger close time)
+}
+```
+
+**Decode:**
+```typescript
+const data = decodeScVal(event.data) as {
+  smart_account: string;
+  creation_time: bigint;
+};
+```
+
+---
+
+### AccountDeletionEvent
+
+Emitted when a margin account is closed.
+
+```
+topic1: "AccountDeletionEvent"
+data: {
+  smart_account: Address,
+  deletion_time: u64
+}
+```
+
+---
+
+### TraderDepositEvent
+
+Emitted when collateral is deposited into a SmartAccount.
+
+```
+topic1: "TraderDepositEvent"
+topic2: <smart_account_address>
+data: {
+  smart_account: Address,
+  token_symbol:  Symbol,    // "XLM", "USDC"
+  amount:        U256       // in WAD (10^18)
+}
+```
+
+---
+
+### TraderBorrowEvent
+
+Emitted on every successful borrow.
+
+```
+topic1: "TraderBorrowEvent"
+topic2: <smart_account_address>
+data: {
+  smart_account: Address,
+  token_symbol:  Symbol,
+  token_amount:  U256       // borrowed amount in WAD (before origination fee)
+}
+```
+
+---
+
+### TraderRepayEvent
+
+Emitted on debt repayment.
+
+```
+topic1: "TraderRepayEvent"
+topic2: <smart_account_address>
+data: {
+  smart_account: Address,
+  token_amount:  U256,
+  timestamp:     u64,
+  token_symbol:  Symbol
+}
+```
+
+---
+
+### TraderLiquidateEvent
+
+Emitted when a margin account is liquidated.
+
+```
+topic1: "TraderLiquidateEvent"
+topic2: <smart_account_address>
+data: {
+  smart_account: Address,
+  timestamp:     u64
+}
+```
+
+---
+
+### TraderSettleAccountEvent
+
+Emitted when all debt is repaid via `settle_account()`.
+
+```
+topic1: "TraderSettleAccountEvent"
+topic2: <smart_account_address>
+data: {
+  smart_account: Address,
+  timestamp:     u64
+}
+```
+
+---
+
+## LendingPool Events
+
+Applies to LendingPoolXLM and LendingPoolUSDC.
+
+### deposit_event (LendingDepositEvent)
+
+Emitted on LP deposit.
+
+```
+topic1: "deposit_event"
+topic2: <lender_address>
+data: {
+  lender:       Address,
+  amount:       U256,       // deposited amount in WAD
+  timestamp:    u64,
+  asset_symbol: Symbol      // "XLM", "USDC"
+}
+```
+
+---
+
+### withdraw_event (LendingWithdrawEvent)
+
+Emitted on vToken redemption.
+
+```
+topic1: "withdraw_event"
+topic2: <lender_address>
+data: {
+  lender:        Address,
+  vtoken_amount: U256,      // vTokens burned
+  timestamp:     u64,
+  asset_symbol:  Symbol
+}
+```
+
+---
+
+### mint_event (LendingTokenMintEvent)
+
+Emitted when vTokens are minted (on deposit).
+
+```
+topic1: "mint_event"
+data: {
+  lender:       Address,
+  token_amount: U256,       // vTokens minted
+  timestamp:    u64,
+  token_symbol: Symbol      // "vXLM", "vUSDC"
+}
+```
+
+---
+
+### burn_event (LendingTokenBurnEvent)
+
+Emitted when vTokens are burned (on redemption).
+
+```
+topic1: "burn_event"
+data: {
+  lender:       Address,
+  token_amount: U256,       // vTokens burned
+  timestamp:    u64,
+  token_symbol: Symbol
+}
+```
+
+---
+
+## SmartAccount Events
+
+### SmartAccountActivationEvent
+
+```
+topic1: "SmartAccountActivationEvent"
+data: {
+  margin_account: Address,
+  activated_time: u64
+}
+```
+
+### SmartAccountDeactivationEvent
+
+```
+topic1: "SmartAccountDeactivationEvent"
+data: {
+  margin_account:   Address,
+  deactivate_time:  u64
+}
+```
+
+---
+
+## vToken Events (MintEvent, BurnEvent, TransferEvent)
+
+Standard token events on vXLM and vUSDC contracts.
+
+```
+MintEvent:      { admin: Address, to: Address, amount: i128 }
+BurnEvent:      { admin: Address, from: Address, amount: i128 }
+TransferEvent:  { from: Address, to: Address, amount: i128 }
+ApprovalEvent:  { from: Address, spender: Address, amount: i128, expiration_ledger: u32 }
+```
+
+---
+
+## Complete Event Decoder
+
+```typescript
+import { xdr, scValToNative } from '@stellar/stellar-sdk';
+
+type VannaEvent =
+  | { type: 'AccountCreated';    smartAccount: string; time: number }
+  | { type: 'AccountDeleted';    smartAccount: string; time: number }
+  | { type: 'TraderDeposit';     smartAccount: string; symbol: string; amountWad: bigint }
+  | { type: 'TraderBorrow';      smartAccount: string; symbol: string; amountWad: bigint }
+  | { type: 'TraderRepay';       smartAccount: string; symbol: string; amountWad: bigint; time: number }
+  | { type: 'TraderLiquidated';  smartAccount: string; time: number }
+  | { type: 'LPDeposit';         lender: string; symbol: string; amountWad: bigint; time: number }
+  | { type: 'LPWithdraw';        lender: string; symbol: string; vtokenAmountWad: bigint; time: number }
+  | { type: 'Unknown';           raw: unknown }
+
+function decodeScVal(base64: string): unknown {
+  const buf = Buffer.from(base64, 'base64');
+  return scValToNative(xdr.ScVal.fromXDR(buf));
+}
+
+function decodeEvent(event: MercuryEvent): VannaEvent {
+  const name = decodeScVal(event.topic1) as string;
+  const data = decodeScVal(event.data) as Record<string, unknown>;
+
+  switch (name) {
+    case 'AccountCreationEvent':
+      return { type: 'AccountCreated', smartAccount: data.smart_account as string, time: Number(data.creation_time) };
+    case 'AccountDeletionEvent':
+      return { type: 'AccountDeleted', smartAccount: data.smart_account as string, time: Number(data.deletion_time) };
+    case 'TraderDepositEvent':
+      return { type: 'TraderDeposit', smartAccount: data.smart_account as string, symbol: data.token_symbol as string, amountWad: data.amount as bigint };
+    case 'TraderBorrowEvent':
+      return { type: 'TraderBorrow', smartAccount: data.smart_account as string, symbol: data.token_symbol as string, amountWad: data.token_amount as bigint };
+    case 'TraderRepayEvent':
+      return { type: 'TraderRepay', smartAccount: data.smart_account as string, symbol: data.token_symbol as string, amountWad: data.token_amount as bigint, time: Number(data.timestamp) };
+    case 'TraderLiquidateEvent':
+      return { type: 'TraderLiquidated', smartAccount: data.smart_account as string, time: Number(data.timestamp) };
+    case 'deposit_event':
+      return { type: 'LPDeposit', lender: data.lender as string, symbol: data.asset_symbol as string, amountWad: data.amount as bigint, time: Number(data.timestamp) };
+    case 'withdraw_event':
+      return { type: 'LPWithdraw', lender: data.lender as string, symbol: data.asset_symbol as string, vtokenAmountWad: data.vtoken_amount as bigint, time: Number(data.timestamp) };
+    default:
+      return { type: 'Unknown', raw: { name, data } };
+  }
+}
+```
+
+---
+
+## Real-Time Event Streaming
+
+Combine Mercury for history with Horizon SSE for live updates:
+
+```typescript
+import { Horizon } from '@stellar/stellar-sdk';
+
+class VannaEventStream {
+  private cursor: string | undefined;
+
+  constructor(
+    private contractAddress: string,
+    private onEvent: (event: VannaEvent) => void,
+  ) {}
+
+  async start() {
+    // 1. Load recent history from Mercury
+    const history = await fetchContractEvents(this.contractAddress, { limit: 200 });
+    history.reverse().forEach(e => this.onEvent(decodeEvent(e)));
+    if (history.length) this.cursor = history[0].id;
+
+    // 2. On each new ledger, poll Mercury for new events
+    const horizon = new Horizon.Server('https://horizon-testnet.stellar.org');
+    horizon.ledgers().cursor('now').stream({
+      onmessage: async () => {
+        const newEvents = await fetchContractEvents(this.contractAddress, {
+          limit: 50,
+          cursor: this.cursor,
+        });
+        if (!newEvents.length) return;
+
+        newEvents.reverse().forEach(e => this.onEvent(decodeEvent(e)));
+        this.cursor = newEvents[0].id;
+      },
+    });
+  }
+}
+
+// Usage:
+const stream = new VannaEventStream(
+  ACCOUNT_MANAGER,
+  (event) => {
+    if (event.type === 'TraderBorrow') {
+      console.log(`New borrow: ${event.symbol} ${Number(event.amountWad) / 1e18}`);
+    }
+    if (event.type === 'TraderLiquidated') {
+      console.log(`Liquidation: ${event.smartAccount}`);
+    }
+  },
+);
+stream.start();
+```
+
+---
+
+## Building an Analytics Dashboard
+
+The event stream provides enough data to build a full analytics dashboard:
+
+| Metric | Events needed |
+|---|---|
+| Total borrows issued | Sum of `TraderBorrow.amountWad` |
+| Active margin accounts | Count of `AccountCreated` minus `AccountDeleted` |
+| Total liquidations | Count of `TraderLiquidated` |
+| LP TVL | Sum of `LPDeposit.amountWad` minus `LPWithdraw.vtokenAmountWad × exchangeRate` |
+| Borrow distribution by asset | Group `TraderBorrow` by symbol |
+| Account health over time | Periodic RiskEngine calls per account |
+
+---
+
+## Related
+
+- [Mercury Indexer](/developers/sdk/mercury-indexer) — fetching and paginating events
+- [Liquidation Bots](/developers/guides/liquidation-bots) — monitoring `TraderLiquidateEvent`
+- [Integrate Lending](/developers/guides/integrate-lending) — `deposit_event` and `withdraw_event` usage

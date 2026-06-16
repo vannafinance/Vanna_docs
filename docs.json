@@ -160,9 +160,42 @@
         "icon": "code",
         "groups": [
           {
-            "group": "Developers",
+            "group": "Introduction",
             "pages": [
-              "developers/coming-soon"
+              "developers/overview",
+              "developers/architecture",
+              "developers/deployed-contracts",
+              "developers/math-reference"
+            ]
+          },
+          {
+            "group": "Contract Reference",
+            "pages": [
+              "developers/contracts/account-manager",
+              "developers/contracts/smart-account",
+              "developers/contracts/lending-pools",
+              "developers/contracts/risk-engine",
+              "developers/contracts/rate-model",
+              "developers/contracts/vtokens",
+              "developers/contracts/registry",
+              "developers/contracts/tracking-tokens"
+            ]
+          },
+          {
+            "group": "TypeScript SDK",
+            "pages": [
+              "developers/sdk/getting-started",
+              "developers/sdk/transaction-flow",
+              "developers/sdk/mercury-indexer"
+            ]
+          },
+          {
+            "group": "Integration Guides",
+            "pages": [
+              "developers/guides/integrate-lending",
+              "developers/guides/integrate-margin",
+              "developers/guides/liquidation-bots",
+              "developers/guides/events-indexing"
             ]
           }
         ]

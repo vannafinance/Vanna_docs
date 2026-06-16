@@ -11,7 +11,7 @@ Liquidation triggers when your Health Factor reaches **1.1x** - the point at whi
 When liquidation runs, the protocol does two things in order:
 
 1. **Repays all your debt.** For every token you have borrowed, the full outstanding balance is cleared. The borrowed tokens held in your Margin Account are transferred back to the lending pools.
-2. **Returns remaining collateral to your wallet.** Whatever direct token balances (XLM, USDC, EURC) are still in your Margin Account after debt repayment are sent to your wallet.
+2. **Returns remaining collateral to your wallet.** Whatever direct token balances (XLM, USDC) are still in your Margin Account after debt repayment are sent to your wallet.
 
 All borrowed tokens are cleared in a single transaction. There is no partial liquidation.
 
@@ -43,10 +43,10 @@ Liquidation requires your authorization. The contract calls `require_auth()` on 
     You trigger liquidation on your Margin Account. The protocol confirms your account is unhealthy before proceeding - if your Health Factor is above 1.1x at the moment of execution, the transaction reverts and nothing happens.
   </Step>
   <Step title="All debt is repaid">
-    For every token you have borrowed (XLM, USDC, EURC), the protocol reads your full outstanding balance including accrued interest and clears it. The borrowed tokens held in your Margin Account are transferred back to the respective lending pools.
+    For every token you have borrowed (XLM, USDC), the protocol reads your full outstanding balance including accrued interest and clears it. The borrowed tokens held in your Margin Account are transferred back to the respective lending pools.
   </Step>
   <Step title="Remaining collateral goes to your wallet">
-    After debt is cleared, any remaining direct token balances (XLM, USDC, EURC) in your Margin Account are transferred to your wallet. If you held Blend yield positions or Aquarius LP positions as collateral, those tracking records are zeroed in your account but the underlying positions are not automatically unwound from their protocols.
+    After debt is cleared, any remaining direct token balances (XLM, USDC) in your Margin Account are transferred to your wallet. If you held Blend yield positions or Aquarius LP positions as collateral, those tracking records are zeroed in your account but the underlying positions are not automatically unwound from their protocols.
   </Step>
 </Steps>
 
@@ -55,7 +55,7 @@ Liquidation requires your authorization. The contract calls `require_auth()` on 
 After liquidation:
 
 - Your full outstanding debt is cleared.
-- Any direct token balances (XLM, USDC, EURC) remaining in your Margin Account after debt repayment are sent to your wallet.
+- Any direct token balances (XLM, USDC) remaining in your Margin Account after debt repayment are sent to your wallet.
 - There is no liquidation fee - the protocol repays your exact debt balance and returns the full remainder to you.
 
 The amount you recover depends on how far your Health Factor had dropped before liquidation ran. If it was right at 1.1x, you recover approximately 10% of your debt value as a surplus (collateral was 1.1x debt, so 0.1x remains after repaying 1x). If it had dropped further before you acted, the recoverable amount is smaller.
@@ -84,7 +84,7 @@ Specific steps:
 - **Repay some debt.** [Repaying debt](/guides/margin/repay) is the fastest way to raise your Health Factor. Even a partial repayment improves your position.
 - **Add more collateral.** [Transferring additional collateral](/guides/margin/deposit-collateral) into your Margin Account increases your collateral value and raises your Health Factor.
 - **Avoid borrowing close to your maximum.** If your Net Available Collateral is near zero, you are already close to the threshold. Always leave headroom.
-- **Use stable assets where possible.** USDC and EURC carry far less price risk than XLM or other volatile assets.
+- **Use stable assets where possible.** USDC carries far less price risk than XLM or other volatile assets.
 
 ## What to do if liquidation is imminent
 

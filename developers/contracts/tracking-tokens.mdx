@@ -1,0 +1,178 @@
+---
+title: "Tracking Tokens"
+description: "Single contract tracking Blend b-token positions and Aquarius/Soroswap LP token balances per margin account."
+mode: "wide"
+---
+
+The `TrackingToken` contract is a single on-chain token registry that tracks synthetic position balances for each SmartAccount. Instead of querying external protocols (Blend, Aquarius, Soroswap) directly during health checks, the RiskEngine reads TrackingToken balances to determine a margin account's external positions.
+
+**Testnet address:** `CA24GDWO63ZXNMW5FLWF2KMZ5DCF3DO7J3RYABFICDIDHH4A342RD2TR`
+
+---
+
+## Tracked Symbols
+
+| Symbol | Represents | Value in risk model |
+|---|---|---|
+| `BLEND_XLM` | XLM b-tokens held in Blend pool | Valued via `b_rate × oracle price` |
+| `BLEND_USDC` | USDC b-tokens held in Blend pool | Valued via `b_rate × oracle price` |
+| `AQ_XLM_USDC` | Aquarius XLM/USDC LP tokens | `$0` (no oracle feed) |
+| `SS_XLM_USDC` | Soroswap XLM/USDC LP tokens | `$0` (no oracle feed) |
+
+<Note>
+LP tokens (AQ_XLM_USDC, SS_XLM_USDC) are tracked to prevent double-counting but are valued at $0 in health factor calculations. Only Blend b-tokens receive non-zero collateral valuation.
+</Note>
+
+---
+
+## Mint / Burn Flow
+
+TrackingTokens are minted and burned by the AccountManager based on the return value from `SmartAccount.execute()`:
+
+```
+SmartAccount.execute() → returns (success, token_delta)
+
+if token_delta > 0:
+    AccountManager → TrackingToken.mint(symbol, smart_account, token_delta)
+if token_delta < 0:
+    AccountManager → TrackingToken.burn(symbol, smart_account, -token_delta)
+```
+
+**Blend deposit:** mint `BLEND_XLM` equal to b-tokens received  
+**Blend withdrawal:** burn `BLEND_XLM` equal to b-tokens returned  
+**Aquarius add liquidity:** mint `AQ_XLM_USDC` equal to LP tokens received  
+**Aquarius remove liquidity:** burn `AQ_XLM_USDC` equal to LP tokens burned
+
+---
+
+## Functions
+
+### initialize
+
+```rust
+fn initialize(
+    env: Env,
+    admin: Address,
+    symbol: Symbol,
+    decimals: u32,
+    name: String,
+) -> ()
+```
+
+One-time initialization per symbol. Sets the token info for a given tracking symbol.
+
+---
+
+### mint
+
+```rust
+fn mint(
+    env: Env,
+    symbol: Symbol,
+    to: Address,
+    amount: i128,
+) -> ()
+```
+
+Increases `to`'s balance for `symbol` by `amount`. Only callable by admin (AccountManager).
+
+**Called when:** A SmartAccount deposits into Blend or adds liquidity to Aquarius/Soroswap.
+
+---
+
+### burn
+
+```rust
+fn burn(
+    env: Env,
+    symbol: Symbol,
+    from: Address,
+    amount: i128,
+) -> ()
+```
+
+Decreases `from`'s balance for `symbol` by `amount`. Only callable by admin (AccountManager).
+
+**Called when:** A SmartAccount withdraws from Blend or removes liquidity from Aquarius/Soroswap.
+
+---
+
+### balance
+
+```rust
+fn balance(env: Env, id: Address, symbol: Symbol) -> i128
+```
+
+Returns the tracking token balance for `id` and `symbol`. The primary read function used by RiskEngine during collateral valuation.
+
+---
+
+### total_supply
+
+```rust
+fn total_supply(env: Env, symbol: Symbol) -> i128
+```
+
+Returns the total tracking tokens minted across all accounts for `symbol`.
+
+---
+
+### admin
+
+```rust
+fn admin(env: Env) -> Address
+```
+
+Returns the admin address (AccountManager).
+
+---
+
+### set_admin
+
+```rust
+fn set_admin(env: Env, new_admin: Address) -> ()
+```
+
+Changes the admin. Requires current admin auth.
+
+---
+
+## Storage Layout
+
+| Key | Type | Description |
+|---|---|---|
+| `TokenInfo(Symbol)` | `{decimals, name, symbol}` | Metadata per symbol |
+| `Admin` | `Address` | Admin (AccountManager) |
+| `TotalSupply(Symbol)` | `i128` | Total minted per symbol |
+| `Balance(Address, Symbol)` | `i128` | Per-account, per-symbol balance |
+
+---
+
+## Reading TrackingToken Balances (TypeScript)
+
+```typescript
+const TRACKING_TOKEN = 'CA24GDWO63ZXNMW5FLWF2KMZ5DCF3DO7J3RYABFICDIDHH4A342RD2TR';
+
+// Check how many Blend XLM b-tokens a smart account has
+const blendXlmBalance = await simulateCall(
+  TRACKING_TOKEN,
+  'balance',
+  [smartAccountAddress, Symbol('BLEND_XLM')]
+);
+
+// Check Aquarius LP position
+const aqLpBalance = await simulateCall(
+  TRACKING_TOKEN,
+  'balance',
+  [smartAccountAddress, Symbol('AQ_XLM_USDC')]
+);
+```
+
+---
+
+## Related
+
+- [SmartAccount](/developers/contracts/smart-account) — triggers mint/burn via `execute()` return value
+- [AccountManager](/developers/contracts/account-manager) — calls `mint`/`burn` based on `token_delta`
+- [Risk Engine](/developers/contracts/risk-engine) — reads balances for collateral valuation
+- [Math Reference](/developers/math-reference#blend-b-token-valuation) — how Blend positions are priced

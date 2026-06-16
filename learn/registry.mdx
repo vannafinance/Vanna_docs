@@ -56,7 +56,7 @@ const VDAI            = 0x7890...
 Three problems:
 
 1. **Upgrades break the integration.** If Vanna redeploys the Risk Engine to fix a bug, every hardcoded integration becomes wrong.
-2. **New assets require integrations to change.** When `vEURC` is added, every dashboard that wants to show EURC has to be updated.
+2. **New assets require integrations to change.** When a new vToken is added, every dashboard that wants to show it has to be updated.
 3. **Multi-chain becomes painful.** Each chain has different addresses. An integration that supports Base, Arbitrum, and Optimism would need three constants per contract.
 
 The Registry collapses all of this. There's one address per chain (the Registry itself), and integrators read everything else dynamically. When a contract is upgraded, the Registry entry is updated and every integration picks up the new address on the next read.

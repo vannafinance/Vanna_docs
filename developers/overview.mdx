@@ -1,0 +1,124 @@
+---
+title: "Developer Overview"
+description: "Everything you need to build on Vanna Protocol — margin accounts, lending pools, liquidation bots, and yield integrations on Stellar Soroban."
+mode: "wide"
+---
+
+Vanna is a margin lending protocol on Stellar Soroban. It consists of 14 smart contracts that together let users deposit collateral, borrow assets, deploy leverage into external DeFi protocols (Blend, Aquarius, Soroswap), and earn passive yield as liquidity providers. Every user who opens a margin account gets their own dedicated smart contract — no shared state, no cross-account risk.
+
+This documentation is for developers who want to integrate with, extend, or build on top of the Vanna Protocol.
+
+---
+
+## What You Can Build
+
+<CardGroup cols={3}>
+  <Card title="Lending Integrations" icon="bank">
+    Supply liquidity to XLM or USDC pools. Read pool state (utilization, APY, exchange rate). Integrate vToken minting and redemption into your own interface.
+  </Card>
+  <Card title="Margin Account Apps" icon="chart-line">
+    Create margin accounts on behalf of users, deposit collateral, issue borrows, and route capital to external protocols — all from your own frontend.
+  </Card>
+  <Card title="Liquidation Bots" icon="robot">
+    Monitor health factors on-chain. Call `liquidate()` when an account drops below 1.1x to earn the protocol fee. No special permissions required.
+  </Card>
+  <Card title="Yield Aggregators" icon="layer-group">
+    Compose Vanna's vTokens with Blend, Aquarius, and Soroswap positions to build automated leveraged yield strategies.
+  </Card>
+  <Card title="Analytics & Risk Tools" icon="chart-bar">
+    Query position data, oracle prices, borrow rates, and health factors across all accounts. Build dashboards, alerting systems, or stress-testing tools.
+  </Card>
+  <Card title="Protocol Integrations" icon="plug">
+    Add Vanna's lending pools as a liquidity source in your own Soroban protocol. The pool interface is minimal: `lend_to()` and `collect_from()`.
+  </Card>
+</CardGroup>
+
+---
+
+## Use Case Quick Reference
+
+| What you want to do | Entry point | Guide |
+|---|---|---|
+| Supply/withdraw liquidity | `LendingPool.deposit_xlm()` / `redeem_vxlm()` | [Integrate Lending](/developers/guides/integrate-lending) |
+| Open a margin account | `AccountManager.create_account()` | [Integrate Margin](/developers/guides/integrate-margin) |
+| Deposit collateral | `AccountManager.deposit_collateral_tokens()` | [Integrate Margin](/developers/guides/integrate-margin) |
+| Borrow from a pool | `AccountManager.borrow()` | [Integrate Margin](/developers/guides/integrate-margin) |
+| Deploy to Blend / Aquarius | `SmartAccount.execute()` | [Integrate Margin](/developers/guides/integrate-margin) |
+| Build a liquidation bot | `AccountManager.liquidate()` | [Liquidation Bots](/developers/guides/liquidation-bots) |
+| Read contract events | Mercury indexer API | [Events & Indexing](/developers/guides/events-indexing) |
+| Get oracle prices | `Oracle.get_price_latest()` | [Math Reference](/developers/math-reference) |
+| Check health factor | `RiskEngine.get_current_total_balance()` | [Risk Engine](/developers/contracts/risk-engine) |
+
+---
+
+## The Contract Stack
+
+Vanna's contracts are organized into four layers. You interact with the top layer; the layers below enforce safety and handle accounting.
+
+```
+┌─────────────────────────────────────────────────────────────┐
+│                      USER / INTEGRATOR                       │
+│         (wallet, frontend, bot, external protocol)           │
+└─────────────────────────┬───────────────────────────────────┘
+                          │
+┌─────────────────────────▼───────────────────────────────────┐
+│                   ENTRY LAYER                                 │
+│   AccountManager — single entry point for all margin ops     │
+│   LendingPools (XLM · USDC) — LP deposit/withdraw           │
+└──────┬────────────────────────────────────────┬─────────────┘
+       │                                        │
+┌──────▼──────────────┐              ┌──────────▼──────────────┐
+│    RISK LAYER        │              │    STATE LAYER           │
+│  RiskEngine          │              │  SmartAccount (per user) │
+│  (health checks,     │              │  (collateral balances,   │
+│   liquidation gates) │              │   borrow lists,          │
+│  RateModel           │              │   external positions)    │
+│  (interest rates)    │              │                          │
+└──────┬──────────────┘              └──────────┬──────────────┘
+       │                                        │
+┌──────▼────────────────────────────────────────▼─────────────┐
+│                    INFRASTRUCTURE LAYER                       │
+│  Registry · Oracle · TrackingTokens · vTokens · Deployer     │
+└─────────────────────────────────────────────────────────────┘
+```
+
+---
+
+## Network & Environment
+
+All contracts are currently deployed on **Stellar Testnet**. Mainnet deployment is planned for a future release.
+
+| Parameter | Value |
+|---|---|
+| Network | Stellar Testnet |
+| Network passphrase | `Test SDF Network ; September 2015` |
+| Soroban RPC | `https://soroban-testnet.stellar.org` |
+| Horizon | `https://horizon-testnet.stellar.org` |
+| Fixed-point precision | WAD — 10¹⁸ (all balances and prices in WAD unless noted) |
+
+See [Deployed Contracts](/developers/deployed-contracts) for all contract addresses.
+
+---
+
+## Documentation Map
+
+<CardGroup cols={2}>
+  <Card title="Architecture" icon="sitemap" href="/developers/architecture">
+    How the 14 contracts fit together. Call graphs and data flows for deposits, borrows, and liquidations.
+  </Card>
+  <Card title="Deployed Contracts" icon="map-pin" href="/developers/deployed-contracts">
+    All testnet contract addresses, token addresses, and external protocol addresses.
+  </Card>
+  <Card title="Math Reference" icon="calculator" href="/developers/math-reference">
+    WAD arithmetic, interest accrual, vToken exchange rate, borrow shares, health factor, and rate model formulas.
+  </Card>
+  <Card title="Contract Reference" icon="book" href="/developers/contracts/account-manager">
+    Function-level reference for all 8 protocol contracts: parameters, return values, errors, and events.
+  </Card>
+  <Card title="TypeScript SDK" icon="code" href="/developers/sdk/getting-started">
+    How to call Soroban contracts from TypeScript using Stellar SDK and Freighter wallet.
+  </Card>
+  <Card title="Integration Guides" icon="hammer" href="/developers/guides/integrate-lending">
+    End-to-end guides for lending integrations, margin account management, liquidation bots, and event indexing.
+  </Card>
+</CardGroup>
