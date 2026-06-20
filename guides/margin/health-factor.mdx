@@ -73,19 +73,9 @@ How much your total collateral value can fall in USD - before your account becom
 
 ## What Changes Your Health Factor
 
-**Health Factor goes down when:**
+Your Health Factor falls when collateral prices drop, when you borrow more, or when interest accrues on your debt — and rises when you repay debt or add collateral. One important detail: interest accrues continuously in the background, so your Health Factor can drift downward over time even if prices are flat and you take no action.
 
-- A collateral asset's price falls, reducing your total collateral value
-- You borrow more, increasing your total debt
-- Interest accrues on your outstanding debt, gradually growing the debt balance over time
-
-**Health Factor goes up when:**
-
-- A collateral asset's price rises, increasing your total collateral value
-- You [repay debt](/guides/margin/repay), reducing your total debt balance
-- You [add more collateral](/guides/margin/deposit-collateral), increasing your total collateral value
-
-One detail worth knowing: interest on your debt grows continuously in the background, even between transactions. The debt balance the protocol uses to calculate your Health Factor updates each time any user interacts with the lending pool - which happens regularly - but in quiet periods, your true debt may be slightly higher than what is displayed. This means your Health Factor can drift downward over time even if prices are flat and you take no actions.
+For the complete breakdown of every event that affects the ratio, see [Health Factor — Core Concepts](/learn/health-factor).
 
 ## How to Keep Your Position Safe
 

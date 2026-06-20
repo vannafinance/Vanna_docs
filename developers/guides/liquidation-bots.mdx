@@ -12,13 +12,13 @@ Liquidation bots keep Vanna Protocol solvent by calling `AccountManager.liquidat
 
 When a margin account's health factor drops to or below 1.1×:
 
-1. Any caller can call `AccountManager.liquidate(smart_account)`
-2. The protocol repays all debt by drawing from the SmartAccount's collateral
-3. Remaining collateral is swept to the trader
-4. The liquidator pays gas and receives no explicit bonus in the current version
+1. Any external caller can call `AccountManager.liquidate(liquidator, smart_account)`
+2. The liquidator pays all outstanding debt from **their own wallet** — token balances are pulled from the liquidator address
+3. **All collateral** in the SmartAccount is transferred to the liquidator
+4. The liquidator profits from the spread: at 1.1× collateralization, collateral received is worth at least 10% more than the debt paid
 
 <Note>
-Vanna V1 does not currently pay a liquidation bonus to the bot. The economic incentive is keeping the protocol healthy. A liquidation premium may be introduced in a future version.
+The liquidator's profit is structural: accounts only become liquidatable when collateral ≥ 1.1× debt. A timely liquidation always yields a positive spread (before gas). Race conditions between bots are possible — the first confirmed transaction wins.
 </Note>
 
 ---
@@ -47,7 +47,7 @@ Fetch the full list of accounts from AccountManager events (Mercury) or read fro
 ```typescript
 import { decodeScVal, fetchContractEvents } from './mercury-client';
 
-const ACCOUNT_MANAGER = 'CAK2IJIO2SKZWUODY4G7ZRIUUIIMJUUAIXE3I5YTQ5QYNSS2RYJ3P4CV';
+const ACCOUNT_MANAGER = 'CAWVGDG3TMGU4DC7POLSMDSBAJNJ363MHYPEAQHBRKOCLQIFP6WDXPJF';
 
 async function getAllSmartAccounts(): Promise<string[]> {
   // Fetch all AccountCreationEvents
@@ -148,11 +148,16 @@ async function liquidateAccount(
 ): Promise<string> {
   console.log(`Liquidating ${smartAccount}...`);
 
+  // liquidate(liquidator, smart_account)
+  // The liquidator (botAddress) must sign and will pay all debt, receiving all collateral
   const txHash = await invokeContract(
     botAddress,
     ACCOUNT_MANAGER,
     'liquidate',
-    [nativeToScVal(smartAccount, { type: 'address' })],
+    [
+      nativeToScVal(botAddress, { type: 'address' }),    // liquidator
+      nativeToScVal(smartAccount, { type: 'address' }),  // smart_account
+    ],
   );
 
   console.log(`Liquidation submitted: ${txHash}`);

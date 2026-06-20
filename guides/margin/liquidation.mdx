@@ -4,6 +4,10 @@ description: "What liquidation is, when it happens, and how to avoid it."
 mode: "wide"
 ---
 
+<Note>
+  This page explains what liquidation means for you as a user — when it happens, what it does to your account, and how to avoid it. For the contract-level flow (code, authorization model, and `settle_account` internals), see [Core Concepts: Liquidation](/learn/liquidation).
+</Note>
+
 ## What liquidation is
 
 Liquidation triggers when your Health Factor reaches **1.1x** - the point at which your collateral is no longer considered sufficient to safely back your outstanding debt.
@@ -31,7 +35,7 @@ See [Health Factor](/guides/margin/health-factor) for how your current ratio is 
 
 ## Who can trigger it
 
-Liquidation requires your authorization. The contract calls `require_auth()` on your wallet address before doing anything - the transaction must carry your signature. This means liquidation is something you initiate on your own unhealthy account, not something an external party can force on you without your involvement.
+Liquidation is **permissionless** — any external party, such as a liquidation bot, can trigger it the moment your Health Factor reaches 1.1×. You do not need to sign or approve the transaction. Liquidation bots continuously monitor all margin accounts and act automatically when an account becomes eligible.
 
 ## What happens step by step
 
@@ -50,15 +54,19 @@ Liquidation requires your authorization. The contract calls `require_auth()` on 
   </Step>
 </Steps>
 
-## What you recover
+## What happens to your collateral
 
-After liquidation:
+When a liquidator triggers liquidation:
 
-- Your full outstanding debt is cleared.
-- Any direct token balances (XLM, USDC) remaining in your Margin Account after debt repayment are sent to your wallet.
-- There is no liquidation fee - the protocol repays your exact debt balance and returns the full remainder to you.
+- Your full outstanding debt is cleared — the liquidator pays it from their own wallet.
+- **All collateral in your Margin Account is transferred to the liquidator.** You receive nothing back.
+- Your Margin Account remains open but empty, with no debt and no collateral.
 
-The amount you recover depends on how far your Health Factor had dropped before liquidation ran. If it was right at 1.1x, you recover approximately 10% of your debt value as a surplus (collateral was 1.1x debt, so 0.1x remains after repaying 1x). If it had dropped further before you acted, the recoverable amount is smaller.
+There is no liquidation fee or protocol cut. The liquidator's profit is the difference between the collateral they receive and the debt they paid — at 1.1× collateralization, this is roughly 10% of the debt value.
+
+<Warning>
+  You will lose all collateral in your Margin Account when liquidation occurs. The only way to keep your collateral is to repay your debt using **Settle Account** before reaching 1.1×. See the section below.
+</Warning>
 
 ## Settle account - the voluntary path out
 
@@ -68,11 +76,13 @@ Settling repays all of your outstanding debt without sweeping your collateral. Y
 
 | | Liquidation | Settle Account |
 |---|---|---|
-| When you can use it | Only when HF is at or below 1.1x | Any time |
-| What happens to collateral | Sent to your wallet | Stays in account |
-| Use case | Cleaning up an unhealthy account | Voluntary full repayment |
+| Who triggers it | Any external liquidator | You (account owner) |
+| When it can happen | Any time HF is at or below 1.1× | Any time — no HF requirement |
+| Who repays debt | The liquidator (from their wallet) | You (from your wallet) |
+| What happens to collateral | **All collateral sent to the liquidator** | Stays in your account |
+| Use case | Forced by external bots when unhealthy | Voluntary full repayment to exit cleanly |
 
-Settling voluntarily while your account is still healthy keeps full control of the timing in your hands.
+Use **Settle Account** before reaching 1.1× to repay debt and keep your collateral. Once liquidation runs, all collateral is gone.
 
 ## How to avoid liquidation
 
@@ -104,3 +114,4 @@ Your options, in order of speed:
 - [Health Factor](/guides/margin/health-factor) - understand how your Health Factor is calculated and what moves it.
 - [Repay a Loan](/guides/margin/repay) - reduce your debt to improve your Health Factor.
 - [Deposit Collateral](/guides/margin/deposit-collateral) - add collateral to strengthen your position.
+- [Core Concepts: Liquidation](/learn/liquidation) - the contract-level flow, authorization model, and settle_account details.

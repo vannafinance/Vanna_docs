@@ -6,7 +6,7 @@ mode: "wide"
 
 The `TrackingToken` contract is a single on-chain token registry that tracks synthetic position balances for each SmartAccount. Instead of querying external protocols (Blend, Aquarius, Soroswap) directly during health checks, the RiskEngine reads TrackingToken balances to determine a margin account's external positions.
 
-**Testnet address:** `CA24GDWO63ZXNMW5FLWF2KMZ5DCF3DO7J3RYABFICDIDHH4A342RD2TR`
+**Testnet address:** `CA2T3IQLIB66T5S3DL3IKBOVINPKQ64VZKMCC2AKYOO6GX5T7CVPBRV4`
 
 ---
 
@@ -151,7 +151,7 @@ Changes the admin. Requires current admin auth.
 ## Reading TrackingToken Balances (TypeScript)
 
 ```typescript
-const TRACKING_TOKEN = 'CA24GDWO63ZXNMW5FLWF2KMZ5DCF3DO7J3RYABFICDIDHH4A342RD2TR';
+const TRACKING_TOKEN = 'CA2T3IQLIB66T5S3DL3IKBOVINPKQ64VZKMCC2AKYOO6GX5T7CVPBRV4';
 
 // Check how many Blend XLM b-tokens a smart account has
 const blendXlmBalance = await simulateCall(
