@@ -4,7 +4,7 @@ description: "The debt clearance mechanism that runs when an account's health fa
 mode: "wide"
 ---
 
-Liquidation is the enforcement mechanism that resolves an unhealthy account. When an account's health factor drops below the 1.1x threshold, the owner can call `AccountManager.liquidate()` to clear all outstanding debt and recover any remaining collateral value. The protocol blocks this call when the account is healthy - it is an emergency exit only.
+Liquidation is the enforcement mechanism that resolves an unhealthy account. When an account's health factor drops below the 1.1x threshold, any external party (a liquidation bot) can call `AccountManager.liquidate(liquidator, smart_account)`. The liquidator pays all outstanding debt from their own wallet and receives all collateral from the SmartAccount in return. The protocol blocks this call when the account is healthy.
 
 ---
 
@@ -33,14 +33,23 @@ If the account is healthy, the call panics and reverts. Liquidation can only pro
 
 ## Authorization
 
-The `liquidate()` function requires the account owner's authorization:
+`liquidate()` is **permissionless** — any external address can call it. The function signature takes a `liquidator` parameter:
 
 ```rust
-let trader_address = Self::get_trader_address(&env, &smart_account);
-trader_address.require_auth();
+pub fn liquidate(
+    env: Env,
+    liquidator: Address,
+    smart_account: Address,
+) -> Result<(), AccountManagerError>
 ```
 
-`require_auth()` on the trader address means the transaction must include a valid authorization entry from the account owner. This is not a permissionless operation - it requires the trader's direct participation or a pre-signed delegation. The protocol uses this model because the collateral is swept back to the owner, not to an external caller.
+Only the liquidator must authenticate:
+
+```rust
+liquidator.require_auth();
+```
+
+The account owner is not consulted and does not sign. The liquidator acts unilaterally once the health check confirms the account is eligible. This design creates a competitive external liquidator market — any bot that detects an unhealthy account can act immediately.
 
 ---
 
@@ -54,23 +63,27 @@ For every token the account has borrowed, the Account Manager:
    let liquidate_amount = xlm_client.get_borrow_balance(&smart_account);
    ```
 
-   Unlike the health check (which uses raw borrow shares), liquidation uses `get_borrow_balance()` - the full outstanding amount including all accrued interest settled as of the current state.
+   Unlike the health check (which uses raw borrow shares), liquidation uses `get_borrow_balance()` — the full outstanding amount including all accrued interest settled as of the current state.
 
-2. Clears the debt on the Lending Pool side:
+2. Transfers tokens **from the liquidator's wallet** to the LendingPool to repay the debt:
+
+   The liquidator must hold sufficient token balances to cover all borrowed positions. The protocol pulls these tokens from the liquidator address.
+
+3. Clears the debt on the Lending Pool side:
 
    ```rust
    xlm_client.collect_from(&liquidate_amount, &smart_account);
    ```
 
-3. Transfers the corresponding tokens from the Smart Account to the pool and updates internal accounting:
+4. Updates internal accounting on the SmartAccount:
 
    ```rust
    smart_account_client.remove_borrowed_token_balance(&XLM_SYMBOL, &amount_wad_u128);
    ```
 
-4. Removes the token from the account's borrowed token list if the debt is fully cleared.
+5. Removes the token from the account's borrowed token list when the debt is fully cleared.
 
-This loop runs for every token in the account's borrowed token list: XLM and USDC. All debt positions are closed in a single transaction - partial liquidation is not supported.
+This loop runs for every token in the account's borrowed token list: XLM, USDC, and any wrapped variants (BLUSDC, AQUSDC, SOUSDC). All debt positions are closed in a single transaction — partial liquidation is not supported.
 
 ---
 
@@ -82,7 +95,7 @@ After all debt is cleared, the Account Manager calls:
 smart_account_client.sweep_to(&trader_address);
 ```
 
-`sweep_to()` iterates over every token in the Smart Account's collateral list and transfers the full balance to the specified address - in this case, the account owner.
+`sweep_to()` iterates over every token in the Smart Account's collateral list and transfers the full balance to the specified address — in this case, the **liquidator**, not the account owner. The liquidator's profit is the collateral received minus the debt repaid.
 
 ### Tokens covered by sweep
 
@@ -140,9 +153,11 @@ pub fn settle_account(env: Env, smart_account: Address) -> Result<bool, AccountM
 
 | | `liquidate()` | `settle_account()` |
 |---|---|---|
-| Health check | Account must be unhealthy | No check |
+| Who calls it | Any external liquidator | Account owner only |
+| Health check | Account must be unhealthy | No check — can be called anytime |
+| Who repays debt | Liquidator (from their wallet) | Account owner (from their wallet) |
 | Debt cleared | All borrowed tokens | All borrowed tokens |
-| Collateral returned | Swept to owner immediately | Stays in Smart Account |
+| Collateral destination | Swept to **liquidator** | Stays in Smart Account |
 | Account deactivated | No | No |
 
 ---

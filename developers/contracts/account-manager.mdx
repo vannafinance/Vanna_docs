@@ -6,7 +6,7 @@ mode: "wide"
 
 `AccountManager` is the first contract a user or integrator calls for any margin operation. It authenticates callers, coordinates with `RiskEngine` and `LendingPool`, and delegates state mutations to the user's `SmartAccount`.
 
-**Testnet address:** `CAK2IJIO2SKZWUODY4G7ZRIUUIIMJUUAIXE3I5YTQ5QYNSS2RYJ3P4CV`
+**Testnet address:** `CAWVGDG3TMGU4DC7POLSMDSBAJNJ363MHYPEAQHBRKOCLQIFP6WDXPJF`
 
 ---
 
@@ -252,27 +252,28 @@ TraderRepayEvent {
 ### liquidate
 
 ```rust
-fn liquidate(env: Env, smart_account: Address) -> ()
+fn liquidate(env: Env, liquidator: Address, smart_account: Address) -> ()
 ```
 
-Liquidates an undercollateralized margin account. Repays all debt by drawing from the SmartAccount's collateral, then sweeps remaining collateral back to the account owner.
+Liquidates an undercollateralized margin account. The liquidator pays all outstanding debt from their own wallet and receives all remaining collateral from the SmartAccount in return.
 
-**Authorization:** None — anyone can call this function
+**Authorization:** `liquidator.require_auth()` — the caller (liquidator) must sign the transaction. The account owner is not involved and does not need to sign. This is fully permissionless.
 
-**Condition:** `RiskEngine.is_account_healthy(collateral_usd, debt_usd)` must return `false`
+**Condition:** `RiskEngine.is_account_healthy(collateral_usd, debt_usd)` must return `false`. Panics if the account is healthy.
 
 **What happens:**
-1. Validates the account is unhealthy
-2. For each borrowed token: reads outstanding debt, calls `LendingPool.collect_from()` to repay it
-3. Calls `SmartAccount.sweep_to(trader_address)` to return remaining collateral
+1. Validates the account is unhealthy via RiskEngine
+2. For each borrowed token: reads outstanding debt, transfers tokens from the **liquidator's wallet** to the LendingPool, calls `LendingPool.collect_from()` to clear the borrow shares
+3. Calls `SmartAccount.sweep_to(liquidator)` to transfer **all remaining collateral to the liquidator**
 4. Emits event
 
-**Liquidation incentive:** Currently, the protocol repays debt directly from collateral. The trader gets back whatever collateral remains after debt is cleared. There is no explicit liquidation bonus — liquidators earn value by keeping the protocol solvent. Incentive structure may be updated in future versions.
+**Liquidation incentive:** The liquidator pays the exact outstanding debt and receives the full collateral balance. Because the account only becomes liquidatable at 1.1× collateralization, a healthy liquidation always yields at least 10% profit on the debt repaid (before gas).
 
 **Events emitted:**
 ```
 TraderLiquidateEvent {
     smart_account: Address,
+    liquidator: Address,
     timestamp: u64
 }
 ```
@@ -339,3 +340,15 @@ enum AccountManagerError {
 | `AssetCap` | `U256` | Maximum total asset cap for the protocol |
 | `Admin` | `Address` | Admin address |
 | `RegistryContract` | `Address` | Registry address |
+
+---
+
+## Related
+
+- [SmartAccount](/developers/contracts/smart-account) — per-user contract that AccountManager writes to
+- [RiskEngine](/developers/contracts/risk-engine) — guard functions called before every borrow, withdraw, and liquidate
+- [LendingPools](/developers/contracts/lending-pools) — pools that issue and collect debt
+- [Integrate Margin](/developers/guides/integrate-margin) — end-to-end guide for building margin account flows
+- [Liquidation Bots](/developers/guides/liquidation-bots) — guide for monitoring accounts and calling liquidate()
+- [User Guide: Margin Account](/guides/margin/overview) — user-facing explanation of margin account lifecycle
+- [Core Concepts: Liquidation](/learn/liquidation) — protocol-level liquidation flow and settle_account details
