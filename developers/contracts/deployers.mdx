@@ -1,0 +1,121 @@
+---
+title: "Deployment Contracts"
+description: "Current testnet implementation, behavior, authorization, and Rust signatures."
+mode: "wide"
+---
+
+The core Deployer and lending-pool Deployer are separate admin-controlled contracts.
+
+## Core deployment
+
+`deploy_all` deploys Registry, RateModel, RiskEngine, Oracle, and AccountManager; sets the SmartAccount WASM hash; and wires core addresses. It accepts the Reflector address explicitly. A one-time deployed guard prevents repeating the core deployment. The return order is **Registry, RateModel, RiskEngine, Oracle, AccountManager**.
+
+## Lending deployment
+
+`DeployerLPoolContract` provides a legacy XLM/USDC pair deployment and `deploy_single_pool` for additional markets. It deploys a pool and receipt, initializes metadata, and initializes the pool. A single-pool deployment still needs appropriate Registry asset/alias/permission configuration; it does not onboard every dependency automatically.
+
+The legacy two-pool helper initializes vXLM with 7 decimals and vUSDC with 6; this is not a universal claim about the four configured receipt deployments or underlying SAC decimals. Read deployed metadata.
+
+The Rust workspace uses Soroban SDK **25.3.1**, Blend SDK **2.25.0**, and contract imports from `target/wasm32v1-none/release`. Build prerequisite WASMs before consumers. Review the repository's deployment scripts before using them; addresses listed here are configuration snapshots, not a new deployment.
+
+## Function signatures
+
+These signatures are copied from the reviewed Rust implementation. `env` is supplied by Soroban and is not a transaction argument. `Result` errors and panics must be handled by the caller; simulation does not guarantee later execution. Public methods include privileged and internal-contract callbacks, not just user entrypoints.
+
+### DeployerContract
+
+### __constructor
+
+```rust
+pub fn __constructor(env: Env, admin: Address)
+```
+
+### deploy_all
+
+```rust
+pub fn deploy_all(
+        env: Env,
+        registry_contract_wasm_hash: BytesN<32>,
+        risk_engine_wasm_hash: BytesN<32>, 
+        rate_model_wasm_hash: BytesN<32>,
+        oracle_wasm_hash: BytesN<32>,
+        account_manager_wasm_hash: BytesN<32>,
+        smart_account_hash: BytesN<32>,
+        reflector_address: Address, 
+    ) -> (Address, Address, Address, Address, Address)
+```
+
+### propose_admin
+
+```rust
+pub fn propose_admin(env: Env, new_admin: Address)
+```
+
+### accept_admin
+
+```rust
+pub fn accept_admin(env: Env)
+```
+
+### upgrade
+
+```rust
+pub fn upgrade(env: Env, new_wasm_hash: BytesN<32>)
+```
+
+### DeployerLPoolContract
+
+### __constructor
+
+```rust
+pub fn __constructor(env: Env, admin: Address)
+```
+
+### deploy_lps_and_token_contracts
+
+```rust
+pub fn deploy_lps_and_token_contracts(
+        env: Env,
+        registry_address: Address,
+        account_manager: Address,
+        rate_model: Address,
+        token_issuer: Address,
+        lending_pool_hash: BytesN<32>,
+        vtoken_hash: BytesN<32>,
+        origination_fee_u128: u128,
+    ) -> (Address, Address, Address, Address)
+```
+
+### deploy_single_pool
+
+```rust
+pub fn deploy_single_pool(
+        env: Env,
+        registry_address: Address,
+        account_manager: Address,
+        rate_model: Address,
+        token_issuer: Address,
+        lending_pool_hash: BytesN<32>,
+        vtoken_hash: BytesN<32>,
+        origination_fee_u128: u128,
+        asset_symbol: Symbol,
+        asset_address: Address,
+        vtoken_symbol: Symbol,
+        vtoken_decimals: u32,
+        vtoken_name: String,
+        vtoken_ticker: String,
+        nonce: u32,
+    ) -> (Address, Address)
+```
+
+### upgrade
+
+```rust
+pub fn upgrade(env: Env, new_wasm_hash: BytesN<32>)
+```
+
+
+## Source reference
+
+- `Protocol_V1_Soroban_testnet/contracts/DeployerContract/src/deployer.rs`
+- `Protocol_V1_Soroban_testnet/contracts/DeployerLPoolContract/src/pool_deployer.rs`

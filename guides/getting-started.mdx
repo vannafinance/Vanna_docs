@@ -1,41 +1,29 @@
 ---
 title: "Getting Started"
-description: "Connect your wallet, choose your side, and start using Vanna in minutes."
+description: "Using getting started in the current Stellar testnet application."
 mode: "wide"
 ---
 
-<div className="vanna-poster">
-  <div className="vanna-poster-orb-violet" />
-  <div className="vanna-poster-orb-rose" />
-  <div className="vanna-poster-grid" />
-  <div className="vanna-poster-grain" />
+Vanna's Stellar testnet application lets you supply liquidity, manage a margin account, swap assets, and explore external yield strategies using test tokens.
 
-  <div className="vanna-poster-content">
-    <img src="/logo/vanna-dark.png" className="vanna-poster-logo" alt="Vanna" />
-    <div className="vanna-poster-headline">
-      <div className="vanna-poster-line">Two sides.</div>
-      <div className="vanna-poster-line">One <span className="accent">protocol.</span></div>
-    </div>
-  </div>
-</div>
+## Connect and fund
 
-Vanna is a **dual-sided DeFi protocol** - built for two types of users: liquidity providers who want to earn yield on their assets, and traders who need capital to trade and invest across DeFi markets.
+Open the testnet app using **Launch App**. Connect Freighter, or use the email/Google option when Privy login is enabled. The build targets Stellar testnet. Claim test assets through the Faucet and retain XLM for fees and account reserves.
 
-## First: connect your wallet
+The four lending assets are **XLM, BLUSDC, AqUSDC, and SoUSDC**. The USDC variants are distinct test tokens; choose the one required by the pool or protocol.
 
-Before doing anything on Vanna, connect your wallet. The guide below walks you through connecting your Stellar wallet and claiming testnet tokens from the faucet.
+## Choose a flow
 
-<Card title="Connect Your Wallet & Get Testnet Tokens" href="/guides/connect-wallet" icon="wallet">
-  Step-by-step guide to connecting your Stellar wallet to Vanna and claiming testnet tokens from the faucet.
-</Card>
+| Goal | Start here |
+|---|---|
+| Supply wallet assets for lending yield | [Earn](/guides/earn/overview) |
+| Deposit collateral and borrow | [Margin](/guides/margin/overview) |
+| Swap tokens | [Spot](/guides/trade/spot-swap) |
+| Supply to Blend or provide AMM liquidity | [Farm](/guides/farm/overview) |
+| Use a simplified strategy workflow | [Lite Mode](/guides/farm/leveraged-yield) |
+| See combined holdings | [Portfolio](/guides/portfolio) |
+| Build and review an assisted action plan | [Copilot](/guides/copilot) |
 
-## Then choose your path
+Pro is the default mode. Switch back to Pro to access advanced screens hidden in Lite. Perps and options are not enabled in this Stellar build.
 
-<CardGroup cols={2}>
-  <Card title="For Liquidity Providers" href="/guides/earn/overview" icon="piggy-bank">
-    Supply assets to Vanna's lending pools and earn yield from borrower interest - passively, with no positions to manage.
-  </Card>
-  <Card title="For Traders & Borrowers" href="/guides/margin/overview" icon="chart-candlestick">
-    Open a Margin Account, deposit collateral, and borrow up to 10× leverage. Deploy your capital composably across DeFi markets.
-  </Card>
-</CardGroup>
+A successful request or wallet signature is not final confirmation. Wait for the transaction result and refreshed balances before the next dependent step.

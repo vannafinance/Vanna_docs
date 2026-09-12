@@ -1,47 +1,25 @@
 ---
-title: "Liquidations"
-description: "Monitor recent liquidation events and wallets currently eligible for liquidation."
+title: "Liquidation Monitoring"
+description: "Using liquidation monitoring in the current Stellar testnet application."
 mode: "wide"
 ---
 
-The Liquidations section gives you a real-time view of liquidation activity across the protocol - both completed liquidations and accounts that are currently eligible to be liquidated.
+The Liquidations view combines liquidation history with accounts that appear eligible from available data.
 
-## Overview metrics
+## Candidates versus completed events
 
-At the top of the page, key summary statistics are shown:
+A candidate has debt and a displayed health factor at or below 1.1. Execution still requires up-to-date oracle data, recognized assets, liquidator funds and allowances, available external paths, and a transaction that fits resource limits. Plain collateral pricing failure can block liquidation.
 
-| Metric | What it means |
-|---|---|
-| **Number of Liquidations** | Total liquidation events recorded |
-| **Collateral Seized** | Total USD value of collateral taken from liquidated accounts |
-| **Debt Repaid** | Total debt cleared through liquidations |
-| **Wallets with Bad Debt** | Accounts where HF dropped below 1.0 (debt exceeded collateral) |
-| **Live Bad Debt Estimate** | Current uncovered protocol loss in USD |
-| **Success Rate** | % of liquidation attempts that completed successfully |
-| **Avg Time to Liquidate** | How quickly the protocol responded to eligible positions |
+A completed `Trader_Liquidate_Event` indicates that the manager liquidation transaction executed. It does not mean the SmartAccount was deactivated or that every unknown debt symbol was cleared. Check current account state when interpreting outcomes.
 
-## Recent liquidation events
+<Frame caption="Historical candidate table for orientation. Eligibility must be checked again against current account and oracle state. Click the image to zoom.">
+  <img src="/images/analytics/WalletEligibleForLiquidation.png" alt="Liquidation candidate table with Stellar addresses, health factor, debt, and collateral" width="1538" height="563" loading="lazy" decoding="async" />
+</Frame>
 
-The events table shows each liquidation with:
+## Proceeds
 
-- **Time** - When the liquidation occurred
-- **Tx Hash** - On-chain transaction identifier
-- **Position** - The account that was liquidated
-- **Liquidator** - The address that triggered the liquidation
-- **Debt** - Amount of debt cleared
-- **Recovered** - Collateral recovered in the liquidation
-- **Bad Debt** - Any shortfall that could not be recovered
-- **Duration** - Time from eligibility to completion
-- **Status** - Success or partial/failed
+Current liquidation repays recognized debt from the liquidator, exits Blend collateral to them, transfers LP tokens, and sweeps direct collateral. LP receipt proceeds are not necessarily realized underlying tokens at that moment.
 
-## Wallets eligible for liquidation
+History may be delayed or incomplete across Mercury/RPC sources. Use the transaction hash and current state for confirmation. A dashboard bad-debt label is a derived condition, not proof that losses have been written off in lending-pool accounting.
 
-This table lists all accounts currently at HF < 1.1 - positions that can be liquidated right now. The data refreshes live and shows current debt, collateral value, and liquidation distance for each account.
-
-![Wallets Eligible for Liquidation](/images/analytics/WalletEligibleForLiquidation.png)
-
-## Related
-
-- [Risk Monitoring Dashboard](/guides/analytics/overview)
-- [Positions](/guides/analytics/positions)
-- [Liquidation](/guides/margin/liquidation)
+See [Liquidation](/guides/margin/liquidation) and [Bot Integration](/developers/guides/liquidation-bots).

@@ -1,38 +1,21 @@
 ---
 title: "Open a Margin Account"
-description: "How to create your Margin Account on Vanna."
+description: "Using open a margin account in the current Stellar testnet application."
 mode: "wide"
 ---
 
-Before you can deposit collateral or borrow on Vanna, you need a Margin Account. Opening one is a one-time on-chain transaction that costs a small network fee.
-
-## Before you start
-
-- **Wallet connected** - see [Connect Wallet](/guides/connect-wallet) if you haven't done this yet.
+You need a SmartAccount before holding margin collateral or deploying account-based strategies. Earn supply does not require one.
 
 ## Steps
 
-<Steps>
-  <Step title="Go to the Margin tab">
-    Click **Margin** in the top navigation bar. If you don't have a Margin Account yet, you'll see a prompt to create one rather than the usual metrics panel.
-  </Step>
-  <Step title="Click Create Account">
-    Click the **Create Account** button (or the equivalent prompt shown on screen). A confirmation modal opens showing you what the transaction will do and the estimated network fee.
-  </Step>
-  <Step title="Review the agreement">
-    Read the terms shown in the modal. This includes acknowledging the liquidation risk - if your Health Factor drops to 1.1×, your account can be liquidated. Check the checkbox to confirm you have read and understood the terms before you can continue.
-  </Step>
-  <Step title="Sign the transaction">
-    Click to proceed. Your wallet opens a confirmation prompt. Review the fee and transaction data, then confirm and sign to broadcast it.
-  </Step>
-  <Step title="Account created">
-    Once the transaction is confirmed, the Margin tab updates and displays your account's metrics panel. You'll see your Health Factor, Net Available Collateral, and Collateral Left Before Liquidation. Your account starts with no collateral and no debt.
-  </Step>
-</Steps>
+1. Connect the wallet that will own the account.
+2. Open Margin in Pro mode and use the account creation control if no account is discovered.
+3. Review the displayed terms and liquidation acknowledgment.
+4. Confirm and authorize the creation transaction.
+5. Wait for confirmation and check the discovered SmartAccount address.
 
-## What happens next
+The owner wallet starts with G; the deployed SmartAccount starts with C. They hold different balances. Creation may reuse a previously closed contract. Existing accounts are rediscovered on reconnect; a missing local browser record does not mean you need to deploy another account.
 
-Your Margin Account is now live and ready to use. The next step is to deposit collateral so that you have borrowing capacity.
+An account cannot be closed in the same ledger in which it was activated. Closing later requires debt clearance and external-position unwind. Liquidation does not automatically close it.
 
-- [Deposit Collateral](/guides/margin/deposit-collateral) - move assets from your wallet into the account.
-- [Margin Overview](/guides/margin/overview) - revisit the full picture of how the Margin system works.
+Continue with [Deposit Collateral](/guides/margin/deposit-collateral).

@@ -17,8 +17,14 @@
   "css": "/custom.css",
   "navbar": {
     "links": [
-      { "label": "App", "href": "https://app.vanna.finance" },
-      { "label": "GitHub", "href": "https://github.com/vanna-finance" }
+      {
+        "label": "App",
+        "href": "https://test-stellar.vanna.finance/"
+      },
+      {
+        "label": "GitHub",
+        "href": "https://github.com/vanna-finance"
+      }
     ],
     "primary": {
       "type": "button",
@@ -34,7 +40,9 @@
         "groups": [
           {
             "group": " ",
-            "pages": ["home"]
+            "pages": [
+              "home"
+            ]
           }
         ]
       },
@@ -46,7 +54,9 @@
             "group": "Get Started",
             "pages": [
               "guides/getting-started",
-              "guides/connect-wallet"
+              "guides/connect-wallet",
+              "guides/portfolio",
+              "guides/copilot"
             ]
           },
           {
@@ -135,7 +145,9 @@
             "pages": [
               "learn/smart-accounts",
               "learn/lending-pools",
-              "learn/vtokens"
+              "learn/vtokens",
+              "learn/lending-pool-mechanics",
+              "learn/composable-leverage"
             ]
           },
           {
@@ -165,7 +177,9 @@
               "developers/overview",
               "developers/architecture",
               "developers/deployed-contracts",
-              "developers/math-reference"
+              "developers/math-reference",
+              "developers/frontend",
+              "developers/review-scope"
             ]
           },
           {
@@ -178,11 +192,18 @@
               "developers/contracts/rate-model",
               "developers/contracts/vtokens",
               "developers/contracts/registry",
-              "developers/contracts/tracking-tokens"
+              "developers/contracts/tracking-tokens",
+              "developers/contracts/oracle",
+              "developers/contracts/controller-facade",
+              "developers/contracts/blend-controller",
+              "developers/contracts/soroswap-controller",
+              "developers/contracts/aquarius-controller",
+              "developers/contracts/deployers",
+              "developers/contracts/shared-types"
             ]
           },
           {
-            "group": "TypeScript SDK",
+            "group": "TypeScript Integration",
             "pages": [
               "developers/sdk/getting-started",
               "developers/sdk/transaction-flow",

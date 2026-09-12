@@ -1,3 +1,5 @@
+> Historical editorial report from before the 2026-09-12 source refresh. Its findings and file descriptions may no longer apply. See [current review](SOURCE_REVIEW.md).
+
 # Vanna Protocol Docs - Technical Writing Review
 
 > Reviewed by: Senior Web3 Technical Writer & DeFi Protocol Reviewer  

@@ -1,248 +1,189 @@
 ---
 title: "vTokens"
-description: "Fungible tokens representing LP share in a Vanna lending pool. Function reference for vXLM and vUSDC contracts."
+description: "Current testnet implementation, behavior, authorization, and Rust signatures."
 mode: "wide"
 ---
 
-vTokens are standard fungible tokens on Soroban that represent a proportional share of a Vanna lending pool's total assets. Three vToken contracts exist — one per pool.
+Each lending pool controls a separate receipt-token deployment. The frontend configures four receipts: vXLM, vBLEND_USDC, vAQUARIUS_USDC, and vSOROSWAP_USDC. Use [configured addresses](/developers/deployed-contracts) and token metadata for exact tickers and decimals.
 
-| Token | Pool | Address |
-|---|---|---|
-| `vXLM` | XLM Lending Pool | `CCQAAPNBYF6I7PRM2NZ4NRDYZUVJJANMX3RZ4ZLMQH6Z5WAUL2MHU2RZ` |
-| `vUSDC` | USDC Lending Pool | `CDAJHQEJ26EBBGV2UYSR5S5LLA6F3A7KQISLPY5JMOL77RUDBEWG3T6Y` |
-| `vAQUSDC` | Aquarius USDC Pool | `CATGJWK22YGAQX4DH6BXUMQYRZRGOQ6MJNJVZP67WZEE4PHSROU763KN` |
-| `vSOUSDC` | Soroswap USDC Pool | `CDW5YJOBAR5KUPYQ5LQICSLKWRUMDEGSZVS5A4QNBMNKEZEARR6EJFYT` |
+## Pool shares
 
-All vToken contracts share the same interface.
+A receipt represents a claim on pool assets, including outstanding borrow interest. The exact conversion includes a virtual offset and native decimal rounding; use pool conversion getters rather than assuming one receipt always equals one underlying token.
 
----
+Pool methods take WAD quantities; token `balance`, `transfer`, `mint`, and `burn` use native `i128` quantities. Underlying and receipt decimals must each be read independently.
 
-## Exchange Rate
+## Authorization and controls
 
-vTokens appreciate against the underlying asset as interest accrues. The exchange rate is:
+Construction sets an admin; initialization supplies metadata and authenticates the configured admin. The lending pool normally controls mint/burn. Holder transfers and allowance-based transfers require their respective authorizations. Admin controls include maximum supply and account authorization/freeze state. Transfers can be blocked by freeze state; unconditional transferability is not guaranteed. Pool-directed burn is permitted for exit even when receipt receiving/transfers are frozen.
 
+Holding vTokens does not itself add collateral to a margin account. Earn positions and margin custody are separate.
+
+## Function signatures
+
+These signatures are copied from the reviewed Rust implementation. `env` is supplied by Soroban and is not a transaction argument. `Result` errors and panics must be handled by the caller; simulation does not guarantee later execution. Public methods include privileged and internal-contract callbacks, not just user entrypoints.
+
+### __constructor
+
+```rust
+pub fn __constructor(env: Env, admin: Address)
 ```
-exchange_rate = total_assets / vtoken_supply
-```
-
-Where `total_assets = pool_balance + outstanding_borrows`. As borrowers repay interest, `total_assets` grows, and each vToken is redeemable for more of the underlying.
-
-**Holding vTokens is how LPs earn yield.** No staking, claiming, or compounding required — yield accrues in the exchange rate.
-
----
-
-## Functions
 
 ### initialize
 
 ```rust
-fn initialize(
-    env: Env,
-    admin: Address,
-    decimals: u32,
-    name: String,
-    symbol: String,
-) -> ()
+pub fn initialize(
+        env: Env,
+        admin: Address,
+        decimal: u32,
+        name: String,
+        symbol: String,
+    ) -> Result<(), TokenError>
 ```
-
-One-time initialization. Sets the token metadata and admin. Can only be called once.
-
----
-
-### mint
-
-```rust
-fn mint(env: Env, to: Address, amount: i128) -> ()
-```
-
-Increases `to`'s vToken balance by `amount`. Only callable by the admin (the LendingPool contract).
-
-Called by the LendingPool on every deposit.
-
----
-
-### burn
-
-```rust
-fn burn(env: Env, from: Address, amount: i128) -> ()
-```
-
-Decreases `from`'s vToken balance by `amount`. Only callable by the admin (the LendingPool contract).
-
-Called by the LendingPool on every vToken redemption.
-
----
-
-### transfer
-
-```rust
-fn transfer(env: Env, from: Address, to: Address, amount: i128) -> ()
-```
-
-Standard token transfer. Requires `from.require_auth()`.
-
-vTokens are freely transferable — they can be held in any wallet or used in other DeFi protocols.
-
----
-
-### transfer_from
-
-```rust
-fn transfer_from(
-    env: Env,
-    spender: Address,
-    from: Address,
-    to: Address,
-    amount: i128,
-) -> ()
-```
-
-Allowance-based transfer. Requires `spender.require_auth()` and sufficient allowance from `from` to `spender`.
-
----
-
-### approve
-
-```rust
-fn approve(
-    env: Env,
-    from: Address,
-    spender: Address,
-    amount: i128,
-    expiration_ledger: u32,
-) -> ()
-```
-
-Grants `spender` permission to transfer up to `amount` of `from`'s vTokens. Standard Soroban token approval with an expiration ledger.
-
----
-
-### balance
-
-```rust
-fn balance(env: Env, id: Address) -> i128
-```
-
-Returns the vToken balance of `id`.
-
----
-
-### total_supply
-
-```rust
-fn total_supply(env: Env) -> i128
-```
-
-Returns the total number of vTokens currently in circulation.
-
----
-
-### allowance
-
-```rust
-fn allowance(env: Env, from: Address, spender: Address) -> i128
-```
-
-Returns the remaining allowance that `spender` can transfer from `from`.
-
----
-
-### decimals / name / symbol
-
-```rust
-fn decimals(env: Env) -> u32
-fn name(env: Env) -> String
-fn symbol(env: Env) -> String
-```
-
-Standard token metadata.
-
----
 
 ### admin
 
 ```rust
-fn admin(env: Env) -> Address
+pub fn admin(env: Env) -> Address
 ```
-
-Returns the admin address (the LendingPool contract that controls mint/burn).
-
----
 
 ### set_admin
 
 ```rust
-fn set_admin(env: Env, new_admin: Address) -> ()
+pub fn set_admin(env: Env, new_admin: Address) -> Result<(), TokenError>
 ```
 
-Changes the admin. Requires current admin auth. Used for protocol upgrades.
+### set_max_supply
 
----
-
-## Events
-
-```
-MintEvent {
-    admin: Address,
-    to: Address,
-    amount: i128
-}
-
-BurnEvent {
-    admin: Address,
-    from: Address,
-    amount: i128
-}
-
-TransferEvent {
-    from: Address,
-    to: Address,
-    amount: i128
-}
-
-ApprovalEvent {
-    from: Address,
-    spender: Address,
-    amount: i128,
-    expiration_ledger: u32
-}
+```rust
+pub fn set_max_supply(env: Env, max_supply: i128) -> Result<(), TokenError>
 ```
 
----
+### max_supply
 
-## Storage Layout
-
-| Key | Type | Description |
-|---|---|---|
-| `TokenInfo` | `{decimals, name, symbol}` | Token metadata |
-| `Admin` | `Address` | Admin (LendingPool) |
-| `TotalSupply` | `i128` | Total vTokens in circulation |
-| `Balance(Address)` | `i128` | Per-user balance |
-| `Allowance({from, spender})` | `{amount, expiration_ledger}` | Transfer allowances |
-| `Frozen(Address)` | `bool` | Whether account is frozen (admin action) |
-
----
-
-## Integration Notes
-
-<Note>
-vTokens follow the **Stellar Asset Interface** (SEP-41) and can be held, transferred, and used as collateral in other protocols on Stellar.
-</Note>
-
-To compute the current redemption value of a vToken balance:
-
-```typescript
-const vtokenBalance = await vtokenContract.balance(userAddress);
-const totalSupply = await vtokenContract.total_supply();
-const totalAssets = await lendingPool.total_assets(); // liquidity + borrows in WAD
-
-const underlyingWad = (vtokenBalance * totalAssets) / totalSupply;
+```rust
+pub fn max_supply(env: Env) -> Option<i128>
 ```
 
----
+### decimals
 
-## Related
+```rust
+pub fn decimals(env: Env) -> u32
+```
 
-- [Lending Pools](/developers/contracts/lending-pools) — mint/burn vTokens via deposit/redeem
-- [Math Reference](/developers/math-reference#vtoken-exchange-rate) — exchange rate formulas
-- [vTokens (Learn)](/learn/vtokens) — user-facing explanation of how yield accrues
+### name
+
+```rust
+pub fn name(env: Env) -> String
+```
+
+### symbol
+
+```rust
+pub fn symbol(env: Env) -> String
+```
+
+### balance
+
+```rust
+pub fn balance(env: Env, id: Address) -> i128
+```
+
+### total_supply
+
+```rust
+pub fn total_supply(env: Env) -> i128
+```
+
+### allowance
+
+```rust
+pub fn allowance(env: Env, from: Address, spender: Address) -> i128
+```
+
+### approve
+
+```rust
+pub fn approve(
+        env: Env,
+        from: Address,
+        spender: Address,
+        amount: i128,
+        expiration_ledger: u32,
+    ) -> Result<(), TokenError>
+```
+
+### transfer
+
+```rust
+pub fn transfer(env: Env, from: Address, to: Address, amount: i128) -> Result<(), TokenError>
+```
+
+### transfer_from
+
+```rust
+pub fn transfer_from(
+        env: Env,
+        spender: Address,
+        from: Address,
+        to: Address,
+        amount: i128,
+    ) -> Result<(), TokenError>
+```
+
+### mint
+
+```rust
+pub fn mint(env: Env, to: Address, amount: i128) -> Result<(), TokenError>
+```
+
+### burn
+
+```rust
+pub fn burn(env: Env, from: Address, amount: i128) -> Result<(), TokenError>
+```
+
+### burn_from
+
+```rust
+pub fn burn_from(
+        env: Env,
+        spender: Address,
+        from: Address,
+        amount: i128,
+    ) -> Result<(), TokenError>
+```
+
+### set_authorized
+
+```rust
+pub fn set_authorized(env: Env, id: Address, authorize: bool) -> Result<(), TokenError>
+```
+
+### authorized
+
+```rust
+pub fn authorized(env: Env, id: Address) -> bool
+```
+
+### set_frozen
+
+```rust
+pub fn set_frozen(env: Env, id: Address, freeze: bool) -> Result<(), TokenError>
+```
+
+### frozen
+
+```rust
+pub fn frozen(env: Env, id: Address) -> bool
+```
+
+### upgrade
+
+```rust
+pub fn upgrade(env: &Env, new_wasm_hash: BytesN<32>)
+```
+
+
+## Source reference
+
+- `Protocol_V1_Soroban_testnet/contracts/v-token/src/token.rs`

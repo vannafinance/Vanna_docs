@@ -1,8 +1,42 @@
 ---
-title: "Coming Soon"
-description: "Resources are on their way."
+title: "Testnet Resources"
+description: "Assets, terminology, fee sources, and implementation references."
+mode: "wide"
 ---
 
-Resources — including the glossary, supported assets, fee schedule, address registry, and FAQ — are currently being prepared.
+## Assets
 
-In the meantime, join us on [Discord](https://discord.gg/vanna) or follow [@vannafinance](https://x.com/vannafinance) for updates.
+| Display name | Identity |
+|---|---|
+| XLM | Native Stellar token |
+| BLUSDC | Blend USDC test token; compatibility alias USDC in selected code paths |
+| AqUSDC | Aquarius USDC test token; contract symbol AQUSDC |
+| SoUSDC | Soroswap USDC test token; contract symbol SOUSDC |
+
+These are the four configured lending markets. External pool cards and legacy icon lists are not the supported-lending-asset registry. See [Configured Contracts](/developers/deployed-contracts).
+
+## Terminology
+
+| Term | Meaning |
+|---|---|
+| Wallet | User signing account, usually a G address |
+| SmartAccount | Margin custody contract, a C address |
+| vToken | Vanna lending-pool receipt |
+| Tracking position | External Blend or AMM position represented in margin accounting |
+| WAD | Integer fixed-point scale of 10^18 |
+| Native units | Integer token quantity at its own decimal precision |
+| Free balance | Account-held tokens available for an action |
+| Equity | Collateral value minus debt, distinct from free balance |
+| Health Factor | Recognized collateral USD / debt USD |
+
+## Fees and rates
+
+Read the selected pool's origination fee and current rate-model coefficients. Frontend comments describe a zero origination-fee setup; the 0.9999 deployment buffer is a rounding margin. Network fees and external pool swap/LP economics are separate. Rates are variable, and the docs do not provide a fixed fee/APY promise.
+
+## Further reading
+
+- [Getting Started](/guides/getting-started)
+- [Core Concepts](/learn/overview)
+- [Contract Reference](/developers/contracts/account-manager)
+- [Frontend and APIs](/developers/frontend)
+- [Review Scope](/developers/review-scope)

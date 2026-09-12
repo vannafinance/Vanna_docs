@@ -1,52 +1,26 @@
 ---
 title: "Farm Overview"
-description: "Deploy assets from your Margin Account into external yield strategies - single-asset lending pools and multi-asset LP pools."
+description: "Using farm overview in the current Stellar testnet application."
 mode: "wide"
 ---
 
-Farm lets you deploy assets from your **Margin Account** into external yield protocols to earn additional yield. All Farm positions are tracked inside your Margin Account - your Health Factor applies to everything you deploy.
+Farm deploys SmartAccount-held assets into external strategies.
 
-<div style={{ display: "flex", justifyContent: "center", margin: "16px 0" }}>
-  <img src="/images/farm/farmSectionOverview.png" alt="Farm Section" style={{ maxWidth: "700px", width: "100%", borderRadius: "12px" }} />
-</div>
+| Type | Current integration |
+|---|---|
+| Single-asset lending | Blend XLM and Blend USDC supply |
+| AMM liquidity | Soroswap and Aquarius pool interfaces |
 
-## Two types of Farm pools
+Earn supplies Vanna's lending pools from your wallet and issues vTokens. Farm uses margin-account custody and external positions, which remain part of that account's risk assessment.
 
-Farm supports two pool types - choose based on your strategy and risk appetite:
+<Frame caption="Earlier Farm single-asset view. Rates and balances are illustrative; Blend USDC means BLUSDC. Click the image to zoom.">
+  <img src="/images/farm/farmSectionOverview.png" alt="Farm single-asset list showing Blend XLM and USDC supply markets" width="1620" height="830" loading="lazy" decoding="async" />
+</Frame>
 
-|  | Single-Asset Pools | LP Pools |
-|---|---|---|
-| **How it works** | Deposit one asset, earn lending yield | Deposit two assets, earn trading fees |
-| **Receipt token** | b-Tokens (e.g. bXLM) | LP shares |
-| **Yield source** | Borrower interest | 0.30% fee per swap |
-| **IL risk** | None | Yes - price divergence between the two assets |
-| **Complexity** | Simple - one asset | Requires both assets in the correct ratio |
+## Before you begin
 
-## Farm vs Earn
+Connect to the intended account and ensure it holds free assets matching the selected pool. BLUSDC, AqUSDC, and SoUSDC are not interchangeable. A displayed pool card does not guarantee controller registration, token permissions, or external pool availability. The Aquarius configuration records a smart-contract trustline/gauge limitation for its referenced pool.
 
-Both Farm and Earn let you earn yield - but they are different products:
+Deployed positions can contribute recognized collateral, but their underlying is not free balance until exited. All positions in the SmartAccount share its health and debt.
 
-- **Earn** (Vanna native) - supply assets to Vanna's own lending pools → receive **vTokens**
-- **Farm** (external protocols) - deploy assets from your Margin Account to external protocols → receive **b-Tokens** or **LP shares**
-
-Do not confuse vXLM (Earn) with bXLM (Farm). They come from different protocols and behave differently.
-
-## Before you start
-
-- **Margin Account with assets** - you need collateral already deposited. See [Deposit Collateral](/guides/margin/deposit-collateral).
-- **Wallet connected** - see [Connect Your Wallet](/guides/connect-wallet).
-
-<Note>
-  Farm positions use your Margin Account balance. Deployed assets are still subject to your Health Factor. If your Health Factor drops to 1.1×, your account can be liquidated.
-</Note>
-
-## Explore Farm
-
-<CardGroup cols={2}>
-  <Card title="Single-Asset Pools" href="/guides/farm/blend-pools" icon="layer-group">
-    Deposit one asset and earn lending yield. Receive b-Tokens that accrue interest automatically.
-  </Card>
-  <Card title="LP Pools" href="/guides/farm/amm-liquidity" icon="arrow-right-arrow-left">
-    Provide liquidity to AMM pools with two assets. Earn a share of every swap's trading fee.
-  </Card>
-</CardGroup>
+See [Blend Pools](/guides/farm/blend-pools), [LP Pools](/guides/farm/amm-liquidity), and [Lite Mode](/guides/farm/leveraged-yield).

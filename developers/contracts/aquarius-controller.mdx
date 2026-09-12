@@ -1,0 +1,76 @@
+---
+title: "Aquarius Controller"
+description: "Current testnet implementation, behavior, authorization, and Rust signatures."
+mode: "wide"
+---
+
+AquariusController supports `Swap`, `AddLiquidity`, and `RemoveLiquidity` through the configured Aquarius router. Tokens are sorted for pool discovery, and a pool index selects the underlying pool.
+
+Swap/add input amounts use WAD before native conversion. Remove-liquidity input is **LP WAD**, unlike Soroswap's raw LP amount. Swap `min_out` and the add-liquidity minimum LP amount are native units passed to Aquarius. Removal splits `min_out / 2` into each native leg minimum. Inspect the action branch and frontend builder before encoding minima.
+
+The controller authorizes router/pool/token subcalls through SmartAccount, synchronizes actual LP position membership, and returns signed WAD collateral deltas. Swap credits are capped by oracle input value.
+
+The configured XLM pair uses **AqUSDC**, a separate test token. The frontend configuration records a gauge/trustline limitation for smart-contract deposits into the referenced gauge-enabled pool. Controller support is present, but that comment is not evidence that the external pool now accepts deposits. Simulate the selected pool before relying on this flow; live availability was not checked in this documentation review.
+
+## Function signatures
+
+These signatures are copied from the reviewed Rust implementation. `env` is supplied by Soroban and is not a transaction argument. `Result` errors and panics must be handled by the caller; simulation does not guarantee later execution. Public methods include privileged and internal-contract callbacks, not just user entrypoints.
+
+### __constructor
+
+```rust
+pub fn __constructor(env: Env, registry: Address, admin: Address)
+```
+
+### upgrade
+
+```rust
+pub fn upgrade(env: &Env, new_wasm_hash: BytesN<32>)
+```
+
+### register_pool
+
+```rust
+pub fn register_pool(
+        env: &Env,
+        token_a: Address,
+        token_b: Address,
+        pool_index: BytesN<32>,
+        pool_address: Address,
+    )
+```
+
+### can_call
+
+```rust
+pub fn can_call(
+        env: &Env,
+        target: Address,
+        action: ExternalAction,
+        tokens: Vec<Address>,
+    ) -> (bool, Vec<Address>, Vec<Address>)
+```
+
+### execute
+
+```rust
+pub fn execute(
+        env: &Env,
+        account: Address,
+        action: ExternalAction,
+        tokens: Vec<Address>,
+        amounts: Vec<u128>,
+        min_out: u128,
+    ) -> TokenDeltas
+```
+
+### get_registry
+
+```rust
+pub fn get_registry(env: &Env) -> Address
+```
+
+
+## Source reference
+
+- `Protocol_V1_Soroban_testnet/contracts/AquariusControllerContract/src/controller.rs`

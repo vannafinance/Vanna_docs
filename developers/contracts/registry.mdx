@@ -1,144 +1,573 @@
 ---
 title: "Registry"
-description: "On-chain address book for all Vanna Protocol contracts. Every protocol contract resolves peer addresses here at runtime."
+description: "Current testnet implementation, behavior, authorization, and Rust signatures."
 mode: "wide"
 ---
 
-The `Registry` is a central address book. Every protocol contract resolves peer contract addresses through the Registry at runtime rather than storing them as constructor constants. This enables safe protocol upgrades — updating a Registry entry propagates to all contracts automatically.
+Registry stores core addresses, trader-to-account membership, token aliases, asset metadata, token permissions, controller routes, controller TVL caps, and tracking metadata.
 
-**Testnet address:** `CC35XWCH7SCQROTNW7PA6HZKP4JMNSVV2K7CX3HY2PSI2MI2ZQQH73ID`
+## Discovery
 
----
+Use `get_protocol_config` for batched core/token/protocol configuration; `get_registered_assets`, `get_token_address_for`, and `get_lending_pool_for_symbol` for market resolution; and `get_tracking_meta` for external-position valuation/unwind configuration. USDC price-feed aliases do not make distinct token contracts interchangeable.
 
-## Stored Addresses
+Account membership is written through AccountManager-authorized `add_account`, `close_account`, and `update_account`. There is no invented `get_user_smart_account` ABI: the frontend discovers account records using Registry storage and other supported fallbacks in `MarginAccountService`.
 
-The Registry stores addresses for every protocol component:
+## Governance
 
-| Key | Description |
-|---|---|
-| `LendingPoolXLM` | XLM lending pool contract |
-| `LendingPoolUSDC` | USDC lending pool contract |
-| `LendingPoolAquariusUSDC` | Aquarius USDC lending pool |
-| `LendingPoolSoroswapUSDC` | Soroswap USDC lending pool |
-| `RiskEngineContract` | Risk Engine contract |
-| `RateModelContract` | Rate Model contract |
-| `OracleContract` | Oracle (Reflector passthrough) |
-| `AccountManagerContract` | Account Manager |
-| `SmartAccountContractHash` | WASM hash used to deploy new SmartAccounts |
-| `NativeXLMAddress` | XLM Stellar Asset Contract (SAC) |
-| `USDCAddress` | USDC token contract |
-| `BlendPoolAddress` | External: Blend Capital pool |
-| `TrackingTokenAddress` | Tracking Token contract |
-| `AquariusRouterAddress` | External: Aquarius router |
-| `AquariusPoolIndex` | Aquarius pool pool_index |
-| `Treasury` | Protocol treasury address |
+After `finalize_registry_config`, controller registration has a **48-hour** queue delay. Token allowlist, asset metadata, and tracking metadata changes have a **24-hour** queue delay. Before finalization, these queue methods apply configuration immediately as a bootstrap path. The queue methods accept proposed data; the corresponding apply methods consume the queued change after its deadline. Cancellation and immediate deregistration methods are available. Finalizing Registry configuration restricts subsequent changes to sensitive configuration. Admin succession uses proposal and acceptance.
 
----
+`AssetMeta` includes LTV and liquidation fields, but the current RiskEngine's operative health threshold is a global 1.1. Do not infer per-asset weighted risk calculations solely from metadata fields.
 
-## Account Management Functions
+`get_exec_gate` batches target-to-controller lookup, probation TVL cap, and token permission checks. AccountManager's current typed execution uses it directly.
 
-The Registry also stores user account data.
+## Function signatures
 
-### add_account
+These signatures are copied from the reviewed Rust implementation. `env` is supplied by Soroban and is not a transaction argument. `Result` errors and panics must be handled by the caller; simulation does not guarantee later execution. Public methods include privileged and internal-contract callbacks, not just user entrypoints.
+
+### __constructor
 
 ```rust
-fn add_account(env: Env, trader: Address, smart_account: Address) -> ()
+pub fn __constructor(env: Env, admin: Address)
 ```
 
-Records a new SmartAccount for `trader`. Called by AccountManager during `create_account()`.
-
-**Authorization:** AccountManager only
-
----
-
-### update_account
+### set_lendingpool_xlm
 
 ```rust
-fn update_account(env: Env, trader: Address, smart_account: Address) -> ()
+pub fn set_lendingpool_xlm(
+        env: &Env,
+        lendingpool_xlm: Address,
+    ) -> Result<(), RegistryContractError>
 ```
 
-Updates the active SmartAccount address for `trader`. Called when reusing an inactive account.
-
----
-
-### get_accounts
+### set_smart_account_hash
 
 ```rust
-fn get_accounts(env: Env, trader: Address) -> Vec<Address>
+pub fn set_smart_account_hash(
+        env: &Env,
+        smart_account_hash: BytesN<32>,
+    ) -> Result<(), RegistryContractError>
 ```
 
-Returns all SmartAccount addresses ever associated with `trader` (active and historical).
+### set_accountmanager_contract
 
-**This is the primary way to look up a user's margin account address.**
+```rust
+pub fn set_accountmanager_contract(
+        env: &Env,
+        account_manager_address: Address,
+    ) -> Result<(), RegistryContractError>
+```
 
----
+### set_lendingpool_usdc
+
+```rust
+pub fn set_lendingpool_usdc(
+        env: &Env,
+        lendingpool_usdc_address: Address,
+    ) -> Result<(), RegistryContractError>
+```
+
+### set_risk_engine_address
+
+```rust
+pub fn set_risk_engine_address(
+        env: &Env,
+        risk_engine_address: Address,
+    ) -> Result<(), RegistryContractError>
+```
+
+### set_rate_model_address
+
+```rust
+pub fn set_rate_model_address(
+        env: &Env,
+        rate_model_address: Address,
+    ) -> Result<(), RegistryContractError>
+```
+
+### set_oracle_contract_address
+
+```rust
+pub fn set_oracle_contract_address(
+        env: &Env,
+        oracle_contract_address: Address,
+    ) -> Result<(), RegistryContractError>
+```
+
+### set_native_xlm_contract_address
+
+```rust
+pub fn set_native_xlm_contract_address(
+        env: &Env,
+        xlm_contract_adddress: Address,
+    ) -> Result<(), RegistryContractError>
+```
+
+### set_native_usdc_contract_address
+
+```rust
+pub fn set_native_usdc_contract_address(
+        env: &Env,
+        usdc_contract_address: Address,
+    ) -> Result<(), RegistryContractError>
+```
+
+### set_blend_pool_address
+
+```rust
+pub fn set_blend_pool_address(
+        env: &Env,
+        blend_pool_address: Address,
+    ) -> Result<(), RegistryContractError>
+```
+
+### set_tracking_token_contract_addr
+
+```rust
+pub fn set_tracking_token_contract_addr(
+        env: &Env,
+        tracking_token_contract_addr: Address,
+    ) -> Result<(), RegistryContractError>
+```
+
+### set_aquarius_router_address
+
+```rust
+pub fn set_aquarius_router_address(
+        env: &Env,
+        aquarius_router_address: Address,
+    ) -> Result<(), RegistryContractError>
+```
+
+### set_aquarius_pool_index
+
+```rust
+pub fn set_aquarius_pool_index(
+        env: &Env,
+        pool_index: BytesN<32>,
+    ) -> Result<(), RegistryContractError>
+```
+
+### get_lendingpool_xlm
+
+```rust
+pub fn get_lendingpool_xlm(env: &Env) -> Result<Address, RegistryContractError>
+```
 
 ### get_smart_account_hash
 
 ```rust
-fn get_smart_account_hash(env: Env) -> BytesN<32>
+pub fn get_smart_account_hash(env: &Env) -> Result<BytesN<32>, RegistryContractError>
 ```
 
-Returns the WASM hash used to deploy new SmartAccount instances.
-
----
-
-## Address Getter Functions
-
-Each stored address has a corresponding getter:
+### get_accountmanager_contract
 
 ```rust
-fn get_lending_pool_xlm(env: Env) -> Address
-fn get_lending_pool_usdc(env: Env) -> Address
-
-fn get_risk_engine(env: Env) -> Address
-fn get_rate_model(env: Env) -> Address
-fn get_oracle(env: Env) -> Address
-fn get_account_manager(env: Env) -> Address
-fn get_tracking_token(env: Env) -> Address
-fn get_treasury(env: Env) -> Address
-fn get_native_xlm(env: Env) -> Address
-fn get_usdc(env: Env) -> Address
-
-fn get_blend_pool(env: Env) -> Address
-// ... and corresponding has_*_address() booleans
+pub fn get_accountmanager_contract(env: &Env) -> Result<Address, RegistryContractError>
 ```
 
----
-
-## Address Setter Functions
-
-Each stored address has a setter callable by the admin:
+### get_lendingpool_usdc
 
 ```rust
-fn set_lending_pool_xlm(env: Env, address: Address) -> ()
-fn set_lending_pool_usdc(env: Env, address: Address) -> ()
-// ... etc.
+pub fn get_lendingpool_usdc(env: &Env) -> Result<Address, RegistryContractError>
 ```
 
-All setters require admin authorization.
+### get_risk_engine_address
 
----
-
-## Querying the Registry (TypeScript Example)
-
-```typescript
-import { Contract, SorobanRpc } from '@stellar/stellar-sdk';
-
-const REGISTRY = 'CC35XWCH7SCQROTNW7PA6HZKP4JMNSVV2K7CX3HY2PSI2MI2ZQQH73ID';
-const server = new SorobanRpc.Server('https://soroban-testnet.stellar.org');
-
-// Find a user's margin account
-const result = await server.simulateTransaction(
-  buildTransaction(userAddress, REGISTRY, 'get_accounts', [userAddressArg])
-);
-
-const accounts = scValToNative(result.result.retval); // Address[]
+```rust
+pub fn get_risk_engine_address(env: &Env) -> Result<Address, RegistryContractError>
 ```
 
----
+### get_rate_model_address
 
-## Related
+```rust
+pub fn get_rate_model_address(env: &Env) -> Result<Address, RegistryContractError>
+```
 
-- [Deployed Contracts](/developers/deployed-contracts) — all current testnet addresses
-- [Architecture](/developers/architecture) — why centralized address resolution matters for upgrades
+### get_oracle_contract_address
+
+```rust
+pub fn get_oracle_contract_address(env: &Env) -> Result<Address, RegistryContractError>
+```
+
+### get_xlm_contract_address
+
+```rust
+pub fn get_xlm_contract_address(env: &Env) -> Result<Address, RegistryContractError>
+```
+
+### get_usdc_contract_address
+
+```rust
+pub fn get_usdc_contract_address(env: &Env) -> Result<Address, RegistryContractError>
+```
+
+### get_blend_pool_address
+
+```rust
+pub fn get_blend_pool_address(env: &Env) -> Result<Address, RegistryContractError>
+```
+
+### get_aquarius_router_address
+
+```rust
+pub fn get_aquarius_router_address(env: &Env) -> Result<Address, RegistryContractError>
+```
+
+### set_soroswap_router_address
+
+```rust
+pub fn set_soroswap_router_address(
+        env: &Env,
+        soroswap_router_address: Address,
+    ) -> Result<(), RegistryContractError>
+```
+
+### get_soroswap_router_address
+
+```rust
+pub fn get_soroswap_router_address(env: &Env) -> Result<Address, RegistryContractError>
+```
+
+### get_aquarius_pool_index
+
+```rust
+pub fn get_aquarius_pool_index(env: &Env) -> Result<BytesN<32>, RegistryContractError>
+```
+
+### has_tracking_token_contract_addr
+
+```rust
+pub fn has_tracking_token_contract_addr(env: &Env) -> bool
+```
+
+### get_tracking_token_contract_addr
+
+```rust
+pub fn get_tracking_token_contract_addr(env: &Env) -> Result<Address, RegistryContractError>
+```
+
+### get_admin
+
+```rust
+pub fn get_admin(env: &Env) -> Result<Address, RegistryContractError>
+```
+
+### propose_admin
+
+```rust
+pub fn propose_admin(env: &Env, proposed: Address) -> Result<(), RegistryContractError>
+```
+
+### accept_admin
+
+```rust
+pub fn accept_admin(env: &Env) -> Result<(), RegistryContractError>
+```
+
+### get_proposed_admin
+
+```rust
+pub fn get_proposed_admin(env: &Env) -> Option<Address>
+```
+
+### get_timelock_durations
+
+```rust
+pub fn get_timelock_durations(_env: &Env) -> (u64, u64)
+```
+
+### upgrade
+
+```rust
+pub fn upgrade(env: &Env, new_wasm_hash: BytesN<32>)
+```
+
+### add_account
+
+```rust
+pub fn add_account(
+        env: &Env,
+        trader: Address,
+        smart_account: Address,
+    ) -> Result<bool, RegistryContractError>
+```
+
+### close_account
+
+```rust
+pub fn close_account(
+        env: &Env,
+        trader: Address,
+        smart_account: Address,
+    ) -> Result<bool, RegistryContractError>
+```
+
+### update_account
+
+```rust
+pub fn update_account(
+        env: &Env,
+        trader: Address,
+        smart_account: Address,
+    ) -> Result<bool, RegistryContractError>
+```
+
+### set_iscollateral_allowed
+
+```rust
+pub fn set_iscollateral_allowed(env: &Env, token_symbol: Symbol, allowed: bool)
+```
+
+### get_iscollateral_allowed
+
+```rust
+pub fn get_iscollateral_allowed(env: &Env, token_symbol: Symbol) -> bool
+```
+
+### is_collateral_explicitly_revoked
+
+```rust
+pub fn is_collateral_explicitly_revoked(env: &Env, token_symbol: Symbol) -> bool
+```
+
+### set_controller_facade
+
+```rust
+pub fn set_controller_facade(env: &Env, facade: Address)
+```
+
+### get_controller_facade
+
+```rust
+pub fn get_controller_facade(env: &Env) -> Address
+```
+
+### has_controller_facade
+
+```rust
+pub fn has_controller_facade(env: &Env) -> bool
+```
+
+### is_registry_config_finalized
+
+```rust
+pub fn is_registry_config_finalized(env: &Env) -> bool
+```
+
+### finalize_registry_config
+
+```rust
+pub fn finalize_registry_config(env: &Env)
+```
+
+### queue_register_controller
+
+```rust
+pub fn queue_register_controller(
+        env: &Env,
+        target: Address,
+        controller: Address,
+        tvl_cap_usd_wad: u128,
+    )
+```
+
+### register_controller
+
+```rust
+pub fn register_controller(env: &Env, target: Address)
+```
+
+### cancel_register_controller
+
+```rust
+pub fn cancel_register_controller(env: &Env, target: Address)
+```
+
+### deregister_controller
+
+```rust
+pub fn deregister_controller(env: &Env, target: Address)
+```
+
+### get_controller_for
+
+```rust
+pub fn get_controller_for(env: &Env, target: Address) -> Option<Address>
+```
+
+### get_controller_tvl_cap
+
+```rust
+pub fn get_controller_tvl_cap(env: &Env, controller: Address) -> Option<u128>
+```
+
+### get_protocol_config
+
+```rust
+pub fn get_protocol_config(env: &Env) -> vanna_common::types::ProtocolConfig
+```
+
+### get_revoked_flags
+
+```rust
+pub fn get_revoked_flags(env: &Env, symbols: Vec<Symbol>) -> Vec<bool>
+```
+
+### get_exec_gate
+
+```rust
+pub fn get_exec_gate(
+        env: &Env,
+        target: Address,
+        tokens: Vec<Address>,
+    ) -> vanna_common::types::ExecGate
+```
+
+### queue_set_token_allowed
+
+```rust
+pub fn queue_set_token_allowed(env: &Env, token_addr: Address, allowed: bool)
+```
+
+### set_token_allowed
+
+```rust
+pub fn set_token_allowed(env: &Env, token_addr: Address)
+```
+
+### cancel_set_token_allowed
+
+```rust
+pub fn cancel_set_token_allowed(env: &Env, token_addr: Address)
+```
+
+### deregister_token
+
+```rust
+pub fn deregister_token(env: &Env, token_addr: Address)
+```
+
+### is_token_allowed
+
+```rust
+pub fn is_token_allowed(env: &Env, token_addr: Address) -> bool
+```
+
+### queue_set_asset_meta
+
+```rust
+pub fn queue_set_asset_meta(env: &Env, token_addr: Address, meta: AssetMeta)
+```
+
+### set_asset_meta
+
+```rust
+pub fn set_asset_meta(env: &Env, token_addr: Address)
+```
+
+### cancel_set_asset_meta
+
+```rust
+pub fn cancel_set_asset_meta(env: &Env, token_addr: Address)
+```
+
+### get_asset_meta
+
+```rust
+pub fn get_asset_meta(env: &Env, token_addr: Address) -> Option<AssetMeta>
+```
+
+### get_registered_assets
+
+```rust
+pub fn get_registered_assets(env: &Env) -> Vec<RegisteredAsset>
+```
+
+### backfill_asset_list
+
+```rust
+pub fn backfill_asset_list(env: &Env, tokens: Vec<Address>)
+```
+
+### get_token_address_for
+
+```rust
+pub fn get_token_address_for(env: &Env, symbol: Symbol) -> Option<Address>
+```
+
+### get_price_feed_for
+
+```rust
+pub fn get_price_feed_for(env: &Env, symbol: Symbol) -> Option<Symbol>
+```
+
+### register_token_alias
+
+```rust
+pub fn register_token_alias(env: &Env, symbol: Symbol, address: Address)
+```
+
+### get_lending_pool_for
+
+```rust
+pub fn get_lending_pool_for(env: &Env, token_addr: Address) -> Option<Address>
+```
+
+### get_lending_pool_for_symbol
+
+```rust
+pub fn get_lending_pool_for_symbol(env: &Env, symbol: Symbol) -> Option<Address>
+```
+
+### queue_set_tracking_meta
+
+```rust
+pub fn queue_set_tracking_meta(env: &Env, symbol: Symbol, meta: TrackingMeta)
+```
+
+### set_tracking_meta
+
+```rust
+pub fn set_tracking_meta(env: &Env, symbol: Symbol)
+```
+
+### cancel_set_tracking_meta
+
+```rust
+pub fn cancel_set_tracking_meta(env: &Env, symbol: Symbol)
+```
+
+### deregister_tracking_meta
+
+```rust
+pub fn deregister_tracking_meta(env: &Env, symbol: Symbol)
+```
+
+### get_tracking_meta
+
+```rust
+pub fn get_tracking_meta(env: &Env, symbol: Symbol) -> Option<TrackingMeta>
+```
+
+### get_blend_tracking_symbol_for
+
+```rust
+pub fn get_blend_tracking_symbol_for(env: &Env, token_addr: Address) -> Option<Symbol>
+```
+
+### is_tracking_symbol
+
+```rust
+pub fn is_tracking_symbol(env: &Env, symbol: Symbol) -> bool
+```
+
+### get_all_tracking_symbols
+
+```rust
+pub fn get_all_tracking_symbols(env: &Env) -> Vec<Symbol>
+```
+
+
+## Source reference
+
+- `Protocol_V1_Soroban_testnet/contracts/RegistryContract/src/registry.rs`

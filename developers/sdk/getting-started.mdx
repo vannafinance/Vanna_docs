@@ -1,262 +1,57 @@
 ---
-title: "TypeScript SDK: Getting Started"
-description: "How to set up your environment and start calling Vanna Protocol contracts from TypeScript using the Stellar SDK and Freighter wallet."
+title: "TypeScript Integration"
+description: "Use the application-local Stellar service layer."
 mode: "wide"
 ---
 
-This guide covers everything you need to start integrating with Vanna Protocol from a TypeScript/JavaScript environment — reading pool state, checking health factors, and executing margin operations.
+The reviewed application declares Next.js `^16.2.3`, React `19.2.0`, Stellar SDK `^14.4.3`, and Freighter API `^6.0.1`. These are repository declarations, not claims about latest upstream releases.
 
----
+## Run the application
 
-## Prerequisites
-
-- Node.js 20+ (required by the Stellar SDK)
-- A Stellar testnet account (create at [Stellar Laboratory](https://laboratory.stellar.org))
-- [Freighter browser extension](https://freighter.app) for wallet signing (browser only)
-- Testnet XLM from the [Stellar Testnet Faucet](https://friendbot.stellar.org)
-
----
-
-## Installation
+From `mercury-stellar-backend`:
 
 ```bash
-npm install @stellar/stellar-sdk @stellar/freighter-api
+npm ci
+npm run dev
 ```
 
-| Package | Version | Purpose |
-|---|---|---|
-| `@stellar/stellar-sdk` | ^14.x | Soroban contract calls, transaction building, XDR encoding |
-| `@stellar/freighter-api` | ^6.x | Browser wallet connection and signing |
+Use its `LOCAL_SETUP.md` for environment-specific setup. Basic contract reads use the configured testnet RPC. Mercury history, Privy login, Copilot, and Hubble require their respective configuration. Keep service credentials server-side.
 
----
+## Service map
 
-## Network Configuration
+| Module | Export |
+|---|---|
+| `lib/stellar-utils.ts` | `ContractService`, `WalletService`, `CONTRACT_ADDRESSES`, `ASSET_TYPES` |
+| `lib/margin-utils.ts` | `MarginAccountService` |
+| `lib/blend-utils.ts` | `BlendService` |
+| `lib/soroswap-utils.ts` | `SoroswapService` |
+| `lib/aquarius-utils.ts` | `AquariusService` |
+| `lib/wallet-adapter.ts` | Wallet-kind-independent address, access, and signing functions |
+| `lib/one-click-strategy.ts` | `executeOneClickStrategy`, `closePosition` |
+
+Imports using `@/` assume the application's TypeScript alias. There is no generated universal client behind these service methods; read their argument types before reusing them.
+
+## Encode exact amounts
+
+For direct contract calls, use decimal strings or bigint, not floating-point multiplication by 10^18:
 
 ```typescript
-import { SorobanRpc, Networks } from '@stellar/stellar-sdk';
+import { nativeToScVal } from '@stellar/stellar-sdk';
 
-const NETWORK_PASSPHRASE = Networks.TESTNET;
-// 'Test SDF Network ; September 2015'
-
-const server = new SorobanRpc.Server(
-  'https://soroban-testnet.stellar.org',
-  { allowHttp: false }
-);
+const oneTokenWad = 1_000_000_000_000_000_000n;
+const amountArg = nativeToScVal(oneTokenWad, { type: 'u256' });
+const symbolArg = nativeToScVal('XLM', { type: 'symbol' });
 ```
 
----
+A token balance is native units. Pool deposit and manager repayment amounts are WAD. Pool redemption expects WAD **receipt quantity**. Controller minima and LP-removal units vary by protocol; see the controller references.
 
-## Contract Addresses
+## Checks
 
-All addresses are available in [Deployed Contracts](/developers/deployed-contracts). Import them centrally:
+`npm run lint`, `npm test`, and `npm run build` are the application checks. Rust integrated tests depend on the imported prerequisite WASMs. Documentation updates do not establish that a deployment or full integration test passed.
 
-```typescript
-export const CONTRACTS = {
-  REGISTRY:        'CC35XWCH7SCQROTNW7PA6HZKP4JMNSVV2K7CX3HY2PSI2MI2ZQQH73ID',
-  ORACLE:          'CB72D6SOUHUTCESXYOQOBMP6MRSH47NBYIBH73BBRH3ZRT53LPTB6R7V',
-  RATE_MODEL:      'CCJAUPCU6EIFQK6GTAAYLW3Y4YETJAAUPAGBPFGQ2OUJPSW3WWHUCL2Z',
-  RISK_ENGINE:     'CBL7RCG5H4VIZCNF7BRM2FQFXK7N5KRQKW7ZVEQZJKNXHA6FEU4OXK5I',
-  ACCOUNT_MANAGER: 'CAWVGDG3TMGU4DC7POLSMDSBAJNJ363MHYPEAQHBRKOCLQIFP6WDXPJF',
-  TRACKING_TOKEN:  'CA2T3IQLIB66T5S3DL3IKBOVINPKQ64VZKMCC2AKYOO6GX5T7CVPBRV4',
 
-  // Lending pools
-  POOL_XLM:        'CBA4E4ZMXUKCDTNT7LDKSO3LGNGKHRCE4GUVPSRCAKU3TKAONUY7SVOB',
-  POOL_USDC:       'CABLEI2ZPCWLO2FQRHJJYR7JW75BCCPN2ZIV5BX7CHPXZT4CZVTGUOBU',
+## Source reference
 
-  // vTokens
-  VXLM:            'CCQAAPNBYF6I7PRM2NZ4NRDYZUVJJANMX3RZ4ZLMQH6Z5WAUL2MHU2RZ',
-  VUSDC:           'CDAJHQEJ26EBBGV2UYSR5S5LLA6F3A7KQISLPY5JMOL77RUDBEWG3T6Y',
-
-  // Native tokens
-  XLM_SAC:         'CDLZFC3SYJYDZT7K67VZ75HPJVIEUVNIXF47ZG2FB2RMQQVU2HHGCYSC',
-  USDC:            'CAQCFVLOBK5GIULPNZRGATJJMIZL5BSP7X5YJVMGCPTUEPFM4AVSRCJU',
-} as const;
-```
-
----
-
-## Simulating (Reading) Contracts
-
-For read-only operations, use `server.simulateTransaction()`. No signing required.
-
-```typescript
-import {
-  Contract,
-  TransactionBuilder,
-  Account,
-  SorobanRpc,
-  scValToNative,
-  nativeToScVal,
-  xdr,
-} from '@stellar/stellar-sdk';
-
-const NETWORK_PASSPHRASE = 'Test SDF Network ; September 2015';
-
-async function simulateContractCall(
-  contractAddress: string,
-  method: string,
-  args: xdr.ScVal[] = [],
-): Promise<xdr.ScVal> {
-  const contract = new Contract(contractAddress);
-  const account = new Account('GAAZI4TCR3TY5OJHCTJC2A4QSY6CJWJH5IAJTGKIN2ER7LBNVKOCCWN', '0');
-
-  const tx = new TransactionBuilder(account, {
-    fee: '100',
-    networkPassphrase: NETWORK_PASSPHRASE,
-  })
-    .addOperation(contract.call(method, ...args))
-    .setTimeout(30)
-    .build();
-
-  const result = await server.simulateTransaction(tx);
-
-  if (SorobanRpc.Api.isSimulationError(result)) {
-    throw new Error(`Simulation failed: ${result.error}`);
-  }
-
-  return result.result!.retval;
-}
-```
-
----
-
-## Reading Pool State
-
-```typescript
-// Get total borrows from the XLM pool
-const borrowsScVal = await simulateContractCall(CONTRACTS.POOL_XLM, 'get_borrows');
-const borrowsWad = scValToNative(borrowsScVal) as bigint;
-// borrowsWad is in 10^18 scale. Divide by 10^7 for XLM (7 decimals), then by 10^11.
-
-// Get total liquidity
-const liquidityScVal = await simulateContractCall(CONTRACTS.POOL_XLM, 'get_total_liquidity_in_pool');
-const liquidityWad = scValToNative(liquidityScVal) as bigint;
-
-// Compute utilization
-const WAD = 10n ** 18n;
-const utilization = (borrowsWad * WAD) / (liquidityWad + borrowsWad);
-// utilization is in WAD (10^18 = 100%)
-```
-
----
-
-## Reading a User's Margin Account
-
-```typescript
-// Step 1: Find the user's SmartAccount via Registry
-const accountsScVal = await simulateContractCall(
-  CONTRACTS.REGISTRY,
-  'get_accounts',
-  [nativeToScVal(userWalletAddress, { type: 'address' })]
-);
-const accounts = scValToNative(accountsScVal) as string[];
-const smartAccount = accounts[0]; // user's active margin account
-
-// Step 2: Read health factor inputs
-const collateralScVal = await simulateContractCall(
-  CONTRACTS.RISK_ENGINE,
-  'get_current_total_balance',
-  [nativeToScVal(smartAccount, { type: 'address' })]
-);
-const collateralUsdWad = scValToNative(collateralScVal) as bigint;
-
-const debtScVal = await simulateContractCall(
-  CONTRACTS.RISK_ENGINE,
-  'get_current_total_borrows',
-  [nativeToScVal(smartAccount, { type: 'address' })]
-);
-const debtUsdWad = scValToNative(debtScVal) as bigint;
-
-// Step 3: Compute health factor
-const healthFactor = debtUsdWad > 0n
-  ? (collateralUsdWad * WAD) / debtUsdWad
-  : null; // no debt
-```
-
----
-
-## Connecting a Freighter Wallet
-
-```typescript
-import {
-  requestAccess,
-  getAddress,
-  signTransaction,
-} from '@stellar/freighter-api';
-
-// Request wallet access (shows Freighter popup)
-async function connectWallet(): Promise<string> {
-  await requestAccess();
-  const address = await getAddress();
-  return address;
-}
-```
-
----
-
-## Executing Transactions
-
-See [Transaction Flow](/developers/sdk/transaction-flow) for the complete pattern: build → simulate → sign → submit.
-
----
-
-## Reading Oracle Prices
-
-```typescript
-const priceScVal = await simulateContractCall(
-  CONTRACTS.ORACLE,
-  'get_price_latest',
-  [nativeToScVal('XLM', { type: 'symbol' })]
-);
-
-const [price, decimals] = scValToNative(priceScVal) as [bigint, number];
-// Convert to WAD: price_wad = price * (10^18 / 10^decimals)
-const priceWad = price * (10n ** 18n) / (10n ** BigInt(decimals));
-```
-
----
-
-## Handling Errors
-
-Soroban errors from contract panics appear in simulation as `SimulationError` or in transaction results as `invokeHostFunctionError`. Parse them:
-
-```typescript
-import { SorobanRpc } from '@stellar/stellar-sdk';
-
-const result = await server.simulateTransaction(tx);
-
-if (SorobanRpc.Api.isSimulationError(result)) {
-  // Contract panicked or insufficient resources
-  console.error('Simulation error:', result.error);
-  throw new Error(result.error);
-}
-
-if (SorobanRpc.Api.isSimulationSuccess(result) && result.result?.auth) {
-  // Check for auth errors — missing require_auth()
-}
-```
-
-Common error patterns:
-- `InsufficientBalance` — caller doesn't have enough tokens
-- `InsufficientPoolBalance` — pool can't cover withdrawal
-- `RiskEngineNotInitialized` — missing registry setup
-- Health factor check failure — logged as a contract panic with specific error code
-
----
-
-## Next Steps
-
-<CardGroup cols={2}>
-  <Card title="Transaction Flow" icon="arrow-right" href="/developers/sdk/transaction-flow">
-    Build, simulate, sign, and submit Soroban transactions step by step.
-  </Card>
-  <Card title="Mercury Indexer" icon="database" href="/developers/sdk/mercury-indexer">
-    Query historical events and transaction history via the Mercury indexer.
-  </Card>
-  <Card title="Integrate Lending" icon="piggy-bank" href="/developers/guides/integrate-lending">
-    End-to-end guide for deposit and vToken redemption.
-  </Card>
-  <Card title="Integrate Margin" icon="chart-line" href="/developers/guides/integrate-margin">
-    Create accounts, deposit collateral, and borrow assets.
-  </Card>
-</CardGroup>
+- `mercury-stellar-backend/package.json`
+- `mercury-stellar-backend/lib/stellar-utils.ts`
+- `mercury-stellar-backend/LOCAL_SETUP.md`

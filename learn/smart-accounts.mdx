@@ -1,136 +1,23 @@
 ---
 title: "Margin Accounts"
-description: "A separately deployed smart contract per user that holds collateral, tracks debt, and executes external protocol calls. The atomic unit of Vanna's risk model."
+description: "Current Stellar testnet margin accounts."
 mode: "wide"
 ---
 
-A Margin Account is a smart contract, not a record in a shared database. Every user who opens a Margin Account on Vanna gets their own deployed contract instance, with its own storage, its own collateral balances, its own borrow list, and its own external positions. No two accounts share state.
+A margin account is a separately deployed Stellar contract holding a trader's collateral and strategy assets. Your wallet authorizes its use through AccountManager.
 
-<div style={{ display: "flex", justifyContent: "center", margin: "4px 0 28px" }}>
-  <img src="/images/learn/marginAccountArchitecture.png" alt="Margin Account Architecture" style={{ maxWidth: "100%", borderRadius: "16px" }} />
-</div>
+## One account, multiple positions
 
-## The Factory Pattern
+The same account can hold direct tokens, Blend supply, and AMM LP positions while owing debt in multiple Vanna lending markets. Health is assessed across the account. Farm cards are views of positions within that shared account, not independent liquidation compartments.
 
-When a user calls `AccountManager.create_account()`, the Account Manager first checks whether the user has any previously closed accounts sitting in the inactive pool:
+Plain-token balances are keyed by token contract address. Tracking symbols identify external positions. BLUSDC, AqUSDC, and SoUSDC remain separate even though their price feeds may all resolve to USDC.
 
-```rust
-let mut inactive_accounts = Self::get_inactive_accounts(env, trader_address.clone());
-if inactive_accounts.len() == 0 {
-    // No inactive accounts - deploy a fresh contract
-    let smart_account_hash = registry_client.get_smart_account_hash();
-    smart_account = Self::create_smart_account(env, &trader_address, smart_account_hash);
-    registry_client.add_account(&trader_address, &smart_account);
-} else {
-    // Reuse an existing inactive contract
-    smart_account = inactive_accounts.pop_back().unwrap();
-    Self::set_inactive_accounts(env, trader_address.clone(), inactive_accounts);
-    registry_client.update_account(&trader_address, &smart_account);
-}
-```
+## Lifecycle
 
-If no inactive account exists, a new SmartAccount contract is deployed using a deterministic salt derived from `(trader_address, account_manager_address, account_index)`. The address is therefore predictable before deployment. The new account is registered in the [Registry](/learn/registry).
+Creating an account deploys or reactivates a contract. Closing requires no debt and a later ledger than activation; the manager unwinds external assets, sweeps remaining tokens to the owner, and deactivates the account for reuse. Repayment, settlement, and liquidation do not automatically close it.
 
-If an inactive account exists, it is reused directly - no new deployment. The Registry entry is updated to point to it. This amortizes deployment cost across the account's lifetime.
+## Spendable versus valued
 
-When an account is closed via `close_account()`, it is swept, deactivated, and pushed back into the user's inactive pool for reuse next time.
+Collateral value includes recognized external positions, but those positions must be withdrawn or converted before their underlying is spendable. The account's risk ledger can also conservatively credit less than its raw token balance after swaps. Use the UI's current free balance and transaction simulation for actions.
 
-## Storage Layout
-
-Every SmartAccount contract stores the following state in persistent storage:
-
-| Storage Key | Type | Description |
-|---|---|---|
-| `CollateralTokensList` | `Vec<Symbol>` | All token symbols currently held as collateral |
-| `CollateralBalanceWAD(Symbol)` | `U256` | Balance of each collateral token in WAD precision |
-| `BorrowedTokensList` | `Vec<Symbol>` | All token symbols with outstanding debt |
-| `HasDebt` | `bool` | True if any borrowed token entry exists |
-| `IsAccountActive` | `bool` | Whether the account is currently active |
-| `OwnerAddress` | `Address` | The wallet that owns and controls this account |
-| `AccountManager` | `Address` | The AccountManager contract authorized to call this account |
-| `RegistryContract` | `Address` | The Registry used to resolve peer contract addresses |
-
-The `CollateralTokensList` grows when a new asset is deposited and shrinks when a balance is fully withdrawn or swept. `BorrowedTokensList` grows when a borrow is issued and shrinks when the debt for a token is fully repaid. `HasDebt` is set to false automatically when `BorrowedTokensList` becomes empty.
-
-## Account States
-
-Each SmartAccount contract moves through the following states:
-
-**Deployed (inactive)** - The constructor sets `IsAccountActive = false`. A freshly deployed contract starts inactive and cannot execute operations.
-
-**Active** - `AccountManager` calls `activate_account()`, which sets `IsAccountActive = true`. The account is now ready for deposits, borrows, and external calls. This happens immediately after creation or reuse.
-
-**Inactive** - `AccountManager` calls `deactivate_account()` when the user closes the account. The contract remains on-chain but cannot execute new operations. It enters the user's inactive pool and will be reactivated if the user opens a new account.
-
-## How Operations Flow Through the Account
-
-The SmartAccount contract itself cannot be called directly by users. Every operation goes through the Account Manager, which authenticates the caller, checks with the Risk Engine, and only then calls the SmartAccount to mutate state.
-
-```
-User wallet
-  └─ AccountManager.borrow() / withdraw() / execute()
-       ├─ RiskEngine.is_borrow_allowed() or is_withdraw_allowed()
-       │    reads SmartAccount collateral + lending pool borrow shares
-       │    returns true / panics
-       └─ SmartAccount.add_borrowed_token() / set_collateral_token_balance() / execute()
-```
-
-The Risk Engine reads the SmartAccount's state to compute the health factor but never writes to it. All writes go through the Account Manager. For the health factor computation and the three guard functions, see [Health Factor](/learn/health-factor).
-
-## External Protocol Calls - execute()
-
-When a user deploys borrowed capital into an external protocol, the Account Manager calls `SmartAccount.execute()` with an action type drawn from the `SmartAccExternalAction` enum:
-
-| Action | Protocol | Description |
-|---|---|---|
-| `Deposit` | Blend | Supply tokens to a Blend lending pool, receive b-tokens |
-| `Withdraw` | Blend | Withdraw tokens from a Blend lending pool, burn b-tokens |
-| `Swap` | Aquarius | Swap tokens in an Aquarius AMM pool |
-| `AddLiquidity` | Aquarius | Provide liquidity to an Aquarius pool, receive LP tokens |
-| `RemoveLiquidity` | Aquarius | Withdraw liquidity from an Aquarius pool, burn LP tokens |
-
-The SmartAccount executes the call directly against the target protocol contract. It returns `(bool, i128)` where the `i128` is the token delta - positive for tokens received, negative for tokens sent.
-
-The Account Manager reads this delta and mints or burns the corresponding Tracking Token on behalf of the SmartAccount:
-
-```rust
-// In AccountManager.execute() after SmartAccount.execute() returns token_delta:
-if token_delta > 0 {
-    tracking_client.mint(&tracking_symbol, &smart_account, &token_delta);
-} else {
-    tracking_client.burn(&tracking_symbol, &smart_account, &(-token_delta));
-}
-```
-
-Tracking Tokens are how the Risk Engine knows the SmartAccount holds a Blend or Aquarius position. It reads the Tracking Token balance for `BLEND_XLM`, `BLEND_USDC`, and `AQ_XLM_USDC`, converts them to their underlying USD value, and includes them in the collateral sum. See [Health Factor](/learn/health-factor) for the collateral valuation detail.
-
-## sweep_to()
-
-`sweep_to(destination)` is called in two places: by `close_account()` (sweeps to the owner) and by `liquidate()` (sweeps to the trader after debt is cleared).
-
-It iterates every token in `CollateralTokensList` and calls `remove_collateral_token_bal_internal()` for each:
-
-- **XLM, USDC** - the actual token balance is transferred to `destination` via the token contract. The `CollateralBalanceWAD` entry is zeroed and the token is removed from `CollateralTokensList`.
-- **BLEND_XLM, BLEND_USDC, AQ_XLM_USDC** - the `CollateralBalanceWAD` entry is zeroed and the token is removed from `CollateralTokensList`. No token transfer occurs - the underlying b-tokens held in Blend's pool and LP positions in Aquarius remain in the external protocol and are not unwound.
-
-## Why Isolated Contracts
-
-The alternative is a shared mapping: one contract holds all user positions in a `mapping(address => Position)`. It is cheaper to deploy but means a single logic bug can affect every user simultaneously.
-
-With isolated contracts, a bug that corrupts one SmartAccount's storage cannot propagate to another. The Risk Engine calls each account directly - it cannot accidentally read or write the wrong account's state. The blast radius of any single-account failure is bounded to that account.
-
-## Constraints
-
-Every function in SmartAccount begins with `account_manager.require_auth()`. Direct user calls are rejected. The only authorized caller is the AccountManager.
-
-- Users cannot move collateral to another address except through `withdraw_collateral_balance()` (which runs a risk check) or `sweep_to()` (which requires Account Manager authorization).
-- External calls are limited to protocols the AccountManager supports: currently Blend and Aquarius. Calls to arbitrary contracts are not possible through this interface.
-- The owner address is set at deployment and cannot be changed.
-
-## Related
-
-- [Health Factor](/learn/health-factor) - how the Risk Engine computes solvency using SmartAccount state
-- [Liquidation](/learn/liquidation) - what happens to the SmartAccount when health falls below 1.1x
-- [Lending Pools](/learn/lending-pools) - where borrow shares are stored
-- [Registry](/learn/registry) - how peer contract addresses are resolved at runtime
-- [Oracle System](/learn/oracle-system) - how asset prices enter the collateral calculation
+See [AccountManager](/developers/contracts/account-manager) and [SmartAccount](/developers/contracts/smart-account).

@@ -1,109 +1,21 @@
 ---
 title: "Health Factor"
-description: "What your Health Factor means, what moves it, and how to keep your position safe."
+description: "Using health factor in the current Stellar testnet application."
 mode: "wide"
 ---
 
-<Snippet file="snippets/health-factor-warning.mdx" />
+Health Factor is recognized collateral value divided by debt value. For accounts with debt, **above 1.1 is healthy; at or below 1.1 is liquidation eligible subject to execution checks**.
 
-## What the Health Factor is
+## What changes it
 
-The Health Factor is a single number that represents the safety of your Margin Account. It compares how much your collateral is currently worth against how much you owe - the higher the number, the more protected your position is against price movements and accruing interest.
+Collateral/debt prices, borrow interest, deposits, withdrawals, swaps, external strategy values, and asset permissions all affect the account. Borrowed funds already held or deployed are included in collateral where recognized. LP valuation is conservative and can differ from the amount shown by a DEX.
 
-Think of it as a cushion: a higher Health Factor means more room to absorb a drop in collateral value before you are at risk. A Health Factor of 2.0× means your collateral is worth twice your debt. A Health Factor of 1.2× means your collateral is only 20% more valuable than your debt - a much thinner cushion that a moderate price swing could erase.
+Borrow and withdrawal checks restrict new risk. Live health checks after external actions depend on the configured execution gate, so do not assume that every action guarantees the ratio remains above the threshold. Market moves can also make a previously healthy account unhealthy.
 
-A Health Factor above 1.1× means your position is safe and your collateral sufficiently covers your debt. Falling below 1.1× is not possible in normal operation - the protocol blocks borrows or withdrawals that would take you there. Once your account reaches 1.1× due to a price drop or accumulated interest, it becomes eligible for liquidation immediately.
+## Interpret the display
 
-<Card title="Health Factor - Core Concepts" href="/learn/health-factor">
-  How the Risk Engine computes this number - collateral valuation, debt representation, guard functions, and the 1.1× threshold.
-</Card>
+No-debt accounts can display an infinity sentinel. UI snapshots are cached and apply display dust rules, so use exact balances and transaction simulation when acting on very small debt or tight health headroom.
 
-## The Formula
+The displayed collateral headroom is `max(0, collateral USD - 1.1 × debt USD)`. Net Available Collateral represents nonnegative equity; it is not the same as immediately withdrawable funds.
 
-```
-Health Factor = Total Collateral Value (USD) / Total Debt Value (USD)
-```
-
-Both values use current market prices. If you hold multiple collateral assets, their combined USD value is used. The same applies to debt across multiple borrows. The ratio is recalculated live - it is not stored and does not update on a schedule. Every time you interact with your account, the latest prices are used.
-
-| Health Factor | What it means |
-|---|---|
-| Above 1.5× | Comfortable - a significant price move is needed to put you at risk |
-| 1.1× – 1.5× | Monitor closely - a moderate price move could approach the threshold |
-| At 1.1× | Liquidation eligible - act immediately |
-
-<div style={{background:"#111111",borderRadius:"16px",padding:"32px 28px 24px",margin:"12px 0 24px",position:"relative",overflow:"hidden"}}>
-  <div style={{position:"absolute",top:"-80px",right:"-60px",width:"200px",height:"200px",background:"radial-gradient(circle,rgba(252,84,87,0.20) 0%,transparent 70%)",pointerEvents:"none"}} />
-  <div style={{position:"absolute",bottom:"-80px",left:"-60px",width:"200px",height:"200px",background:"radial-gradient(circle,rgba(112,58,230,0.22) 0%,transparent 70%)",pointerEvents:"none"}} />
-  <div style={{position:"relative",zIndex:2}}>
-    <div style={{position:"relative",height:"26px",marginBottom:"12px"}}>
-      <div style={{position:"absolute",left:"0",width:"44%",textAlign:"center",fontSize:"13px",color:"rgba(252,84,87,1)",fontWeight:700,fontFamily:"system-ui",letterSpacing:"0.02em"}}>Liquidatable</div>
-      <div style={{position:"absolute",left:"44%",width:"16%",textAlign:"center",fontSize:"13px",color:"rgba(251,191,36,1)",fontWeight:700,fontFamily:"system-ui",letterSpacing:"0.02em"}}>Caution</div>
-      <div style={{position:"absolute",left:"60%",width:"40%",textAlign:"center",fontSize:"13px",color:"rgba(52,211,153,1)",fontWeight:700,fontFamily:"system-ui",letterSpacing:"0.02em"}}>Safe</div>
-    </div>
-    <div style={{position:"relative",height:"20px",borderRadius:"10px",overflow:"hidden"}}>
-      <div style={{position:"absolute",left:"0",top:"0",width:"44%",height:"100%",background:"linear-gradient(90deg,rgba(252,84,87,0.35) 0%,rgba(252,84,87,0.85) 100%)"}} />
-      <div style={{position:"absolute",left:"44%",top:"0",width:"16%",height:"100%",background:"rgba(251,191,36,0.75)"}} />
-      <div style={{position:"absolute",left:"60%",top:"0",width:"40%",height:"100%",background:"linear-gradient(90deg,rgba(52,211,153,0.60) 0%,rgba(52,211,153,0.90) 100%)"}} />
-      <div style={{position:"absolute",left:"44%",top:"0",width:"3px",height:"100%",background:"rgba(255,255,255,0.95)"}} />
-    </div>
-    <div style={{position:"relative",height:"28px",marginTop:"10px",fontSize:"12px",fontFamily:"monospace"}}>
-      <span style={{position:"absolute",left:"0",color:"rgba(255,255,255,0.45)"}}>0×</span>
-      <span style={{position:"absolute",left:"44%",transform:"translateX(-50%)",color:"rgba(255,255,255,0.95)",fontWeight:700,fontSize:"13px"}}>1.1×</span>
-      <span style={{position:"absolute",left:"60%",transform:"translateX(-50%)",color:"rgba(255,255,255,0.55)"}}>1.5×</span>
-      <span style={{position:"absolute",left:"80%",transform:"translateX(-50%)",color:"rgba(255,255,255,0.55)"}}>2.0×</span>
-      <span style={{position:"absolute",right:"0",color:"rgba(255,255,255,0.45)"}}>2.5×</span>
-    </div>
-    <p style={{textAlign:"center",fontSize:"0.78rem",color:"rgba(255,255,255,0.70)",margin:"8px 0 0",fontFamily:"system-ui"}}>Accounts at or below 1.1× are eligible for liquidation</p>
-  </div>
-</div>
-
-## Your Margin Account Metrics
-
-The Margin tab shows three numbers that together describe the state of your position.
-
-**Health Factor**
-Your current ratio, updated in real time as market prices change. The display turns red as it approaches 1.1×. This is the primary number to watch.
-
-**Net Available Collateral**
-Your net equity in the account - the total value of all assets inside your Margin Account minus what you owe. For a leveraged position, this represents your initial deposited capital. If this number is small relative to your total position size, your leverage is high and a price move against you will have a large impact on your Health Factor.
-
-**Collateral Left Before Liquidation**
-How much your total collateral value can fall in USD - before your account becomes eligible for liquidation, given your current debt. Use this during volatile markets to understand how much price movement your position can absorb.
-
-## What Changes Your Health Factor
-
-Your Health Factor falls when collateral prices drop, when you borrow more, or when interest accrues on your debt — and rises when you repay debt or add collateral. One important detail: interest accrues continuously in the background, so your Health Factor can drift downward over time even if prices are flat and you take no action.
-
-For the complete breakdown of every event that affects the ratio, see [Health Factor — Core Concepts](/learn/health-factor).
-
-## How to Keep Your Position Safe
-
-**Leave room above 1.1×.** A Health Factor of 1.5× or higher means a 27% drop in your collateral value is needed to reach the liquidation threshold. A Health Factor of 1.15× means a 4% drop is enough. Give yourself room that matches the volatility of your collateral assets.
-
-**Check it during volatile markets.** The Margin tab updates in real time - you do not need to refresh. If a market is moving quickly, watch your Health Factor directly rather than assuming it is still where it was an hour ago.
-
-**Repay or add collateral before it reaches 1.1×.** Once your account is at 1.1×, liquidation can happen in the very next block. The only way to prevent it is to act before it gets there, not after.
-
-**Prefer stable collateral when borrowing heavily.** USDC carries far less price risk than XLM. If you are borrowing close to your limit, holding more of your collateral in USDC reduces the chance of a sudden price move pushing you below the threshold.
-
-## If Your Health Factor Is Dropping
-
-Act immediately. Do not wait to see if the market recovers.
-
-Your options, in order of how quickly they take effect:
-
-1. **Repay some debt** - even a partial repayment meaningfully improves your Health Factor. See [Repay a Loan](/guides/margin/repay).
-2. **Add more collateral** - transfer additional assets from your wallet into your Margin Account to increase your collateral value. See [Deposit Collateral](/guides/margin/deposit-collateral).
-3. **Do both** - if you are very close to 1.1×, combining a repayment with a collateral top-up is the safest approach.
-
-<Warning>
-  There is no grace period. Once your Health Factor reaches 1.1×, your account is immediately eligible for liquidation. Act before the threshold is reached - not after.
-</Warning>
-
-## Related
-
-- [Liquidation](/guides/margin/liquidation) - what happens to your position if it reaches 1.1×
-- [Repay a Loan](/guides/margin/repay) - the fastest way to raise your Health Factor
-- [Deposit Collateral](/guides/margin/deposit-collateral) - add collateral to strengthen your position
-- [Health Factor - Core Concepts](/learn/health-factor) - how the protocol computes this number
+If you need to reduce debt, obtain the correct free repayment asset in the SmartAccount and use Repay Loan. Deposits can add collateral, while external assets may need to be unwound before repayment. See [Repay](/guides/margin/repay) and [Liquidation](/guides/margin/liquidation).

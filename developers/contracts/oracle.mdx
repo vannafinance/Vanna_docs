@@ -1,0 +1,76 @@
+---
+title: "Oracle Service"
+description: "Reflector pricing, memoization, freshness, and emergency fallback."
+mode: "wide"
+---
+
+OracleContract returns `(price, decimals)` for a feed symbol. RiskEngine converts the result to USD WAD.
+
+## Resolution order
+
+The production path can reuse a **30-second memo**. Otherwise it checks a Reflector-compatible feed's latest timestamp, uses a supported positive **five-record TWAP** when fresh, then a positive fresh spot price, then an admin-set fallback. Fresh upstream data must be no older than **600 seconds**; fallback prices expire after **86,400 seconds**. A missing `twap` method is tolerated. The testutils path uses a mock oracle without the TWAP call.
+
+A fallback is a configurable emergency price, not guaranteed live market data. If no usable price exists the call fails. RiskEngine handles failures differently for new risk and liquidation; plain collateral that cannot be priced blocks AccountManager liquidation.
+
+## Administration
+
+The admin can set fallback prices, replace the Reflector address, and upgrade WASM. Configuration getters expose upstream address, staleness windows, and per-symbol fallback metadata. Stored metadata and memoization reduce cross-contract costs; read the implementation before assuming every call contacts Reflector.
+
+
+## Function signatures
+
+### __constructor
+
+```rust
+pub fn __constructor(env: &Env, admin: Address, reflector_address: Address)
+```
+
+### get_price_latest
+
+```rust
+pub fn get_price_latest(env: &Env, symbol: Symbol) -> (u128, u32)
+```
+
+### get_oracle_config
+
+```rust
+pub fn get_oracle_config(env: &Env) -> (Address, u64, u64)
+```
+
+### get_asset_config
+
+```rust
+pub fn get_asset_config(
+        env: &Env,
+        symbol: Symbol,
+    ) -> (Address, u64, u64, Option<(u128, u32, u64)>)
+```
+
+### get_admin
+
+```rust
+pub fn get_admin(env: &Env) -> Address
+```
+
+### set_fallback_price
+
+```rust
+pub fn set_fallback_price(env: &Env, symbol: Symbol, price: u128, decimals: u32)
+```
+
+### set_reflector_contract
+
+```rust
+pub fn set_reflector_contract(env: &Env, new_address: Address)
+```
+
+### upgrade
+
+```rust
+pub fn upgrade(env: &Env, new_wasm_hash: BytesN<32>)
+```
+
+
+## Source reference
+
+- `Protocol_V1_Soroban_testnet/contracts/OracleContract/src/oracle_service.rs`

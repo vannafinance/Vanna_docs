@@ -1,3 +1,5 @@
+> Historical editorial report from before the 2026-09-12 source refresh. Its findings and file descriptions may no longer apply. See [current review](SOURCE_REVIEW.md).
+
 # Content Redundancy Report - Vanna Documentation
 
 **Scope:** `learn/` (Core Concepts) vs `guides/` (User Guide)  

@@ -1,90 +1,13 @@
 ---
 title: "Dual Yield Stack"
-description: "Supply USDC to Vanna's Earn pool while simultaneously running an XLM rate carry in Margin - stacking two independent yield streams with no directional price exposure."
+description: "Illustrative testnet workflow and its accounting limits."
 mode: "wide"
 ---
 
-<Info>
-  **Sections used:** Earn · Margin · Farm &nbsp;·&nbsp; **Delta exposure:** None &nbsp;·&nbsp; **Risk level:** Low–Medium &nbsp;·&nbsp; **Complexity:** Medium
-</Info>
+Hold an Earn position in your wallet while running a separate margin-funded Blend supply position. The two yield sources have different custody, rates, withdrawal limits, and risks.
 
-Supply USDC to Vanna's Earn pool for passive stablecoin yield. At the same time, deposit USDC as Margin collateral, borrow XLM, and supply the borrowed XLM to a Blend XLM single-asset pool. The two strategies run independently and in parallel - each with no directional price exposure - producing two separate yield streams from the same capital base.
+Earn receipts do not automatically back the margin position. A matching borrowed/supplied Blend leg can offset some token exposure, but your equity, changing rates, and external-protocol exposure remain. Combined yield is not guaranteed positive or price-neutral.
 
-## Why this is delta-neutral
+Manage the Earn leg through its pool and the Farm leg through the SmartAccount. Redeeming Earn may partially fill; withdrawing Farm must be followed by debt repayment where applicable.
 
-**Earn leg (USDC):** USDC is a USD-pegged stablecoin. Supplying it to Earn carries no meaningful price risk.
-
-**Carry leg (XLM):** Your borrow is denominated in XLM and your farm position is denominated in XLM. Any XLM price movement affects both equally and cancels out - leaving only the rate spread as the source of return.
-
-Combined, neither leg has directional exposure. The strategy earns from two rate differentials - the USDC lending yield and the XLM carry spread - running simultaneously without either one affecting the other.
-
-## How to execute
-
-<Steps>
-  <Step title="Supply USDC to Earn">
-    Go to **Earn** → select the USDC pool → **Supply** your USDC. Your vUSDC tokens begin accruing yield immediately. No further action needed on this leg.
-  </Step>
-  <Step title="Open a Margin Account">
-    Go to **Margin** → **Open Account** if you don't have one yet. See [Open a Margin Account](/guides/margin/open-account).
-  </Step>
-  <Step title="Deposit USDC as Margin collateral">
-    Go to **Margin** → **Deposit & Borrow** → deposit USDC from your wallet. This backs the XLM borrow independently of the Earn position.
-  </Step>
-  <Step title="Borrow XLM">
-    In the borrow panel, select XLM as the borrow asset. Keep Health Factor at **1.5× or above**. Since your XLM farm and debt will cancel each other on price, HF is insulated from XLM price moves - the main risk is accruing interest.
-  </Step>
-  <Step title="Supply borrowed XLM to the Blend XLM pool">
-    Go to **Farm** → **Single-Asset Pools** → select the Blend XLM pool → enter your full XLM balance → click **Add Liquidity** and confirm. This leg is now live alongside the Earn position.
-  </Step>
-</Steps>
-
-## Example
-
-| | |
-|---|---|
-| USDC supplied to Earn (Leg 1) | $500 USDC |
-| USDC Earn APY | 8% → earns $40/year |
-| USDC Margin collateral (Leg 2) | $400 USDC |
-| XLM borrowed (at conservative LTV) | $200 worth of XLM |
-| XLM deployed to Blend XLM pool | $200 worth of XLM |
-| Blend XLM Supply APY | 12% → earns $24/year |
-| Vanna XLM Borrow APR | 8% → costs $16/year |
-| **Net annual yield (both legs)** | **$40 + $24 − $16 = $48** |
-| **Total capital deployed** | **$900 ($500 Earn USDC + $400 Margin USDC)** |
-| **Net XLM price exposure** | **Zero** |
-
-<Note>
-  Both legs must independently be profitable. The carry leg earns positively only when Blend XLM supply APY exceeds Vanna XLM borrow APR. Monitor each leg's rates separately.
-</Note>
-
-## Managing the two legs
-
-The Earn leg and the carry leg are independent - you can adjust or exit either one without affecting the other.
-
-- **To exit the Earn leg:** Go to **Earn** → **Withdraw** → redeem your vUSDC tokens.
-- **To exit the carry leg:** Go to **Farm** → remove XLM liquidity from Blend → go to **Margin** → **Repay** → repay the XLM borrow → withdraw USDC collateral.
-
-## Risk profile
-
-| Risk | Level | Notes |
-|---|---|---|
-| USDC price risk | None | USDC is USD-pegged |
-| XLM price risk | None | XLM farm and XLM debt cancel each other exactly |
-| Liquidation risk | Low | HF on the carry leg only changes from accruing interest |
-| Rate risk (Earn leg) | Low | USDC Earn APY fluctuates with pool utilization |
-| Rate risk (Carry leg) | Medium | XLM carry turns negative if borrow rate exceeds Blend supply rate |
-| Smart contract risk | Low | Inherent to all on-chain protocols |
-
-## What to monitor
-
-**Carry leg rate spread** - Check the Vanna XLM borrow APR vs Blend XLM supply APY periodically. If the spread inverts, exit the carry leg while keeping the Earn leg intact.
-
-**Health Factor** - Only the carry leg has a Margin Account and therefore a Health Factor. Monitor it separately from the Earn position.
-
-## Related
-
-- [Supply to Earn](/guides/earn/supply)
-- [Borrow](/guides/margin/borrow)
-- [Single-Asset Pools](/guides/farm/blend-pools)
-- [Health Factor](/guides/margin/health-factor)
-- [Repay](/guides/margin/repay)
+See [Sample Strategies](/guides/sample-strategies), [Borrow](/guides/margin/borrow), and [Repay](/guides/margin/repay).

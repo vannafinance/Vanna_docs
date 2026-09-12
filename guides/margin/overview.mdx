@@ -1,55 +1,27 @@
 ---
 title: "Margin Account"
-description: "Your personal on-chain account for depositing collateral, borrowing assets, and trading with leverage."
+description: "Using margin account in the current Stellar testnet application."
 mode: "wide"
 ---
 
-A Margin Account is your personal smart contract on Stellar. You deposit collateral into it, borrow assets against that collateral, and deploy those assets into trading or farming strategies - all while Vanna's risk engine monitors your position health continuously.
+Your Margin Account is a SmartAccount contract holding collateral, borrowed funds, and external strategy positions.
 
-<Snippet file="snippets/risk-notice.mdx" />
+The Pro interface provides **Leverage Assets**, **Repay Loan**, and **Transfer Collateral** tabs, alongside balances, positions, history, and account metrics. The root page and Margin detail page draw on shared account snapshots.
 
-## What you can do
+<Frame caption="Earlier Margin layout showing where to find account metrics and action tabs. Values and contract addresses are historical. Click the image to zoom.">
+  <img src="/images/margin/MarginOverview.png" alt="Margin overview showing health, collateral headroom, borrowing, and action tabs" width="1645" height="849" loading="lazy" decoding="async" />
+</Frame>
 
-<CardGroup cols={2}>
-  <Card title="Open Account" icon="plus" href="/guides/margin/open-account">
-    Create your Margin Account on-chain.
-  </Card>
-  <Card title="Deposit Collateral" icon="arrow-down-to-bracket" href="/guides/margin/deposit-collateral">
-    Move assets from your wallet into your Margin Account.
-  </Card>
-  <Card title="Borrow" icon="hand-holding-dollar" href="/guides/margin/borrow">
-    Borrow assets against your deposited collateral.
-  </Card>
-  <Card title="Repay" icon="arrow-up-from-bracket" href="/guides/margin/repay">
-    Pay down your outstanding debt.
-  </Card>
-  <Card title="Transfer Collateral" icon="arrow-right-arrow-left" href="/guides/margin/transfer-collateral">
-    Move assets between your wallet and Margin Account.
-  </Card>
-  <Card title="Health Factor" icon="heart-pulse" href="/guides/margin/health-factor">
-    Understand how your position health is tracked.
-  </Card>
-</CardGroup>
+## Read the metrics
 
-## How it works
-
-You deposit collateral (XLM or USDC) into your Margin Account and borrow assets against it. Borrowed assets stay inside your Margin Account - they cannot be sent directly to your wallet, but you can deploy them into Farm or Trade from within the account.
-
-Your Health Factor - total collateral value divided by total debt value - must stay above 1.1x at all times. If it drops to 1.1x, your account becomes eligible for liquidation.
-
-You can have one active Margin Account at a time. Closing an account and opening a new one reuses the same on-chain contract.
-
-## Before you start
-
-- **Wallet connected** - see [Connect Wallet](/guides/connect-wallet) if you haven't done this yet.
-- **Assets in your wallet** - you need collateral (XLM or USDC) ready before you can borrow.
-
-## Key metrics
-
-Once your Margin Account is active, the Margin tab shows a metrics bar with three values.
-
-| Metric | What it means |
+| Metric | Meaning |
 |---|---|
-| **Health Factor** | Total collateral value divided by total debt value. Must stay above 1.1x to avoid liquidation. |
-| **Net Available Collateral** | Your net equity in the account - total collateral value minus what you owe. |
-| **Collateral Left Before Liquidation** | How much your collateral value can drop before your Health Factor reaches 1.1x and the account becomes eligible for liquidation. |
+| Health Factor | Recognized collateral USD divided by debt USD |
+| Borrowed value | Outstanding debt, including interest |
+| Net Available Collateral | Nonnegative displayed equity; not a withdrawal quote |
+| Collateral Left Before Liquidation | `max(0, collateral - 1.1 × debt)` |
+| Debt limit | Derived from collateral and threshold; not guaranteed new borrow capacity |
+
+Health must be strictly above 1.1 for an account with debt to be healthy. A zero or placeholder P&L figure is not proof of realized performance; the current Margin summary lacks complete cost-basis accounting.
+
+Start with [Open Account](/guides/margin/open-account), [Deposit](/guides/margin/deposit-collateral), and [Borrow](/guides/margin/borrow).

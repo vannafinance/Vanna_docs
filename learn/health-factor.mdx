@@ -1,141 +1,27 @@
 ---
 title: "Health Factor"
-description: "The solvency invariant computed by the Risk Engine before every borrow, withdrawal, and liquidation. Never stored - always derived on demand from live oracle prices and current account state."
+description: "Current Stellar testnet health factor."
 mode: "wide"
 ---
 
-The health factor is the single invariant the Risk Engine enforces across the entire protocol. Before any borrow is issued, any collateral is released, or any liquidation executes, the Risk Engine derives this ratio from live state and either permits or rejects the operation. It is never written to storage - it has no persistent form.
+Health factor compares recognized collateral value with debt value:
 
----
+```text
+Health factor = collateral USD / debt USD
+```
 
-## The Core Invariant
+A priced account with debt must be **strictly above 1.1** to be healthy. At or below 1.1 it is a liquidation candidate. Zero debt is healthy; the contract uses a maximum-integer sentinel for an unbounded ratio.
 
-$$
-\text{Health Factor} = \frac{\displaystyle\sum_{i}\ \text{collateral}_i \times \text{price}_i}{\displaystyle\sum_{j}\ \text{debt}_j \times \text{price}_j}
-$$
+## What is collateral?
 
-Both sums are denominated in USD using live oracle prices at the moment of computation. The comparison is performed in WAD-precision fixed-point arithmetic - all values scaled to `1e18` - so the on-chain check is:
+Direct token balances use oracle prices. Blend supply is valued using its b-token exchange rate and underlying price. Registered Soroswap and Aquarius LPs can contribute a conservative value based on the smaller USD-valued reserve side. Explicitly unpriced, frozen, revoked, or unavailable positions can contribute zero. Cached values on some paths can differ from current external position value.
 
-$$
-\frac{\text{balance\_wad} \times 10^{18}}{\text{debt\_wad}} > \underbrace{1.1 \times 10^{18}}_{\texttt{BALANCE\_TO\_BORROW\_THRESHOLD}}
-$$
+## Debt and new borrowing
 
-If debt is zero, the account is unconditionally solvent - the check returns `true` and no division occurs.
+Debt reads include pending pool interest. Existing borrowed proceeds are already part of account assets when held or deployed; do not count the same debt twice as collateral. A standalone new-borrow check compares `(C+B)/(D+B)` with 1.1. Withdrawal compares the reduced collateral to existing debt. Net credits, fees, permissions, and pool limits can further constrain actual borrowing.
 
----
+## Displayed account metrics
 
-## Collateral Valuation
+Equity is collateral minus debt. The UI labels a nonnegative equity value as Net Available Collateral; it is not a promise that this amount can be withdrawn. Liquidation collateral headroom is `max(0, C-1.1*D)`. Market prices, interest, LP reserve changes, and oracle/configuration changes can move these figures.
 
-The Risk Engine recognizes two classes of collateral and values them differently.
-
-**Direct collateral - XLM, USDC**
-
-Balances are read from the Margin Account's on-chain storage and multiplied by their oracle price. One oracle call per unique symbol, cached for the duration of the transaction.
-
-**Blend yield positions - BLEND\_XLM, BLEND\_USDC**
-
-When borrowed capital is deployed into [Blend](https://blend.capital) lending pools, the Margin Account receives b-tokens tracked by Vanna's Tracking Token contract. These are not priced directly - they are first converted to their underlying asset amount via Blend's `b_rate`:
-
-$$
-\text{underlying amount} = \frac{\text{b\_token\_balance} \times \text{b\_rate}}{10^{12}}
-$$
-
-The resulting underlying amount is then priced via the oracle at the underlying asset's USD price. A Blend USDC position and a direct USDC deposit are treated identically for collateral purposes after this conversion.
-
-For the full detail of how oracle prices enter the protocol and how the price cache works, see [Oracle System](/learn/oracle-system).
-
----
-
-## Debt Valuation
-
-Debt is read from each Lending Pool as **raw borrow shares**, not as the fully accrued token amount.
-
-Borrow shares represent the account's proportional claim on a pool's total outstanding borrows. Converting shares to the actual token amount owed - inclusive of all accrued interest - requires querying the pool's current index, which in turn requires a call chain across Registry, RateModel, and LendingPool contracts. On Soroban, this chain exceeds the per-transaction computation budget for accounts with borrows across multiple pools.
-
-The consequence: the debt value used in a health check reflects the principal plus interest settled as of the last pool interaction, but excludes interest that has accrued since then. This creates a small understatement of true debt in the window between pool operations.
-
-This is a deliberate trade-off. The 1.1× threshold provides enough buffer that interest-accrual gaps between settlements do not compromise solvency before the next pool operation normalizes them. When any operation touches a pool - a borrow, a repay, a deposit, a withdrawal - interest is fully settled into shares, and the next health check reflects the true outstanding balance.
-
----
-
-## The Three Guard Functions
-
-The Risk Engine exposes three distinct health-check entry points. Each uses a different formula suited to the operation it gates.
-
-### Borrow Guard
-
-$$
-\frac{C + B}{D + B} \geq 1.1
-$$
-
-where $C$ = current collateral value, $D$ = current debt value, $B$ = USD value of the requested borrow amount.
-
-The borrow amount appears on **both sides**. This is the self-collateralization principle: capital borrowed from a Lending Pool cannot leave the Margin Account - it is immediately available as deployed collateral in the same account. The protocol therefore treats the incoming borrow as simultaneously increasing both the asset base and the debt, rather than only the debt.
-
-This is asymmetric with how standard overcollateralized lending protocols handle borrows, where borrowed capital leaves the account and the formula is $C / (D + B)$.
-
-### Withdraw Guard
-
-$$
-\frac{C - W}{D} \geq 1.1
-$$
-
-where $W$ = USD value of the requested withdrawal.
-
-Standard collateral subtraction. The self-collateralization rationale does not apply - a withdrawal removes value from the account permanently. If the account carries no debt, `has_debt()` returns false and this check is skipped entirely.
-
-### Liquidation Guard
-
-$$
-\frac{C}{D} \leq 1.1
-$$
-
-Liquidation is permitted when `is_account_healthy()` returns `false` - i.e., the standard collateral-to-debt ratio has fallen below the threshold. The same function used for ongoing health assessment is the condition for liquidation eligibility, evaluated with the inverse outcome.
-
----
-
-## Maximum Leverage
-
-The borrow guard's formula directly determines the maximum leverage achievable from a clean account (zero existing debt, $D = 0$):
-
-$$
-\frac{C + B}{B} \geq 1.1
-$$
-
-$$
-C + B \geq 1.1B
-$$
-
-$$
-C \geq 0.1B
-$$
-
-$$
-B \leq 10C
-$$
-
-An account with no outstanding debt can borrow up to 10× its deposited collateral value before the borrow guard blocks. With existing debt ($D > 0$), the remaining borrow capacity is lower - the formula must be evaluated with the current debt balance to find the remaining room.
-
----
-
-## The 1.1× Threshold
-
-A threshold of 1.0× would render an account liquidatable precisely when collateral equals debt - leaving zero surplus. A liquidation executed at zero surplus faces three cost sources with no cover:
-
-- **Slippage** - selling collateral on-chain to repay debt incurs market impact. The larger the position, the higher the slippage relative to the mid-price.
-- **Oracle lag** - prices update on Reflector's cadence (approximately every 5 minutes). The on-chain price at liquidation time may lag the true market price by one or more ledger intervals.
-
-The 1.1× floor (10% overcollateralization minimum) provides a fixed surplus at the liquidation trigger point. This surplus covers all three cost sources in ordinary market conditions. In extreme conditions - collateral price collapses faster than liquidations can clear - the surplus may be insufficient and a bad debt position arises. In that case, the affected pool's `total_assets` decreases, reducing the vToken exchange rate and distributing the shortfall proportionally across LP positions. See [vTokens](/learn/vtokens) for the exchange rate mechanics.
-
----
-
-## Related
-
-- [Liquidation](/learn/liquidation) - what happens when an account falls below 1.1×
-- [Oracle System](/learn/oracle-system) - how prices enter the protocol and the price cache works
-- [Lending Pools](/learn/lending-pools) - where borrow shares are stored and interest accrues
-- [Margin Accounts](/learn/smart-accounts) - the isolated contract whose state the Risk Engine reads
-- [vTokens](/learn/vtokens) - how LP positions absorb bad debt via exchange rate dilution
-- [Interest Rate Model](/learn/interest-rate-model) - the rate that determines how fast debt grows toward the threshold
-- [User Guide: Health Factor](/guides/margin/health-factor) - what Health Factor means for your position and how to protect it
-- [Developer Reference: Risk Engine](/developers/contracts/risk-engine) - contract-level implementation of the three guard functions
+There is no universal guaranteed maximum leverage or time to liquidation. Read [Liquidation](/learn/liquidation) and [Math Reference](/developers/math-reference).

@@ -1,70 +1,28 @@
 ---
 title: "Earn Overview"
-description: "How Liquidity Providers (LPs) Earn on Vanna"
+description: "Using earn overview in the current Stellar testnet application."
 mode: "wide"
 ---
 
-<div style={{ display: "flex", justifyContent: "center", margin: "8px 0 16px" }}>
-  <img src="/images/earn/EarnSectionOverview.png" alt="Earn Section" style={{ maxWidth: "700px", width: "100%", borderRadius: "12px" }} />
-</div>
+Earn is Vanna's wallet-to-lending-pool supply interface. Deposits receive vTokens representing a claim on the selected pool's assets and borrower interest.
 
-Earn is Vanna's native lending pool system. You supply assets to a lending pool, receive vTokens in return, and earn yield from the interest paid by traders - passively, without managing any open positions.
+## Markets
 
-## How lending pools work in Vanna
+| Display asset | Underlying market |
+|---|---|
+| XLM | Native Stellar asset |
+| BLUSDC | Blend's USDC test asset |
+| AqUSDC | Aquarius's USDC test asset |
+| SoUSDC | Soroswap's USDC test asset |
 
-Vanna's lending pools are the core of the protocol's liquidity infrastructure. Liquidity providers deposit assets into these pools, making them available for traders who want to open leveraged positions. Traders borrow from the pools to fund their strategies and pay interest on those borrows continuously.
+The three USDC variants have different addresses and independent lending markets. Use the matching wallet balance and receipt token.
 
-When a borrower repays their loan, the interest returns to the pool. This raises the exchange rate of vTokens - each vToken becomes redeemable for slightly more of the underlying asset over time. When you withdraw, you redeem your vTokens at the current exchange rate and receive more than you originally deposited. That difference is your earned yield.
+<Frame caption="Earlier Earn market list. Rates and balances shown are historical examples. Click the image to zoom.">
+  <img src="/images/earn/EarnSectionOverview.png" alt="Earn market list showing XLM, BLUSDC, AqUSDC, and SoUSDC pools" width="1662" height="847" loading="lazy" decoding="async" />
+</Frame>
 
-The Supply APY adjusts dynamically based on borrower demand and pool utilization, so it moves as market conditions change.
+## Use Earn
 
-<Info>
-  To understand how vTokens, exchange rates, and the interest rate model work in depth, see [Lending Pools](/learn/lending-pools) and [vTokens](/learn/vtokens) in Core Concepts.
-</Info>
+In Pro mode, open Earn and select a pool. Its page provides supply, withdrawal, pool information, and position/history views. Supply uses wallet funds; no margin account is required. Earnings depend on actual borrower interest and utilization.
 
-## What drives LP earnings
-
-**Borrower demand and utilization** - When more of the pool is borrowed, interest rates rise automatically. Higher utilization means higher rates, which means more interest returned to LPs on each repayment.
-
-**Liquidation fees shared with LPs** - When a trader's health factor drops to the liquidation threshold, their position is liquidated. A portion of the liquidation fee is distributed to the lending pool, adding an additional revenue stream on top of borrower interest.
-
-**Protocol flywheel** - Vanna's undercollateralized leverage model keeps pool utilization structurally higher than standard money markets, driving higher yields for LPs. [See how the Vanna Flywheel works →](/guides/how-vanna-works)
-
-## What you can do
-
-<CardGroup cols={2}>
-  <Card title="Supply to Earn" href="/guides/earn/supply" icon="arrow-up-to-line">
-    Step-by-step guide to depositing assets, receiving vTokens, and starting to earn yield.
-  </Card>
-  <Card title="Withdraw from Earn" href="/guides/earn/withdraw" icon="arrow-down-to-bracket">
-    Redeem your vTokens and receive your original deposit plus all earned yield.
-  </Card>
-</CardGroup>
-
-## Before you start
-
-- **Wallet connected** - your wallet must be connected to Vanna. See [Connect Your Wallet](/guides/connect-wallet) if you haven't done this yet.
-- **Assets to supply** - the asset you want to supply, available in your connected wallet.
-
-<Note>
-  Earn positions carry smart contract risk and liquidity risk. If utilization is near 100%, withdrawals may be temporarily limited until borrowers repay. This is rare but possible.
-</Note>
-
-## Dive deeper
-
-Want to understand how lending pools and vTokens work under the hood?
-
-<CardGroup cols={2}>
-  <Card title="Lending Pools" href="/learn/lending-pools" icon="layer-group">
-    How pool accounting, borrow shares, and interest accrual work at the protocol level.
-  </Card>
-  <Card title="vTokens" href="/learn/vtokens" icon="ticket">
-    The share token mechanism - how exchange rates rise and yield accrues.
-  </Card>
-  <Card title="Interest Rate Model" href="/learn/interest-rate-model" icon="chart-line">
-    How borrow rates are calculated and what drives APY changes.
-  </Card>
-  <Card title="Liquidation" href="/learn/liquidation" icon="triangle-exclamation">
-    What happens when a trader is liquidated and how it affects LP positions.
-  </Card>
-</CardGroup>
+Withdrawal redeems receipts, with a per-call cap of 50% of pool total assets and available liquidity. A confirmed withdrawal may leave receipts behind. See [Supply](/guides/earn/supply) and [Withdraw](/guides/earn/withdraw).

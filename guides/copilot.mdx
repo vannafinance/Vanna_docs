@@ -1,0 +1,21 @@
+---
+title: "Copilot"
+description: "Using copilot in the current Stellar testnet application."
+mode: "wide"
+---
+
+Copilot provides a conversational interface for understanding account state and preparing supported action plans. Its availability depends on the configured planning, account, and external execution services.
+
+## Review a plan
+
+Connect the intended wallet and state the desired action with the exact asset variant and amount. Review the proposed operations, funding account, borrowing, and destination before approving execution. A multi-step plan may include more than one transaction.
+
+Approval of a plan is not confirmation that the transactions completed. Review the execution receipt and current balances, especially if a step pauses, fails, or requires more funds.
+
+## Signing and account access
+
+Ordinary wallet signing and configured delegated-signing flows are distinct. With supported Privy configuration, adding a Vanna signer requires user consent in the browser; wallet ownership stays with the user. Connecting a wallet alone does not authorize arbitrary future transactions.
+
+The application includes wallet binding, plan approval, conditional checks, and write deduplication, but external MCP/signing-service availability is not established by the frontend source. If a flow cannot proceed, the regular Earn/Margin/Farm controls remain the reference for supported manual actions.
+
+See [Frontend and APIs](/developers/frontend) for implementation scope.

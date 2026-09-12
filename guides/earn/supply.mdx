@@ -1,60 +1,35 @@
 ---
 title: "Supply to Earn"
-description: "Deposit assets into a Vanna lending pool and start earning yield immediately."
+description: "Using supply to earn in the current Stellar testnet application."
 mode: "wide"
 ---
 
-When you supply assets to a pool, you receive vTokens that automatically accrue yield as traders pay interest. There is no lock-in period - you can withdraw at any time.
+## Before supplying
+
+Connect your wallet, select Pro mode, and obtain the exact token for the chosen Earn market. Retain XLM for fees and reserves.
 
 ## Steps
 
 <Steps>
-  <Step title="Go to the Earn tab">
-    Click **Earn** in the top navigation bar. The Earn page shows all available pools with their current Supply APY and utilization rate.
+  <Step title="Choose the market">
+    Open **Earn** and select XLM, BLUSDC, AqUSDC, or SoUSDC. Check that the selected market matches your wallet asset.
   </Step>
-  <Step title="Select a pool">
-    Click the pool you want to supply to. The pool detail page opens, showing live statistics: Total Supply, Available Liquidity, Utilization Rate, and Supply APY.
-    <div style={{ display: "flex", justifyContent: "center", margin: "12px 0" }}>
-      <img src="/images/earn/PoolOverview.png" alt="Pool Overview" style={{ maxWidth: "700px", width: "100%", borderRadius: "12px" }} />
-    </div>
-  </Step>
-  <Step title="Enter an amount">
-    On the right panel, make sure **Supply Liquidity** is selected. Enter the amount you want to supply. Use the quick-select buttons (10% / 25% / 50% / 100%) to fill a portion of your balance.
+  <Step title="Enter and review the supply">
+    Select **Supply Liquidity**, enter an amount, and review the pool, asset, and receipt preview.
 
-    Click **More Details** to see the full breakdown before confirming:
-    <div style={{ display: "flex", justifyContent: "center", margin: "12px 0" }}>
-      <img src="/images/earn/SupplyLiquidity1.png" alt="Supply details panel" style={{ maxWidth: "700px", width: "100%", borderRadius: "12px" }} />
-    </div>
+<Frame caption="Earlier supply form. Quoted returns, addresses, and legacy reward labels are not current protocol settings. Click the image to zoom.">
+  <img src="/images/earn/SupplyLiquidity1.png" alt="Earn XLM supply form with an entered amount and receipt preview" width="1916" height="942" loading="lazy" decoding="async" />
+</Frame>
+  </Step>
+  <Step title="Confirm and check your receipts">
+    Confirm and sign, wait for the transaction result, then check your vToken balance and position view.
 
-    | Field | What it means |
-    |---|---|
-    | **Base APY** | Interest earned from trader borrowing |
-    | **Bonus APY** | Additional protocol incentives |
-    | **Rewards APY** | Reward token distribution |
-    | **Current APY** | Total combined yield rate |
-    | **You Get (vXLM)** | vTokens you will receive |
-    | **XLM per vXLM** | Current exchange rate |
-    | **Projected Monthly / Yearly Earnings** | Estimated yield at current APY |
-  </Step>
-  <Step title="Click Supply Liquidity">
-    Click the **Supply Liquidity** button. Your wallet will prompt you to sign the transaction. Approve it to confirm your deposit.
-    <div style={{ display: "flex", justifyContent: "center", margin: "12px 0" }}>
-      <img src="/images/earn/SupplyLiquidity2.png" alt="Confirm supply transaction" style={{ maxWidth: "700px", width: "100%", borderRadius: "12px" }} />
-    </div>
-  </Step>
-  <Step title="Confirm your position is live">
-    Once confirmed, go to the **Your Positions** tab. You will see your vToken balance (Vault Shares), amount deposited, current USD value, and live APY.
-    <div style={{ display: "flex", justifyContent: "center", margin: "12px 0" }}>
-      <img src="/images/earn/MyPositionTab.png" alt="My Position table" style={{ maxWidth: "700px", width: "100%", borderRadius: "12px" }} />
-    </div>
-    Yield starts accruing immediately. You don't need to do anything else.
+<Frame caption="Example receipt position after supply. The pictured balance and APY are illustrative. Click the image to zoom.">
+  <img src="/images/earn/MyPositionTab.png" alt="Earn Current Position table showing receipt shares and underlying value" width="1021" height="815" loading="lazy" decoding="async" />
+</Frame>
   </Step>
 </Steps>
 
-<Info>
-  Each pool operates in isolation - funds in one pool are never at risk from issues in another. There is also no impermanent loss. See [Lending Pools](/learn/lending-pools) in Core Concepts for the full details.
-</Info>
+The deposited asset moves to the pool. The receipt quantity depends on the pool conversion rate and rounding; it is not always numerically identical to the underlying deposit. Your receipts remain in the wallet and do not automatically become margin collateral.
 
-## What happens next
-
-You don't need to do anything after supplying. Your vTokens grow in value as yield accrues. When you are ready to exit, see [Withdraw from Earn](/guides/earn/withdraw).
+History can lag behind a confirmed transaction. Use its hash and refreshed balances to verify the result. Continue with [Withdraw](/guides/earn/withdraw).
