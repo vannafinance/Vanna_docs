@@ -1,105 +1,13 @@
 ---
 title: "Parallel Rate Carry"
-description: "Borrow XLM from a single USDC collateral base and split it across two yield venues - Blend's XLM pool and Aquarius's XLM/USDC pool - stacking two independent rate spreads with no net XLM price exposure."
+description: "Illustrative testnet workflow and its accounting limits."
 mode: "wide"
 ---
 
-<Info>
-  **Sections used:** Margin · Farm &nbsp;·&nbsp; **Delta exposure:** None (XLM-neutral) &nbsp;·&nbsp; **Risk level:** Medium–High &nbsp;·&nbsp; **Complexity:** High
-</Info>
+A SmartAccount can borrow XLM and BLUSDC in their respective Vanna markets and supply each to the matching Blend reserve. Compare rates, quantities, free balances, and debt separately for both legs.
 
-Deposit USDC as Margin collateral and borrow XLM. Rather than deploying all borrowed XLM to a single venue, split it between two parallel positions: Blend's XLM single-asset pool and Aquarius's XLM/USDC LP pool. Both deployment legs are denominated in XLM, so the borrow and the combined farm exposure cancel out on price. The strategy earns two independent yield spreads - Blend supply yield and Aquarius LP fees - from the same capital base and the same single borrow position.
+The account shares collateral and health across both positions. It is not two isolated loans with separate liquidation protection. Debt allocation shown by recovered position cards is derived and may not reconstruct the original strategy history.
 
-## Why this is delta-neutral
+Opening and exiting can require multiple transactions. If one leg fails after another confirms, inspect the account before retrying. Withdraw each supplied asset and repay its exact debt market on exit.
 
-**Blend leg:** XLM borrowed and XLM deposited to Blend cancel exactly on price. Any XLM price movement affects both sides by the same amount.
-
-**Aquarius leg:** XLM allocated to the Aquarius XLM/USDC pool is also denominated partially in XLM. Combined with the Blend XLM allocation, the total XLM farm exposure still matches the total XLM borrow, so net price exposure remains near zero.
-
-**USDC collateral:** Stable. The collateral value is unaffected by XLM price movements.
-
-The only source of profit or loss on each leg is the yield differential between what each venue pays and what Vanna charges on the XLM borrow.
-
-## How to execute
-
-<Steps>
-  <Step title="Open a Margin Account and deposit USDC">
-    Go to **Margin** → **Open Account** if you don't have one. Then go to **Deposit & Borrow** → deposit USDC as collateral. This single collateral position backs the entire XLM borrow.
-  </Step>
-  <Step title="Borrow XLM">
-    In the borrow panel, select XLM and borrow against your USDC collateral. Keep Health Factor at **1.5× or above** after borrowing. You will split this XLM across two venues in the next steps.
-  </Step>
-  <Step title="Deploy first half of XLM to the Blend XLM pool">
-    Go to **Farm** → **Single-Asset Pools** → select the Blend XLM pool → enter roughly half your borrowed XLM → **Add Liquidity**. The first carry leg is now live.
-  </Step>
-  <Step title="Deploy second half of XLM to the Aquarius XLM/USDC pool">
-    Go to **Farm** → **Aquarius Pools** → select the XLM/USDC pool → enter the remaining XLM → **Add Liquidity**. Both carry legs are now running in parallel from the same borrow position.
-  </Step>
-</Steps>
-
-## Example
-
-| | |
-|---|---|
-| USDC collateral deposited | $1,000 USDC |
-| XLM borrowed (total) | $400 worth of XLM |
-| XLM deployed to Blend XLM pool (half) | $200 worth of XLM |
-| Blend XLM Supply APY | 12% → earns $24/year |
-| XLM deployed to Aquarius XLM/USDC pool (half) | $200 worth of XLM |
-| Aquarius XLM/USDC LP APY | 10% → earns $20/year |
-| Vanna XLM Borrow APR (on full $400) | 8% → costs $32/year |
-| **Combined annual yield** | **$24 + $20 − $32 = $12** |
-| **Total capital deployed** | **$1,000 USDC** |
-| **Net XLM price exposure** | **Near zero** |
-
-<Note>
-  Both deployment legs must independently justify their share of the borrow cost. If one venue's yield drops, that leg may no longer carry its portion of the interest. Monitor each venue's APY separately against the Vanna borrow APR.
-</Note>
-
-## Unwinding the position
-
-Exit both deployment legs completely before withdrawing collateral:
-
-<Steps>
-  <Step title="Exit the Blend XLM leg">
-    Go to **Farm** → select the Blend XLM pool → **Remove Liquidity** → withdraw your full XLM position from Blend.
-  </Step>
-  <Step title="Exit the Aquarius XLM/USDC leg">
-    Go to **Farm** → select the Aquarius XLM/USDC pool → **Remove Liquidity** → withdraw your full XLM position from Aquarius.
-  </Step>
-  <Step title="Repay the XLM borrow">
-    Go to **Margin** → **Repay** → repay the full XLM borrow including accrued interest using the XLM recovered from both pools.
-  </Step>
-  <Step title="Withdraw USDC collateral">
-    Once the borrow is fully repaid, withdraw your USDC collateral back to your wallet.
-  </Step>
-</Steps>
-
-<Warning>
-  Repay the XLM borrow in full before attempting to withdraw collateral. Partial repayment will leave the Health Factor constrained and block the collateral withdrawal.
-</Warning>
-
-## Risk profile
-
-| Risk | Level | Notes |
-|---|---|---|
-| XLM price risk | Near zero | XLM borrow and combined XLM farm exposure cancel |
-| Liquidation risk | Medium | Interest accrues continuously against USDC collateral; HF declines over time |
-| Rate risk (Blend leg) | Medium | Turns negative if Vanna borrow rate exceeds Blend XLM supply rate |
-| Rate risk (Aquarius leg) | Medium | Turns negative if Vanna borrow rate exceeds Aquarius LP yield |
-| Impermanent loss (Aquarius) | Low | XLM/USDC pool can suffer minor IL if the XLM/USDC ratio shifts significantly |
-| Smart contract risk | Low | Inherent to all on-chain protocols |
-
-## What to monitor
-
-**Both venue yields independently** - Either leg can compress without affecting the other. Check Blend XLM supply APY and Aquarius XLM/USDC LP APY separately against the Vanna XLM borrow APR. Exit only the leg whose yield has dropped below its share of the borrow cost.
-
-**Health Factor** - With accumulated interest on a single XLM borrow, HF declines gradually over time. Add USDC collateral or partially exit one leg if HF falls below 1.5×.
-
-## Related
-
-- [Borrow](/guides/margin/borrow)
-- [Single-Asset Pools](/guides/farm/blend-pools)
-- [Health Factor](/guides/margin/health-factor)
-- [Repay](/guides/margin/repay)
-- [Cross-Pool Rate Carry](/guides/strategies/cross-pool-rate-carry)
+See [Sample Strategies](/guides/sample-strategies), [Borrow](/guides/margin/borrow), and [Repay](/guides/margin/repay).

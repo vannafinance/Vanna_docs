@@ -1,118 +1,21 @@
 ---
 title: "Lending Pools"
-description: "The passive liquidity layer that powers every borrow on Vanna."
+description: "Current Stellar testnet lending pools."
 mode: "wide"
 ---
 
-## The Prime Brokerage Model
+Liquidity providers deposit wallet assets into Vanna pools and receive vTokens. Margin accounts borrow from those pools and accrue interest. Each of the four configured markets—XLM, BLUSDC, AqUSDC, and SoUSDC—has separate liquidity, debt, and receipts.
 
-The best way to understand Vanna's pools is through the lens of a **prime brokerage**.
+## Cash and total assets
 
-A prime broker provides a single credit line to a fund manager. The fund deploys that capital into equities, derivatives, or any market - all from one account. The prime broker doesn't care what individual trades are running. It monitors the fund's *overall* collateral and acts only if the aggregate position becomes unsafe.
+Available liquidity is the underlying held by the pool. Total assets add outstanding debt, including previewed interest. A pool can therefore have substantial total assets but little immediately withdrawable cash.
 
-<div style={{ display: "flex", justifyContent: "center", margin: "8px 0 24px" }}>
-  <img src="/images/learn/ThePrimeBrokerageModel.png" alt="The Prime Brokerage Model" style={{ maxWidth: "100%", borderRadius: "16px" }} />
-</div>
+## Interest and borrowing
 
-## Two Sides
+Rates respond to utilization under an admin-configurable polynomial curve. New borrows cannot push pool utilization above 95%. Borrowers owe the gross amount; an origination fee, if configured, reduces what reaches the SmartAccount.
 
-Every pool has two participants with different goals:
+## Withdrawals
 
-<CardGroup cols={2}>
-  <Card title="Liquidity Providers" icon="piggy-bank">
-    Deposit an asset, receive **vTokens**, earn yield passively as borrowers repay debt with interest. No active management needed.
-  </Card>
-  <Card title="Margin Accounts" icon="chart-line">
-    Borrow from the pool against posted collateral. Deploy capital into DeFi strategies. Pay interest that returns to the pool on repayment.
-  </Card>
-</CardGroup>
+Redemption burns receipts at their current conversion rate. A single call pays at most 50% of total assets and the available cash, so a withdrawal can partially fill. The remaining receipts continue to represent a claim on the pool. No cash available means the redemption fails.
 
-LPs and borrowers never interact directly. The pool intermediates everything - collecting deposits on one side, issuing credit on the other.
-
-## Per-Asset Isolation
-
-Vanna runs a separate pool contract for each supported asset:
-
-<div style={{ display: "flex", justifyContent: "center", margin: "8px 0 24px" }}>
-  <img src="/images/learn/isloatedLendingPool.png" alt="Per-Asset Isolated Lending Pools" style={{ maxWidth: "100%", borderRadius: "16px" }} />
-</div>
-
-A USDC depositor has zero exposure to the XLM pool. Bad debt in one pool cannot affect another. Each pool contract holds only its own asset and tracks only its own borrowers.
-
-## Borrow Shares Accounting
-
-Borrows are tracked using a **shares model** - the same principle as vTokens on the LP side.
-
-When a Margin Account borrows, the pool converts the borrowed amount into **borrow shares**:
-
-```
-borrow_shares = amount × total_borrow_shares / total_borrows
-```
-
-If this is the first borrow (no shares exist yet), shares are issued 1:1. As interest accrues over time, `total_borrows` grows while `total_borrow_shares` stays fixed - so each existing share represents a larger debt. New borrows therefore receive fewer shares per unit borrowed. This ensures repayments are proportional to the actual debt including accumulated interest.
-
-The pool stores per-account borrow shares in `UserBorrowSharesWAD(Address)` and the protocol-wide total in `TotalBorrowSharesWAD`.
-
-`get_borrow_balance(address)` converts a Margin Account's shares back to the current asset amount owed:
-
-```
-debt = user_borrow_shares × total_borrows / total_borrow_shares
-```
-
-## Interest Accrual - update_state()
-
-Every borrow and repayment begins with a call to `update_state()`. This function:
-
-1. Checks whether any time has elapsed since the last update
-2. Queries the Rate Model for the current borrow rate per second at the current utilization
-3. Computes `interest = borrows_wad × rate_per_sec × elapsed_seconds`
-4. Adds the interest to `borrows_wad` - the running total of outstanding debt
-
-Since `total_borrow_shares` is unchanged while `borrows_wad` grows, each share represents more debt with every accrual. Borrowers who repay later owe more than those who repay sooner.
-
-For the interest rate formula itself, see [Interest Rate Model](/learn/interest-rate-model).
-
-## lend_to() and collect_from()
-
-The pool exposes two functions exclusively callable by the Account Manager:
-
-**`lend_to(smart_account, amount)`**
-1. Calls `update_state()` to settle pending interest
-2. Converts `amount` to borrow shares and adds them to the Margin Account's share balance
-3. Charges an origination fee - a percentage of the borrow amount sent from the pool to the protocol treasury
-4. Transfers the full borrowed amount to the Margin Account's contract
-
-**`collect_from(amount, smart_account)`**
-1. Calls `update_state()` to settle pending interest
-2. Converts `amount` to borrow shares and subtracts them from the Margin Account's share balance
-3. Decreases `borrows_wad` by `amount`
-
-Neither function is directly callable by users - only the Account Manager can invoke them, after the Risk Engine has approved the operation.
-
-## Origination Fee
-
-Every borrow incurs a one-time origination fee. At borrow time, the pool sends `amount × origination_fee_rate` from its own balance to the protocol treasury. This is deducted from pool liquidity at the moment of each borrow. The rate is a configurable parameter set by the pool admin.
-
-## Pool Balance vs. Total Assets
-
-The pool tracks two distinct values:
-
-| Value | What it represents |
-|---|---|
-| `pool_balance` | Physical asset balance held by the pool contract right now. Drops when borrows go out, rises when repayments come in. |
-| `total_assets` | `pool_balance + borrows_wad` - the pool's theoretical total, including outstanding debt. |
-
-These two values diverge whenever borrows are active. See [vTokens](/learn/vtokens) for how `pool_balance` drives the LP exchange rate and LP yield.
-
-## Risk Gating
-
-The pool never decides whether to lend. Every call to `lend_to()` originates from the Account Manager, which first asks the Risk Engine to verify that the Margin Account's health factor remains above 1.1x after the borrow. The pool only executes what the Risk Engine approves.
-
-See [Health Factor](/learn/health-factor) for the gating logic.
-
-## Related
-
-- [vTokens](/learn/vtokens) - how LP positions and yield are tracked via pool_balance
-- [Interest Rate Model](/learn/interest-rate-model) - the utilization-based curve that prices every borrow
-- [Health Factor](/learn/health-factor) - the check that gates every borrow
-- [Liquidation](/learn/liquidation) - what happens when an account becomes undercollateralized
+Pools have pause controls. Pool pause stops deposit, redemption, and new borrow; repayment accounting remains available. See [Pool Mechanics](/learn/lending-pool-mechanics).

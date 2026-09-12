@@ -1,26 +1,19 @@
 ---
-title: "For Passive Investors"
-description: "Supply assets to Vanna's lending pools and earn higher yields from borrower interest - passively, with no active management required."
+title: "For Liquidity Providers"
+description: "Using for liquidity providers in the current Stellar testnet application."
 mode: "wide"
 ---
 
-Vanna's lending pools are built for passive investors who want to put their assets to work without managing open positions. You supply assets to a lending pool, receive vTokens in return, and earn yield continuously - as long as you hold them.
+Use **Earn** to supply assets from your wallet into a Vanna lending pool. You receive the selected market's vToken receipts and gain exposure to borrower interest through their redemption value.
 
-## How it works
+The configured markets are XLM, BLUSDC, AqUSDC, and SoUSDC. Each has separate liquidity and receipts. You do not need a margin account to supply.
 
-When you supply assets, your deposits fund the borrowing side of the protocol. Traders borrow from these pools to open leveraged positions, pay interest on those borrows, and that interest flows directly back to you - automatically, with no action required. Withdraw at any time by redeeming your vTokens for the underlying asset plus all earned yield.
+1. Connect a wallet and obtain the correct test token.
+2. Open Earn in Pro mode and choose a market.
+3. Supply the chosen amount and confirm the transaction.
+4. Review your receipt balance and pool liquidity.
+5. Redeem receipts when you want underlying back; a redemption can partially fill.
 
-## Why yields are higher
+Available liquidity differs from total assets because outstanding loans count toward total assets. A single redemption pays at most 50% of total assets and available cash. Pool pause and liquidity conditions can prevent withdrawal. Displayed yield is variable.
 
-Yields on Vanna are structurally higher than most DeFi money markets - because of how the protocol is designed. [See how the Vanna Flywheel works →](/guides/how-vanna-works#the-vanna-flywheel)
-
-## Ready to start?
-
-<CardGroup cols={2}>
-  <Card title="Supply to Earn" href="/guides/earn/overview" icon="piggy-bank">
-    Step-by-step guide to depositing assets, receiving vTokens, and earning yield from the Earn pool.
-  </Card>
-  <Card title="Withdraw from Earn" href="/guides/earn/withdraw" icon="arrow-down-to-bracket">
-    How to redeem your vTokens and withdraw your original deposit plus all accumulated yield.
-  </Card>
-</CardGroup>
+See [Supply](/guides/earn/supply), [Withdraw](/guides/earn/withdraw), and [Pool Mechanics](/learn/lending-pool-mechanics).

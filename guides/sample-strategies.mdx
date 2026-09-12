@@ -1,37 +1,16 @@
 ---
 title: "Sample Strategies"
-description: "Practical strategies for using Vanna's Earn, Margin, Trade, and Farm sections to build yield-generating positions with minimal downside."
+description: "Using sample strategies in the current Stellar testnet application."
 mode: "wide"
 ---
 
-The strategies on this page are designed to earn yield while minimising or eliminating directional price exposure. Rather than relying on asset prices moving in your favour, each approach isolates a yield source - lending interest, farming returns, or rate spreads - and constructs a position around it. Vanna's composable architecture across Earn, Margin, Trade, and Farm makes this possible within a single account.
+These are testnet workflow examples for combining Vanna borrowing, Earn, and external supply. They are not promises of positive carry, fixed yield, or price neutrality.
 
-<Note>
-  No DeFi strategy is entirely risk-free. All positions on Vanna carry smart contract risk. The strategies below are designed to eliminate or minimise **price risk** and **liquidation risk** - not protocol risk. Each strategy page includes a clear risk breakdown.
-</Note>
+- [Cross-Pool Rate Carry](/guides/strategies/cross-pool-rate-carry): borrow a token and supply the matching Blend asset.
+- [Earn, Borrow, and Hedge](/guides/strategies/earn-borrow-hedge): separate an Earn holding from a margin strategy and evaluate its exposure.
+- [Parallel Rate Carry](/guides/strategies/parallel-rate-carry): manage more than one matching-asset borrow/supply leg.
+- [Dual Yield Stack](/guides/strategies/dual-yield-stack): hold Earn receipts while managing a separate Farm position.
 
-## Strategies
+Use the exact token variant, current rates, and account-wide health for every leg. All margin strategies in one SmartAccount share debt and liquidation risk. Earn receipts held in the wallet do not automatically collateralize that account.
 
-<CardGroup cols={2}>
-  <Card title="Cross-Pool Rate Carry" href="/guides/strategies/cross-pool-rate-carry" icon="arrow-right-arrow-left">
-    Borrow XLM from Vanna, deploy to a Blend XLM pool - earn the rate spread with zero net XLM price exposure.
-  </Card>
-  <Card title="Earn + Borrow Hedge" href="/guides/strategies/earn-borrow-hedge" icon="shield-halved">
-    Supply XLM to Earn, borrow equal XLM and swap to USDC - the two legs cancel out, leaving zero net XLM exposure.
-  </Card>
-  <Card title="Parallel Rate Carry" href="/guides/strategies/parallel-rate-carry" icon="arrows-split-up-and-left">
-    Split borrowed XLM across two yield venues - Blend and Aquarius - from one USDC collateral base, stacking two independent rate spreads with zero net XLM price exposure.
-  </Card>
-  <Card title="Dual Yield Stack" href="/guides/strategies/dual-yield-stack" icon="layer-group">
-    Supply USDC to Earn while running an XLM carry in Margin - two independent yield streams, zero directional exposure.
-  </Card>
-</CardGroup>
-
-## Comparison
-
-| Strategy | Sections | Delta Exposure | Risk | Complexity |
-|---|---|---|---|---|
-| [Cross-Pool Rate Carry](/guides/strategies/cross-pool-rate-carry) | Margin · Farm | None (XLM-neutral) | Low–Medium | Medium |
-| [Dual Yield Stack](/guides/strategies/dual-yield-stack) | Earn · Margin · Farm | None | Low–Medium | Medium |
-| [Earn + Borrow Hedge](/guides/strategies/earn-borrow-hedge) | Earn · Margin · Trade | None (XLM-neutral) | Medium | Medium |
-| [Parallel Rate Carry](/guides/strategies/parallel-rate-carry) | Margin · Farm | None | Medium–High | High |
+The Stellar application supports Spot, not perpetual/options trading. A hedge requiring an unavailable derivative cannot be executed through those redirected routes.

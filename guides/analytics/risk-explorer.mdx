@@ -1,53 +1,23 @@
 ---
 title: "Risk Explorer"
-description: "Run stress simulations to understand how the protocol responds to market crashes, depegs, and liquidity shocks."
+description: "Using risk explorer in the current Stellar testnet application."
 mode: "wide"
 ---
 
+Risk Explorer presents hypothetical shocks to help explain account and protocol exposure. It is a simulation interface; changing a scenario does not trade, update oracle prices, or liquidate accounts.
 
-The Risk Explorer is a stress-testing hub that lets you simulate extreme market conditions and see how the protocol's positions would respond. Use it to understand the protocol's exposure before deploying capital, or to monitor systemic risk during volatile market conditions.
-![Risk Explorer Overview](/images/analytics/RiskExplorerOverview.png)
+## Scenario routes
 
-## Available simulations
+The application includes single-asset and multi-asset shocks, stablecoin depeg, rate spike, whale withdrawal, LP impermanent loss, leverage concentration, cascading liquidation, oracle failure, protocol exploit, black swan, and leveraged-perp shock pages.
 
-### Market Risk
-**Single Asset Risk Explorer** - Simulate a price drop in one asset and see how many accounts would become liquidatable, how much bad debt would be generated, and what the total collateral impact would be.
+Some pages use live account inputs, while single-asset, multi-asset crash, and leverage-concentration pages also import fixture distributions. Treat outputs according to their input source. A perpetual-shock scenario does not mean perpetual trading is enabled.
 
-![Single Asset Risk Explorer](/images/analytics/SingleAssetRiskExplorer.png)
+<Frame caption="Earlier scenario hub. Scenario counts and result figures are illustrative; the current route list above includes additional scenarios. Click the image to zoom.">
+  <img src="/images/analytics/RiskExplorerOverview.png" alt="Risk Explorer cards for asset shocks, depeg, LP loss, whale withdrawal, and oracle failure" width="1534" height="548" loading="lazy" decoding="async" />
+</Frame>
 
-**Multi-Asset Correlated Crash** - Model a scenario where multiple assets fall simultaneously (e.g. a broad market selloff). Shows the cascading effect across all positions.
+## Use the results
 
-![Multi Asset Risk Explorer](/images/analytics/MultiAssetRiskExplorer.png)
+Choose a scenario, inspect its assumptions and input source, adjust the available controls, and compare the resulting exposure metrics. These outputs are conditional calculations, not forecasts or transaction guarantees. Oracle failures, cached valuations, external liquidity, and execution resources can produce different real outcomes.
 
-### Leverage Risk
-**LP Impermanent Loss Amplification** - Simulate how impermanent loss in AMM LP positions amplifies leverage risk across accounts that hold LP tokens as collateral.
-
-![LP Impermanent Loss Risk Explorer](/images/analytics/LpImpermanentLossRiskExplorer.png)
-
-### Systemic Risk
-**Whale Withdrawal Risk** - Model the impact of a large depositor withdrawing a significant portion of liquidity from a lending pool. Shows how utilization and borrowing capacity would change.
-
-![Whale Withdrawal Risk](/images/analytics/WhaleWithdrawal.png)
-
-**Stablecoin Depeg Simulation** - Simulate a stablecoin losing its peg and see the downstream impact on accounts using it as collateral or for borrowing.
-
-![Stablecoin Depeg](/images/analytics/StableCoinDepeg.png)
-
-### Protocol Risk
-**Oracle Failure / Manipulation** - Model an oracle price reporting incorrectly or being delayed. Shows which positions become liquidatable under incorrect price feeds and the resulting protocol risk.
-
-## How to use
-
-1. Go to **Analytics** in the top navigation
-2. Click **Risk Explorer** in the sidebar
-3. Select a simulation category and scenario
-4. Adjust the input parameters (e.g. price drop %, asset selection)
-5. Click **Run Simulation** to see the projected impact
-
-Each simulation shows: accounts affected, projected bad debt, total collateral at risk, and which accounts would cross liquidation thresholds.
-
-## Related
-
-- [Risk Monitoring Dashboard](/guides/analytics/overview)
-- [Positions](/guides/analytics/positions)
-- [Liquidations](/guides/analytics/liquidations)
+See [Risk Monitoring](/guides/analytics/overview) and [Health Factor](/guides/margin/health-factor).

@@ -1,0 +1,72 @@
+---
+title: "Controller Facade"
+description: "Current testnet implementation, behavior, authorization, and Rust signatures."
+mode: "wide"
+---
+
+ControllerFacade resolves a controller for an external target, calls its capability check, and verifies permitted input tokens. Unknown targets return a denied result with empty token lists.
+
+`can_call` uses a typed action; `can_call_fn` uses a function symbol. Each returns `(allowed, tokens_in, tokens_out)`. `validate_tokens_in` checks a supplied list against Registry. Admin can change Registry and upgrade WASM.
+
+The facade remains available as a policy interface. AccountManager's current `exec` implementation optimizes the transaction budget by reading `Registry.get_exec_gate` and calling the controller directly, so an architecture diagram must not require the facade in every execution.
+
+## Function signatures
+
+These signatures are copied from the reviewed Rust implementation. `env` is supplied by Soroban and is not a transaction argument. `Result` errors and panics must be handled by the caller; simulation does not guarantee later execution. Public methods include privileged and internal-contract callbacks, not just user entrypoints.
+
+### __constructor
+
+```rust
+pub fn __constructor(env: Env, admin: Address, registry: Address)
+```
+
+### can_call
+
+```rust
+pub fn can_call(
+        env: &Env,
+        target: Address,
+        action: ExternalAction,
+        tokens: Vec<Address>,
+    ) -> (bool, Vec<Address>, Vec<Address>)
+```
+
+### can_call_fn
+
+```rust
+pub fn can_call_fn(
+        env: &Env,
+        target: Address,
+        func: soroban_sdk::Symbol,
+        tokens: Vec<Address>,
+    ) -> (bool, Vec<Address>, Vec<Address>)
+```
+
+### validate_tokens_in
+
+```rust
+pub fn validate_tokens_in(env: &Env, tokens_in: Vec<Address>) -> bool
+```
+
+### get_registry
+
+```rust
+pub fn get_registry(env: &Env) -> Address
+```
+
+### set_registry
+
+```rust
+pub fn set_registry(env: &Env, new_registry: Address)
+```
+
+### upgrade
+
+```rust
+pub fn upgrade(env: &Env, new_wasm_hash: BytesN<32>)
+```
+
+
+## Source reference
+
+- `Protocol_V1_Soroban_testnet/contracts/ControllerFacadeContract/src/facade.rs`

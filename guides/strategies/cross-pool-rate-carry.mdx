@@ -1,80 +1,13 @@
 ---
 title: "Cross-Pool Rate Carry"
-description: "Borrow XLM from Vanna and deploy it into an external Blend XLM pool - earning the spread between the two rates while holding zero net XLM price exposure."
+description: "Illustrative testnet workflow and its accounting limits."
 mode: "wide"
 ---
 
-<Info>
-  **Sections used:** Margin · Farm &nbsp;·&nbsp; **Delta exposure:** None (XLM-neutral) &nbsp;·&nbsp; **Risk level:** Low–Medium &nbsp;·&nbsp; **Complexity:** Medium
-</Info>
+Deposit collateral, borrow XLM or BLUSDC from its Vanna market, then supply that exact asset to Blend from the SmartAccount. Compare the current borrowing cost with the external supply rate on the actual deployed amount.
 
-Deposit USDC as Margin collateral, borrow XLM from Vanna, and supply that borrowed XLM directly into a Blend XLM single-asset pool via Farm. Your debt is denominated in XLM and your farm position is denominated in XLM - so XLM price movement affects both sides equally and cancels out. Your P&L depends entirely on the rate differential, not on where XLM trades.
+A matching borrowed/supplied quantity can offset price exposure on that borrowed leg. Your own collateral remains exposed, amounts change with interest, and external liquidity and protocol risks remain. The whole account is not automatically delta-neutral.
 
-## Why this is delta-neutral
+Use Margin then Farm, or the eligible Lite workflow. Exit by withdrawing Blend underlying, repaying the matching debt, and checking residual balances.
 
-When XLM rises in price:
-- Your farm position (XLM) increases in USD value - gain.
-- Your borrow debt (XLM) increases in USD value - loss of the same magnitude.
-- Net: zero.
-
-When XLM falls in price:
-- Your farm position decreases in USD value - loss.
-- Your borrow debt decreases in USD value - gain of the same magnitude.
-- Net: zero.
-
-The only source of profit or loss is the **rate spread**: Blend XLM supply APY minus Vanna XLM borrow APR. As long as the Blend pool pays more than Vanna charges, the strategy earns a positive return independent of price.
-
-## How to execute
-
-<Steps>
-  <Step title="Open a Margin Account">
-    If you don't have one yet, go to **Margin** → **Open Account**. See [Open a Margin Account](/guides/margin/open-account).
-  </Step>
-  <Step title="Deposit USDC as collateral">
-    Go to **Margin** → **Deposit & Borrow** → deposit USDC from your wallet. USDC backs the XLM borrow and is not exposed to XLM price movement.
-  </Step>
-  <Step title="Borrow XLM">
-    In the borrow panel, select XLM as the borrow asset. Use the leverage slider and keep your Health Factor at **1.5× or above**. Since your farm and debt are both in XLM, your HF is insulated from XLM price moves - the main risk is from accruing interest.
-  </Step>
-  <Step title="Deploy borrowed XLM to the Blend XLM pool">
-    Go to **Farm** → **Single-Asset Pools** → select the Blend XLM pool → enter your full XLM balance → click **Add Liquidity** and confirm. The XLM immediately starts earning Blend's supply APY.
-  </Step>
-</Steps>
-
-## Example
-
-| | |
-|---|---|
-| USDC collateral deposited | $500 USDC |
-| XLM borrowed (at conservative LTV) | $250 worth of XLM |
-| XLM deployed to Blend XLM pool | $250 worth of XLM |
-| Blend XLM Supply APY | 12% |
-| Vanna XLM Borrow APR | 8% |
-| Rate spread | 4% |
-| **Net annual yield on deployed XLM** | **~$10 on $250 - regardless of XLM price** |
-
-<Note>
-  This strategy is profitable only when Blend's XLM supply APY exceeds Vanna's XLM borrow APR. Check both rates before entering and monitor the spread over time.
-</Note>
-
-## Risk profile
-
-| Risk | Level | Notes |
-|---|---|---|
-| XLM price risk | None | Farm position and borrow debt cancel each other out |
-| Liquidation risk | Low | HF changes only from accruing interest, not price movement |
-| Rate risk | Medium | Strategy turns negative if Vanna's borrow rate rises above Blend's supply rate |
-| Smart contract risk | Low | Inherent to all on-chain protocols |
-
-## What to monitor
-
-**Rate spread** - This is the only lever that determines profitability. If Vanna's XLM borrow rate rises above the Blend XLM supply rate, exit by withdrawing from the Blend pool first and then repaying the borrow.
-
-**Health Factor** - Accruing borrow interest gradually reduces your HF even with no price risk. Add collateral or make partial repayments if it approaches 1.3×.
-
-## Related
-
-- [Borrow](/guides/margin/borrow)
-- [Single-Asset Pools](/guides/farm/blend-pools)
-- [Health Factor](/guides/margin/health-factor)
-- [Repay](/guides/margin/repay)
+See [Sample Strategies](/guides/sample-strategies), [Borrow](/guides/margin/borrow), and [Repay](/guides/margin/repay).

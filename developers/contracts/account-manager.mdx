@@ -1,354 +1,327 @@
 ---
 title: "AccountManager"
-description: "The single entry point for all margin account operations. Function reference with parameters, return values, errors, and events."
+description: "Current testnet implementation, behavior, authorization, and Rust signatures."
 mode: "wide"
 ---
 
-`AccountManager` is the first contract a user or integrator calls for any margin operation. It authenticates callers, coordinates with `RiskEngine` and `LendingPool`, and delegates state mutations to the user's `SmartAccount`.
+AccountManager authenticates margin owners, manages account lifecycle, coordinates lending and risk checks, and routes external actions through registered controllers. Earn deposits call lending pools directly.
 
-**Testnet address:** `CAWVGDG3TMGU4DC7POLSMDSBAJNJ363MHYPEAQHBRKOCLQIFP6WDXPJF`
+## Account lifecycle
 
----
+`create_account` deploys or reactivates a SmartAccount for the trader and updates Registry ownership records. `close_account` requires owner authorization, no outstanding debt, and a ledger later than activation. It unwinds external positions, sweeps direct tokens to the owner, deactivates the account, and records it for reuse.
 
-## Account Lifecycle
+## Collateral and borrowing
+
+Deposits, withdrawals, and borrows use WAD amounts. Token transfers use each token's native decimals. Deposits credit the amount actually transferred after conversion. Borrow proceeds remain in the SmartAccount; gross debt includes any origination fee, while credited collateral is the net receipt.
+
+`deposit_and_borrow` combines same-asset operations. `deposit_and_borrow_cross` supports distinct collateral and debt assets. `deposit_borrow_and_deploy_blend` accepts the legacy encoded Blend Deposit action and executes the combined operation atomically. The frontend may instead use multiple transactions.
+
+The asset cap defaults to **5**, and can be changed by the admin. Token eligibility and pool resolution use Registry configuration. Borrow and withdrawal checks require health strictly above 1.1.
+
+## Repayment, settlement, and liquidation
+
+`repay` takes arguments in the order **amount, symbol, SmartAccount**. It clamps repayment to debt, updates pool shares, and transfers repayment tokens from the SmartAccount through `remove_borrowed_token_balance`. It does not automatically fund repayment from the owner's wallet.
+
+`settle_account` unwinds external positions into the account, attempts repayment of recognized debt legs, and returns whether debt is cleared. It neither sweeps remaining collateral to the wallet nor deactivates the account. Use withdrawal or `close_account` afterward.
+
+`liquidate` requires the liquidator's authorization and allowances for each underlying debt token to AccountManager. It takes a liquidation snapshot, rejects healthy accounts and unpriceable plain collateral, repays full recognized debt from the liquidator, exits Blend directly to the liquidator, transfers held AMM LP tokens, and sweeps remaining direct collateral to the liquidator. There is no partial-repayment input or enforced debt-plus-bonus seizure cap. The 10% bonus reported by `get_liquidation_config` is not a separate payment calculation in this path. Liquidation does not deactivate the account.
+
+## External execution
+
+`exec` uses the typed `ExternalAction` interface. It calls Registry's batched `get_exec_gate`, checks the controller's `can_call`, executes through the SmartAccount, applies signed WAD token deltas, and enforces asset and controller TVL caps. The current path checks Registry directly; it does not require a facade round-trip.
+
+Live post-execution and post-borrow health validation is controlled by `get_exec_live_gate` (default **true**, admin configurable). Borrowing uses SmartAccount prechecks, then conditionally calls RiskEngine on the resulting state; the combined deposit/borrow path uses the same flag. Do not promise that every external action always runs a live health check. `execute` is the legacy XDR adapter; `exec_fn` is the function-name adapter. Use the typed path for new integrations.
+
+## Administration
+
+Admin methods cover two-step admin transfer, WASM upgrades, SmartAccount upgrades, pause state, asset cap, collateral eligibility, tracking minter authorization, valuation-cache refreshes, and the live execution gate. Manager pause blocks borrowing, combined deposit/borrow, collateral withdrawal, external execution, and liquidation. Standalone collateral deposit, repayment, settlement, and explicit close do not check this pause flag; their other authorization/configuration checks still apply. These controls are separate from pool and RiskEngine pause flags.
+
+## Function signatures
+
+These signatures are copied from the reviewed Rust implementation. `env` is supplied by Soroban and is not a transaction argument. `Result` errors and panics must be handled by the caller; simulation does not guarantee later execution. Public methods include privileged and internal-contract callbacks, not just user entrypoints.
+
+### __constructor
+
+```rust
+pub fn __constructor(env: &Env, admin: Address, registry_contract: Address)
+```
+
+### get_liquidation_config
+
+```rust
+pub fn get_liquidation_config(_env: &Env) -> (u128, u128, bool, bool)
+```
+
+### get_admin
+
+```rust
+pub fn get_admin(env: &Env) -> Address
+```
+
+### upgrade
+
+```rust
+pub fn upgrade(env: &Env, new_wasm_hash: BytesN<32>)
+```
+
+### upgrade_smart_account
+
+```rust
+pub fn upgrade_smart_account(env: &Env, smart_account: Address, new_wasm_hash: BytesN<32>)
+```
+
+### refresh_blend_underlying_cache
+
+```rust
+pub fn refresh_blend_underlying_cache(env: &Env, smart_account: Address)
+```
+
+### refresh_lp_usd_cache
+
+```rust
+pub fn refresh_lp_usd_cache(env: &Env, smart_account: Address)
+```
+
+### refresh_usd_valuation_cache
+
+```rust
+pub fn refresh_usd_valuation_cache(env: &Env, smart_account: Address)
+```
 
 ### create_account
 
 ```rust
-fn create_account(env: Env, trader_addr: Address) -> Address
+pub fn create_account(
+        env: &Env,
+        trader_address: Address,
+    ) -> Result<Address, AccountManagerError>
 ```
-
-Deploys a new `SmartAccount` contract for `trader_addr` (or reuses a closed one from the inactive pool) and marks it as active.
-
-**Authorization:** `trader_addr.require_auth()`
-
-**Returns:** Address of the new (or reused) SmartAccount
-
-**Storage written:**
-- `UsersList` — appends `trader_addr` if not already present
-- `SmartAccounts(trader_addr)` — stores the active SmartAccount address
-- `TraderAddress(smart_account)` — reverse mapping from SmartAccount → trader
-- Registry is updated with the new account
-
-**Events emitted:**
-```
-AccountCreationEvent {
-    smart_account: Address,
-    creation_time: u64
-}
-```
-
-**Reuse logic:** If the user previously closed an account, the closed contract is reactivated instead of deploying a new one. Deployment cost is amortized across the account's lifetime.
-
----
 
 ### close_account
 
 ```rust
-fn close_account(env: Env, smart_account: Address) -> bool
+pub fn close_account(
+        env: &Env,
+        smart_account_address: Address,
+    ) -> Result<bool, AccountManagerError>
 ```
-
-Closes an active margin account. Sweeps all collateral to the owner, deactivates the contract, and pushes it to the inactive pool for reuse.
-
-**Authorization:** Trader (owner of `smart_account`) must sign
-
-**Panics if:** The account has any outstanding debt (`has_debt == true`)
-
-**Returns:** `true` on success
-
-**Events emitted:**
-```
-AccountDeletionEvent {
-    smart_account: Address,
-    deletion_time: u64
-}
-```
-
----
-
-## Collateral Operations
 
 ### deposit_collateral_tokens
 
 ```rust
-fn deposit_collateral_tokens(
-    env: Env,
-    smart_account: Address,
-    symbol: Symbol,
-    amount: U256,
-) -> ()
+pub fn deposit_collateral_tokens(
+        env: Env,
+        smart_account: Address,
+        token_symbol: Symbol,
+        token_amount_wad: U256,
+    ) -> Result<(), AccountManagerError>
 ```
-
-Transfers `amount` (in WAD) of the token identified by `symbol` from the caller's wallet to the SmartAccount.
-
-**Authorization:** Trader must sign; caller must approve token transfer
-
-**Parameters:**
-
-| Parameter | Type | Description |
-|---|---|---|
-| `smart_account` | `Address` | The user's margin account |
-| `symbol` | `Symbol` | Token symbol (e.g., `"XLM"`, `"USDC"`) |
-| `amount` | `U256` | Amount in WAD (10¹⁸ = 1 token) |
-
-**Events emitted:**
-```
-TraderDepositEvent {
-    smart_account: Address,
-    token_symbol: Symbol,
-    amount: U256
-}
-```
-
----
 
 ### withdraw_collateral_balance
 
 ```rust
-fn withdraw_collateral_balance(
-    env: Env,
-    smart_account: Address,
-    symbol: Symbol,
-    amount: U256,
-) -> ()
+pub fn withdraw_collateral_balance(
+        env: Env,
+        smart_account: Address,
+        token_symbol: Symbol,
+        token_amount_wad: U256,
+    ) -> Result<(), AccountManagerError>
 ```
-
-Withdraws collateral from a SmartAccount back to the owner's wallet.
-
-**Authorization:** Trader must sign
-
-**Risk check:** `RiskEngine.is_withdraw_allowed(symbol, amount, smart_account)` must return `true`
-
-**Panics if:** Health factor would drop below 1.1× after withdrawal
-
----
-
-## Borrow Operations
 
 ### borrow
 
 ```rust
-fn borrow(
-    env: Env,
-    smart_account: Address,
-    amount: U256,
-    symbol: Symbol,
-) -> ()
+pub fn borrow(
+        env: &Env,
+        smart_account: Address,
+        borrow_amount_wad: U256,
+        token_symbol: Symbol,
+    ) -> Result<(), AccountManagerError>
 ```
-
-Borrows `amount` of `symbol` from the corresponding LendingPool into the SmartAccount.
-
-**Authorization:** Trader must sign
-
-**Risk check:** `RiskEngine.is_borrow_allowed(symbol, amount, smart_account)` must return `true`
-
-**Parameters:**
-
-| Parameter | Type | Description |
-|---|---|---|
-| `smart_account` | `Address` | The user's margin account |
-| `amount` | `U256` | Amount to borrow in WAD |
-| `symbol` | `Symbol` | Asset to borrow (`"XLM"`, `"USDC"`) |
-
-**What happens internally:**
-1. RiskEngine validates the borrow
-2. LendingPool accrues interest (`update_state()`)
-3. Origination fee is deducted and sent to treasury
-4. Borrowed amount is transferred to SmartAccount
-5. SmartAccount records the new borrow in `BorrowedTokensList`
-
-**Events emitted:**
-```
-TraderBorrowEvent {
-    smart_account: Address,
-    token_symbol: Symbol,
-    token_amount: U256
-}
-```
-
----
 
 ### deposit_and_borrow
 
 ```rust
-fn deposit_and_borrow(
-    env: Env,
-    smart_account: Address,
-    deposit_amt: U256,
-    borrow_amt: U256,
-    symbol: Symbol,
-) -> ()
+pub fn deposit_and_borrow(
+        env: Env,
+        smart_account: Address,
+        deposit_amount_wad: U256,
+        borrow_amount_wad: U256,
+        token_symbol: Symbol,
+    ) -> Result<(), AccountManagerError>
 ```
-
-Atomically deposits collateral and borrows the same asset in a single transaction.
-
----
 
 ### deposit_and_borrow_cross
 
 ```rust
-fn deposit_and_borrow_cross(
-    env: Env,
-    smart_account: Address,
-    deposit_amt: U256,
-    deposit_symbol: Symbol,
-    borrow_amt: U256,
-    borrow_symbol: Symbol,
-) -> ()
+pub fn deposit_and_borrow_cross(
+        env: Env,
+        smart_account: Address,
+        deposit_amount_wad: U256,
+        deposit_token_symbol: Symbol,
+        borrow_amount_wad: U256,
+        borrow_token_symbol: Symbol,
+    ) -> Result<(), AccountManagerError>
 ```
-
-Atomically deposits one asset as collateral and borrows a different asset. Useful for cross-collateral strategies (e.g., deposit XLM, borrow USDC).
-
----
 
 ### deposit_borrow_and_deploy_blend
 
 ```rust
-fn deposit_borrow_and_deploy_blend(
-    env: Env,
-    smart_account: Address,
-    deposit_amt: U256,
-    borrow_amt: U256,
-    symbol: Symbol,
-    blend_bytes: Bytes,
-) -> ()
+pub fn deposit_borrow_and_deploy_blend(
+        env: Env,
+        smart_account: Address,
+        deposit_amount_wad: U256,
+        borrow_amount_wad: U256,
+        token_symbol: Symbol,
+        blend_call_bytes: Bytes,
+    ) -> Result<(), AccountManagerError>
 ```
-
-Three-step atomic operation: deposit collateral, borrow, then forward borrowed funds to Blend — all in one transaction. Minimizes round-trips for leverage strategies.
-
----
-
-## Repay
 
 ### repay
 
 ```rust
-fn repay(
-    env: Env,
-    repay_amt: U256,
-    symbol: Symbol,
-    smart_account: Address,
-) -> ()
+pub fn repay(
+        env: Env,
+        repay_amount_wad: U256,
+        token_symbol: Symbol,
+        smart_account: Address,
+    ) -> Result<(), AccountManagerError>
 ```
-
-Repays `repay_amt` of `symbol` debt. Caller (trader) transfers funds back to the LendingPool. If the full debt is repaid, the symbol is removed from `BorrowedTokensList`.
-
-**Authorization:** Trader must sign
-
-**Events emitted:**
-```
-TraderRepayEvent {
-    smart_account: Address,
-    token_amount: U256,
-    timestamp: u64,
-    token_symbol: Symbol
-}
-```
-
----
-
-## Liquidation
 
 ### liquidate
 
 ```rust
-fn liquidate(env: Env, liquidator: Address, smart_account: Address) -> ()
+pub fn liquidate(
+        env: Env,
+        liquidator: Address,
+        smart_account: Address,
+    ) -> Result<(), AccountManagerError>
 ```
-
-Liquidates an undercollateralized margin account. The liquidator pays all outstanding debt from their own wallet and receives all remaining collateral from the SmartAccount in return.
-
-**Authorization:** `liquidator.require_auth()` — the caller (liquidator) must sign the transaction. The account owner is not involved and does not need to sign. This is fully permissionless.
-
-**Condition:** `RiskEngine.is_account_healthy(collateral_usd, debt_usd)` must return `false`. Panics if the account is healthy.
-
-**What happens:**
-1. Validates the account is unhealthy via RiskEngine
-2. For each borrowed token: reads outstanding debt, transfers tokens from the **liquidator's wallet** to the LendingPool, calls `LendingPool.collect_from()` to clear the borrow shares
-3. Calls `SmartAccount.sweep_to(liquidator)` to transfer **all remaining collateral to the liquidator**
-4. Emits event
-
-**Liquidation incentive:** The liquidator pays the exact outstanding debt and receives the full collateral balance. Because the account only becomes liquidatable at 1.1× collateralization, a healthy liquidation always yields at least 10% profit on the debt repaid (before gas).
-
-**Events emitted:**
-```
-TraderLiquidateEvent {
-    smart_account: Address,
-    liquidator: Address,
-    timestamp: u64
-}
-```
-
----
 
 ### settle_account
 
 ```rust
-fn settle_account(env: Env, smart_account: Address) -> bool
+pub fn settle_account(env: Env, smart_account: Address) -> Result<bool, AccountManagerError>
 ```
 
-Repays all outstanding debt without closing the account. Unlike `liquidate()`, this is intended for voluntary debt settlement by the account owner.
-
----
-
-## External Protocol Execution
-
-### execute (via SmartAccount routing)
-
-External protocol calls are routed through the SmartAccount's `execute()` function. The AccountManager orchestrates:
-1. Auth of the trader
-2. SmartAccount executes the external call (Blend, Aquarius, Soroswap)
-3. AccountManager mints/burns TrackingTokens based on the returned token delta
-
-See [SmartAccount](/developers/contracts/smart-account) for the action types and routing details.
-
----
-
-## Supported Assets
-
-| Symbol | Asset | Pool |
-|---|---|---|
-| `XLM` | Stellar Lumens (native) | LendingPoolXLM |
-| `USDC` | USD Coin | LendingPoolUSDC |
-
-| `BLUSDC` | Blend-wrapped USDC | LendingPoolUSDC |
-| `AQUSDC` | Aquarius-wrapped USDC | LendingPoolAquariusUSDC |
-| `SOUSDC` | Soroswap-wrapped USDC | LendingPoolSoroswapUSDC |
-
----
-
-## Error Codes
+### propose_admin
 
 ```rust
-enum AccountManagerError {
-    TokenNotFound,          // Symbol not recognized
-    MarginAccountNotFound,  // SmartAccount not in registry
-    ConversionError,        // Integer conversion failed
-}
+pub fn propose_admin(env: &Env, proposed: Address)
 ```
 
----
+### accept_admin
 
-## Key Storage
+```rust
+pub fn accept_admin(env: &Env)
+```
 
-| Key | Type | Description |
-|---|---|---|
-| `UsersList` | `Vec<Address>` | All traders with accounts |
-| `SmartAccounts(trader)` | `Address` | Trader's active SmartAccount |
-| `InactiveAccountOf(trader)` | `Vec<Address>` | Closed accounts available for reuse |
-| `TraderAddress(account)` | `Address` | Reverse: SmartAccount → trader |
-| `IsCollateralAllowed(symbol)` | `bool` | Whether symbol is accepted as collateral |
-| `AssetCap` | `U256` | Maximum total asset cap for the protocol |
-| `Admin` | `Address` | Admin address |
-| `RegistryContract` | `Address` | Registry address |
+### set_paused
 
----
+```rust
+pub fn set_paused(env: &Env, paused: bool)
+```
 
-## Related
+### is_paused
 
-- [SmartAccount](/developers/contracts/smart-account) — per-user contract that AccountManager writes to
-- [RiskEngine](/developers/contracts/risk-engine) — guard functions called before every borrow, withdraw, and liquidate
-- [LendingPools](/developers/contracts/lending-pools) — pools that issue and collect debt
-- [Integrate Margin](/developers/guides/integrate-margin) — end-to-end guide for building margin account flows
-- [Liquidation Bots](/developers/guides/liquidation-bots) — guide for monitoring accounts and calling liquidate()
-- [User Guide: Margin Account](/guides/margin/overview) — user-facing explanation of margin account lifecycle
-- [Core Concepts: Liquidation](/learn/liquidation) — protocol-level liquidation flow and settle_account details
+```rust
+pub fn is_paused(env: &Env) -> bool
+```
+
+### set_max_asset_cap
+
+```rust
+pub fn set_max_asset_cap(env: &Env, cap: U256)
+```
+
+### get_max_asset_cap
+
+```rust
+pub fn get_max_asset_cap(env: &Env) -> U256
+```
+
+### get_iscollateral_allowed
+
+```rust
+pub fn get_iscollateral_allowed(env: &Env, token_symbol: Symbol) -> bool
+```
+
+### set_iscollateral_allowed
+
+```rust
+pub fn set_iscollateral_allowed(env: &Env, token_symbol: Symbol, allowed: bool)
+```
+
+### generate_salt
+
+```rust
+pub fn generate_salt(
+        env: &Env,
+        trader_address: Address,
+        account_manager: Address,
+        smart_account_num: u32,
+    ) -> BytesN<32>
+```
+
+### get_inactive_accounts
+
+```rust
+pub fn get_inactive_accounts(env: &Env, trader_address: Address) -> Vec<Address>
+```
+
+### exec
+
+```rust
+pub fn exec(
+        env: &Env,
+        smart_account: Address,
+        target: Address,
+        action: ExternalAction,
+        tokens: Vec<Address>,
+        amounts_wad: Vec<u128>,
+        min_out: u128,
+    )
+```
+
+### set_exec_live_gate
+
+```rust
+pub fn set_exec_live_gate(env: &Env, enabled: bool)
+```
+
+### get_exec_live_gate
+
+```rust
+pub fn get_exec_live_gate(env: &Env) -> bool
+```
+
+### authorize_tracking_minter
+
+```rust
+pub fn authorize_tracking_minter(env: &Env, minter: Address, authorized: bool)
+```
+
+### execute
+
+```rust
+pub fn execute(env_x: &Env, smart_account: Address, extern_proto_call_bytes: Bytes)
+```
+
+### exec_fn
+
+```rust
+pub fn exec_fn(
+        env: &Env,
+        smart_account: Address,
+        target: Address,
+        func: Symbol,
+        args: Vec<Val>,
+        auth_entries: Vec<InvokerContractAuthEntry>,
+        tokens: Vec<Address>,
+    )
+```
+
+
+## Source reference
+
+- `Protocol_V1_Soroban_testnet/contracts/AccountManagerContract/src/account_manager.rs`

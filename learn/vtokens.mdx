@@ -1,112 +1,23 @@
 ---
 title: "vTokens"
-description: "vTokens are the share tokens issued by Vanna's Lending Pools. They represent a depositor's proportional claim on the pool and grow in redemption value as borrowers repay debt with interest."
+description: "Current Stellar testnet vtokens."
 mode: "wide"
 ---
 
-When an LP deposits into a [Lending Pool](/learn/lending-pools), they receive vTokens - share tokens that track their proportional claim on the pool. The vToken is the mechanism that makes yield passive.
+vTokens are the receipts issued by Vanna lending pools. Each of the four markets has a separate receipt contract. Your receipt balance measures shares; its underlying redemption value changes with pool assets and debt interest.
 
-<div style={{ display: "flex", justifyContent: "center", margin: "8px 0 24px" }}>
-  <img src="/images/learn/vToken.png" alt="vToken mechanics" style={{ maxWidth: "100%", borderRadius: "16px" }} />
-</div>
+## How yield appears
 
-## The Core Idea: Shares
+You do not need to claim a separate reward to realize lending interest. The value represented by a receipt can grow as interest accrues. Actual redemption still depends on available pool liquidity and the per-call payout cap.
 
-A vToken does **not** represent a fixed quantity of the underlying asset. It represents a **proportional claim on the pool's physical balance**. Two values determine the exchange rate at any moment:
+The exchange rate is approximately total assets divided by receipt supply; exact execution includes virtual-offset and native-rounding rules. Do not assume deposits always mint an equal number of whole receipts.
 
-| Value | Meaning |
-|---|---|
-| `pool_balance` | The asset balance physically held by the pool contract right now - what can actually be withdrawn. |
-| `vToken supply` | Total vTokens currently in circulation. |
+<Frame caption="Conceptual interest-accrual example. Higher redemption value is not guaranteed; actual payouts depend on pool assets, liquidity, and caps. Click the image to zoom.">
+  <img src="/images/learn/vToken.png" alt="Diagram showing a deposit receiving vTokens, borrower interest, and receipt redemption" width="1536" height="1024" loading="lazy" decoding="async" />
+</Frame>
 
-The redemption rate (assets per vToken) is:
+## Transfers and controls
 
-$$
-\text{assetsPerShare} = \frac{\text{pool\_balance}}{\text{vToken supply}}
-$$
+Receipts support holder and allowance-based transfers, subject to authorization/freeze controls. Pool-controlled mint/burn and configurable maximum supply are part of the implementation. A receipt's existence does not imply acceptance as collateral by another protocol.
 
-When a borrower repays their debt plus accrued interest, `pool_balance` rises. `vToken supply` does not change. So `assetsPerShare` rises - and every vToken holder benefits proportionally, without doing anything.
-
-## How vTokens Are Minted and Burned
-
-**On deposit** - the pool calculates shares to issue:
-
-```
-vTokens minted = amount × vToken supply / pool_balance
-```
-
-If the pool is empty or no vTokens have ever been minted, the first depositor receives shares 1:1.
-
-**On redemption** - the pool calculates assets to return:
-
-```
-asset amount = vTokens redeemed × pool_balance / vToken supply
-```
-
-Both operations use the same ratio: `pool_balance / vToken supply`. A depositor who supplies, waits, and then redeems gets back more than they put in - as long as at least one repayment with interest has occurred during that period.
-
-## When Does the Exchange Rate Rise?
-
-The exchange rate rises when `pool_balance` grows. This happens when **a borrower repays their debt**.
-
-- **Borrow:** XLM leaves the pool. `pool_balance` drops. The exchange rate drops proportionally - but the LP's total claim is unchanged, because the same XLM now exists as an outstanding loan.
-- **Repayment:** XLM returns to the pool. Since borrowers owe principal plus accrued interest, the interest portion is surplus. After repayment, `pool_balance` ends up higher than it was before the borrow, and `assetsPerShare` rises above the original level.
-
-Interest **accrues** in the pool's accounting (`borrows_wad` grows via `update_state()`), but this accounting does not affect `pool_balance` or the vToken exchange rate. The rate only moves when tokens physically enter or leave the pool contract.
-
-## A Worked Example
-
-Suppose a pool starts empty and an LP deposits 1,000 XLM:
-
-| Event | pool_balance | vToken supply | Exchange rate | LP vTokens | LP redeemable (liquid) |
-|---|---|---|---|---|---|
-| LP deposits 1,000 XLM | 1,000 | 1,000 | 1.000 | 1,000 vXLM | 1,000 XLM |
-| Borrower draws 500 XLM | 500 | 1,000 | 0.500 | 1,000 vXLM | 500 XLM |
-| 30 days pass, interest accrues in accounting | 500 | 1,000 | 0.500 | 1,000 vXLM | 500 XLM |
-| Borrower repays 510 XLM (500 principal + 10 interest) | 1,010 | 1,000 | 1.010 | 1,000 vXLM | 1,010 XLM |
-
-The LP did nothing between the borrow and repayment. Their vToken balance stayed at 1,000 vXLM throughout. Once the borrower repaid with interest, the exchange rate rose from 1.000 to 1.010.
-
-During the active borrow, the LP's redeemable amount reflects only the liquid portion of the pool. The outstanding 500 XLM is an active loan - the LP's full claim is restored once the borrower repays. If utilization is high, full redemptions may be temporarily limited.
-
-A second LP depositing 100 XLM at the end would receive `100 / 1.010 ≈ 99.01 vXLM` - they enter at the current exchange rate, fairly priced against the original LP.
-
-## vToken Operations
-
-| Action | pool_balance | vToken supply | Exchange rate |
-|---|---|---|---|
-| LP deposits | Increases | Increases (vTokens minted) | Unchanged |
-| LP redeems | Decreases | Decreases (vTokens burned) | Unchanged |
-| Borrower borrows | Decreases (XLM leaves pool) | No change | Decreases |
-| Borrower repays principal only | Returns to pre-borrow level | No change | Returns to pre-borrow rate |
-| Borrower repays principal + interest | Rises above pre-borrow level | No change | Rises above original rate |
-| Liquidation - full debt recovered | Pool receives full repayment | No change | Rises (full recovery) |
-| Liquidation - partial recovery | Pool receives partial repayment | No change | Rises less (LPs absorb the shortfall) |
-
-## What vTokens Are Not
-
-A vToken is **not**:
-
-- **A fixed-yield bond.** Yield depends on what borrowers repay, which varies with utilization and the [Rate Model](/learn/interest-rate-model).
-- **Risk-free.** If a borrower defaults and liquidation does not recover the full debt, `pool_balance` receives less than the full repayment. The shortfall reduces the exchange rate permanently - LPs absorb it proportionally.
-- **Always redeemable.** If pool utilization is near 100%, most assets are out as active loans. Redemptions may fail until borrowers repay. This is a liquidity constraint, not a solvency problem - the debt is still tracked and will return to the pool.
-- **A governance token.** vTokens carry no voting rights. They are purely economic claims on the pool.
-
-## Transferability
-
-vTokens are standard fungible tokens with `transfer` and `transfer_from` functions. They can be sent to another address, which then holds the same proportional claim on the pool. Vanna does not restrict transfers.
-
-## Supported Assets
-
-Vanna currently deploys two vToken contracts on Stellar:
-
-| Underlying | vToken |
-|---|---|
-| XLM | vXLM |
-| USDC | vUSDC |
-
-## Related
-
-- [Lending Pools](/learn/lending-pools) - the pool that issues vTokens and how borrow accounting works
-- [Interest Rate Model](/learn/interest-rate-model) - the utilization-based curve that drives borrow cost and LP yield
-- [Liquidation](/learn/liquidation) - what can cause LP loss
+Earn receipts in your wallet are separate from margin collateral and external Blend/LP tracking positions. See [Supply](/guides/earn/supply), [Withdraw](/guides/earn/withdraw), and [vToken Reference](/developers/contracts/vtokens).

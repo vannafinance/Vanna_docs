@@ -1,62 +1,21 @@
 ---
 title: "Transfer Collateral"
-description: "How to move assets between your wallet and your Margin Account."
+description: "Using transfer collateral in the current Stellar testnet application."
 mode: "wide"
 ---
 
-<Snippet file="snippets/testnet-notice.mdx" />
+The **Transfer Collateral** tab moves supported tokens between your wallet and SmartAccount.
 
-The **Transfer Collateral** tab lets you move assets in two directions: from your wallet into your Margin Account, and from your Margin Account back to your wallet. The direction matters because adding collateral improves your Health Factor, while removing it reduces it.
+## Wallet to Margin
 
-## Before you start
+Choose the wallet-to-margin direction, select the exact token variant, enter an amount, review the destination and available balance, and confirm/sign. This increases account-held funds without creating debt.
 
-- **Margin Account created** - see [Open a Margin Account](/guides/margin/open-account) if you haven't done this yet.
-- **Wallet connected** - your wallet must be connected to approve the transaction.
+## Margin to Wallet
 
-## Wallet to Margin Account (add collateral)
+Choose the margin-to-wallet direction, select a free account-held token balance, and enter the amount. Review the post-withdrawal health preview, then confirm/sign.
 
-Use this direction when you want to increase your collateral, improve your Health Factor, or create borrowing capacity without opening a full deposit-and-borrow transaction.
+A withdrawal with outstanding debt must leave the account strictly above the 1.1 health threshold. The contract also checks available balances and configuration. Recognized external-position value is not a withdrawable plain-token balance; exit Blend or remove LP liquidity first if those assets are needed.
 
-<Steps>
-  <Step title="Go to Transfer Collateral">
-    Click **Margin** in the top navigation bar, then find and click the **Transfer Collateral** tab in the Margin interface.
-  </Step>
-  <Step title="Select direction">
-    Choose the wallet-to-account direction. This moves assets from your wallet into your Margin Account.
-  </Step>
-  <Step title="Choose asset and amount">
-    Select the asset you want to transfer (for example, XLM or USDC) and enter the amount. The panel updates to show your Health Factor after the transfer, along with your updated Net Available Collateral and Collateral Left Before Liquidation.
-  </Step>
-  <Step title="Confirm">
-    Click the confirm button to proceed. Your wallet opens a confirmation prompt. Review and confirm to sign and broadcast the transaction. Once confirmed, your collateral balance in the Margin Account increases and your metrics bar updates.
-  </Step>
-</Steps>
+Net Available Collateral is displayed equity, not a maximum withdrawal amount. Prices, interest, and cached valuations can change between the preview and execution.
 
-## Margin Account to Wallet (withdraw collateral)
-
-Use this direction when you want to reclaim collateral you no longer need to back your current debt. If you have no outstanding debt, you can withdraw all of your collateral.
-
-<Steps>
-  <Step title="Go to Transfer Collateral">
-    Click **Margin** in the top navigation bar, then click the **Transfer Collateral** tab.
-  </Step>
-  <Step title="Select direction">
-    Choose the account-to-wallet direction. This moves assets from your Margin Account back to your wallet.
-  </Step>
-  <Step title="Choose asset and amount">
-    Select the asset and enter the amount you want to withdraw. The panel shows how much your Health Factor will decrease as a result of the withdrawal. Make sure your Health Factor after the withdrawal stays well above 1.1×. If you have outstanding debt, withdrawing too much collateral can push your account into liquidation range.
-  </Step>
-  <Step title="Confirm">
-    Click the confirm button to proceed. Your wallet opens a confirmation prompt. Review and confirm to sign and broadcast the transaction. Once confirmed, the withdrawn asset appears in your wallet and your Margin Account collateral balance decreases accordingly.
-  </Step>
-</Steps>
-
-<Warning>
-  Withdrawing collateral reduces your Health Factor. If you have outstanding debt, check the post-withdrawal Health Factor before confirming. Withdrawals that would push your Health Factor below 1.1× will be rejected by the protocol.
-</Warning>
-
-## Related
-
-- [Deposit Collateral](/guides/margin/deposit-collateral) - add collateral as part of a combined deposit-and-borrow flow.
-- [Health Factor](/guides/margin/health-factor) - understand how collateral movements affect your position health.
-- [Repay a Loan](/guides/margin/repay) - reduce your debt to free up collateral for withdrawal.
+Verify both wallet and margin balances after confirmation. See [Deposit Collateral](/guides/margin/deposit-collateral) and [Health Factor](/guides/margin/health-factor).

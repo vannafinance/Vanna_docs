@@ -1,0 +1,119 @@
+---
+title: "Shared Types and Units"
+description: "Controller actions, configuration, tracking metadata, and fixed-point units."
+mode: "wide"
+---
+
+`vanna-common` is a shared Rust library, not a separately deployed contract. It defines controller interfaces, arithmetic helpers, TTL constants, and the types below.
+
+`ExternalAction::PlaceOrder` is a type variant; none of the three current controllers implements a perpetual-order integration. An enum variant is not product availability.
+
+`TokenDeltas` contains signed WAD collateral changes. Controller execution can constrain credits by ledger and oracle value; consumers must not equate every delta with a raw wallet balance change.
+
+```rust
+use soroban_sdk::{contracttype, Address, BytesN, Symbol, Vec};
+
+#[contracttype]
+#[derive(Clone)]
+pub struct AssetConfig {
+    pub native_asset_address: Address,
+    pub asset_symbol: Symbol,
+    pub vtoken_symbol: Symbol,
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Controller-facade port, Phase 4 — the shared controller interface types.
+// ─────────────────────────────────────────────────────────────────────────────
+
+#[contracttype]
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub enum ExternalAction {
+    Supply,
+    Withdraw,
+    Swap,
+    AddLiquidity,
+    RemoveLiquidity,
+    PlaceOrder,
+}
+
+#[contracttype]
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub struct TokenDeltas {
+    pub tokens: Vec<Address>,
+    pub deltas: Vec<i128>,
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Budget optimization — batched Registry reads.
+//
+// Every cross-contract invocation instantiates a wasm VM and is charged to the
+// per-tx budget; the exec pipeline (AM → controller → vault → external
+// protocol) previously performed 12-14 SEPARATE single-value Registry reads,
+// which alone exhausted the transaction memory budget on the real network.
+// These structs let each participant fetch everything it needs from the
+// Registry in ONE call.
+// ─────────────────────────────────────────────────────────────────────────────
+
+#[contracttype]
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub struct ProtocolConfig {
+    pub account_manager: Address,
+    pub oracle: Address,
+    pub tracking_token: Address,
+    pub xlm: Address,
+    pub usdc: Address,
+    pub aquarius_usdc: Option<Address>,
+    pub soroswap_usdc: Option<Address>,
+    pub blend_pool: Option<Address>,
+    pub aquarius_router: Option<Address>,
+    pub soroswap_router: Option<Address>,
+    pub aquarius_pool_index: Option<BytesN<32>>,
+}
+
+#[contracttype]
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub struct ExecGate {
+    pub controller: Option<Address>,
+    pub tvl_cap: u128,
+    pub tokens_allowed: bool,
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Tracking-token registry (generic external-protocol position receipts).
+// ─────────────────────────────────────────────────────────────────────────────
+
+#[contracttype]
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub enum TrackingValuationKind {
+    BlendUnderlying = 0,
+    LpSoroswap = 1,
+    LpAquarius = 2,
+    Unpriced = 3,
+}
+
+#[contracttype]
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub enum TrackingUnwindKind {
+    BlendWithdraw = 0,
+    LpRemoveWad = 1,
+    LpRemoveRaw = 2,
+}
+
+#[contracttype]
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub struct TrackingMeta {
+    pub symbol: Symbol,
+    pub target: Address,
+    pub valuation_kind: TrackingValuationKind,
+    pub unwind_kind: TrackingUnwindKind,
+    pub price_feed: Symbol,
+    pub token_legs: Vec<Address>,
+}
+```
+
+## Source reference
+
+- `Protocol_V1_Soroban_testnet/contracts/vanna-common/src/types.rs`
+- `Protocol_V1_Soroban_testnet/contracts/vanna-common/src/controller.rs`
+- `Protocol_V1_Soroban_testnet/contracts/vanna-common/src/math.rs`
+- `Protocol_V1_Soroban_testnet/contracts/vanna-common/src/ttl.rs`

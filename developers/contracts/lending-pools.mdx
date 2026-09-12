@@ -1,335 +1,289 @@
 ---
 title: "Lending Pools"
-description: "Function reference for LendingPoolXLM and LendingPoolUSDC — deposit, vToken redemption, borrow, repay, and interest state functions."
+description: "Current testnet implementation, behavior, authorization, and Rust signatures."
 mode: "wide"
 ---
 
-Vanna runs three isolated lending pool contracts, one per supported asset. Each pool manages LP deposits (issuing vTokens), borrow issuance (via AccountManager), and interest accrual.
+One lending-pool implementation serves four configured frontend markets: XLM, Blend USDC, Aquarius USDC, and Soroswap USDC. Each deployment has its own underlying asset, liquidity, debt shares, and vToken.
 
-| Pool | Asset | Address |
-|---|---|---|
-| LendingPoolXLM | Stellar Lumens (XLM) | `CBA4E4ZMXUKCDTNT7LDKSO3LGNGKHRCE4GUVPSRCAKU3TKAONUY7SVOB` |
-| LendingPoolUSDC | USD Coin (USDC) | `CABLEI2ZPCWLO2FQRHJJYR7JW75BCCPN2ZIV5BX7CHPXZT4CZVTGUOBU` |
+## Supply and redeem
 
+`deposit(lender, amount_wad)` authenticates the lender, accrues interest, transfers native underlying, and mints vTokens. The first deposit uses 1:1 WAD accounting and reserves 1,000 WAD share units for minimum liquidity before native vToken conversion. Later deposits use a virtual offset of **1 WAD integer unit** in both supply and assets. A zero-share accounting result is rejected.
 
-All three pools share the same interface — only the underlying asset differs.
+`redeem_vtokens(lender, tokens_to_redeem_wad)` accepts **vToken quantity in WAD**, not underlying quantity or raw native receipt units. Payout is clamped to the minimum of requested value, **50% of total assets**, and available liquidity. A partial redemption burns the recomputed share amount; zero available payout fails. Read the event's `asset_amount` and remaining balance to determine what actually redeemed.
 
----
+## Borrow and repay accounting
 
-## Liquidity Provider Functions
+Only AccountManager may call `lend_to` and `collect_from`. `lend_to` returns `(is_first_borrow, net_amount_wad)` on success, records gross debt with upward-rounded shares, and distributes the fee to treasury and net proceeds to the SmartAccount. New borrowing cannot exceed **95% pool utilization**.
 
-### deposit_xlm / deposit_usdc
+`collect_from` updates debt accounting; it does not itself pull tokens. AccountManager's regular repay path separately transfers account-held underlying, while liquidation transfers from the liquidator using an allowance. Do not call the pool accounting function as a standalone repayment flow.
 
-```rust
-fn deposit_xlm(env: Env, lender: Address, amount_wad: U256) -> ()
-```
+`get_borrows` includes pending interest with floor rounding. `update_state` persists interest with ceiling rounding. Account debt getters use these live preview borrows, not just stored principal. See [Math Reference](/developers/math-reference).
 
-Deposits `amount_wad` of the pool's native asset from `lender`, mints vTokens proportional to the LP's share of the pool.
+## Pool administration
 
-**Authorization:** `lender.require_auth()`
+Pool pause blocks supply, redeem, and borrow, but not `collect_from`. Admin transfer is two-step. Origination fee and rate-model address are configurable. Read `get_origination_fee` rather than assuming a fixed deployment fee. The frontend's 0.9999 spend buffer is a rounding allowance, not the on-chain fee.
 
-**Parameters:**
+## Function signatures
 
-| Parameter | Type | Description |
-|---|---|---|
-| `lender` | `Address` | The depositor's wallet address |
-| `amount_wad` | `U256` | Deposit amount in WAD (10¹⁸ = 1 token) |
+These signatures are copied from the reviewed Rust implementation. `env` is supplied by Soroban and is not a transaction argument. `Result` errors and panics must be handled by the caller; simulation does not guarantee later execution. Public methods include privileged and internal-contract callbacks, not just user entrypoints.
 
-**What happens:**
-1. Calls `update_state()` to accrue pending interest
-2. Computes vToken amount: `floor(amount × vtoken_supply / total_assets)`
-3. Transfers native asset from lender to pool
-4. Mints vTokens to lender
-
-**Events emitted:**
-```
-deposit_event (LendingDepositEvent) {
-    lender: Address,
-    amount: U256,
-    timestamp: u64,
-    asset_symbol: Symbol
-}
-
-mint_event (LendingTokenMintEvent) {
-    lender: Address,
-    token_amount: U256,
-    timestamp: u64,
-    token_symbol: Symbol
-}
-```
-
----
-
-### redeem_vxlm / redeem_vusdc
+### __constructor
 
 ```rust
-fn redeem_vxlm(env: Env, lender: Address, tokens_to_redeem: U256) -> ()
+pub fn __constructor(
+        env: Env,
+        admin: Address,
+        asset_config: AssetConfig,
+        registry_contract: Address,
+        account_manager: Address,
+        rate_model: Address,
+        token_issuer: Address,
+        treasury: Address,
+        origination_fee: U256,
+    )
 ```
 
-Burns `tokens_to_redeem` vTokens and transfers the underlying asset back to the lender.
+### propose_admin
 
-**Authorization:** `lender.require_auth()`
-
-**What happens:**
-1. Calls `update_state()` to accrue pending interest
-2. Computes underlying: `floor(vtoken_amount × total_assets / vtoken_supply)`
-3. Burns vTokens from lender
-4. Transfers underlying asset to lender
-
-**Panics if:** Pool balance is insufficient to cover the redemption
-
-**Events emitted:**
-```
-withdraw_event (LendingWithdrawEvent) {
-    lender: Address,
-    vtoken_amount: U256,
-    timestamp: u64,
-    asset_symbol: Symbol
-}
-
-burn_event (LendingTokenBurnEvent) {
-    lender: Address,
-    token_amount: U256,
-    timestamp: u64,
-    token_symbol: Symbol
-}
+```rust
+pub fn propose_admin(env: Env, proposed: Address) -> Result<(), LendingError>
 ```
 
----
+### accept_admin
 
-## Borrow Functions (AccountManager Only)
+```rust
+pub fn accept_admin(env: Env) -> Result<String, LendingError>
+```
 
-These functions are restricted to the registered AccountManager. Direct calls from other addresses will panic.
+### get_admin
+
+```rust
+pub fn get_admin(env: &Env) -> Result<Address, LendingError>
+```
+
+### initialize_pool
+
+```rust
+pub fn initialize_pool(
+        env: Env,
+        vtoken_contract_address: Address,
+    ) -> Result<String, LendingError>
+```
+
+### deposit
+
+```rust
+pub fn deposit(env: Env, lender: Address, amount_wad: U256)
+```
+
+### redeem_vtokens
+
+```rust
+pub fn redeem_vtokens(env: &Env, lender: Address, tokens_to_redeem_wad: U256)
+```
 
 ### lend_to
 
 ```rust
-fn lend_to(env: Env, smart_account: Address, amount_wad: U256) -> bool
+pub fn lend_to(
+        env: &Env,
+        smart_account: Address,
+        amount_wad: U256,
+    ) -> Result<(bool, U256), LendingError>
 ```
-
-Issues a borrow from the pool to `smart_account`. Called by AccountManager after RiskEngine approval.
-
-**Authorization:** `AccountManager.require_auth()`
-
-**What happens:**
-1. `update_state()` — accrue interest
-2. Convert `amount_wad` to borrow shares and add to `UserBorrowSharesWAD(smart_account)`
-3. Deduct origination fee: `fee = floor(amount × origination_fee_rate / WAD)` → send to treasury
-4. Transfer `amount_wad` worth of assets to `smart_account`
-
-**Returns:** `true` on success
-
----
 
 ### collect_from
 
 ```rust
-fn collect_from(env: Env, amount_wad: U256, smart_account: Address) -> bool
+pub fn collect_from(
+        env: &Env,
+        amount_wad: U256,
+        trader_smart_account: Address,
+    ) -> Result<bool, LendingError>
 ```
-
-Accepts a repayment from `smart_account`. Called by AccountManager during repay or liquidation.
-
-**Authorization:** `AccountManager.require_auth()`
-
-**What happens:**
-1. `update_state()` — accrue interest
-2. Convert `amount_wad` to borrow shares and subtract from `UserBorrowSharesWAD(smart_account)`
-3. Decrease `BorrowsWAD` by `amount_wad`
-
-**Returns:** `true` on success
-
----
-
-## State & Query Functions
-
-### update_state
-
-```rust
-fn update_state(env: Env) -> ()
-```
-
-Accrues interest since last update. Must be called before any borrow or repayment.
-
-```
-elapsed = now - last_updated
-rate_factor = elapsed × rate_per_sec
-interest = floor(borrows_wad × rate_factor / WAD)
-borrows_wad += interest
-last_updated = now
-```
-
-No-op if called in the same ledger as the last update.
-
----
-
-### get_borrow_balance
-
-```rust
-fn get_borrow_balance(env: Env, trader: Address) -> U256
-```
-
-Returns the current outstanding debt (in WAD) for `trader`, including accrued interest.
-
-```
-user_debt = floor(user_borrow_shares × borrows_wad / total_borrow_shares)
-```
-
-This is the primary function used by RiskEngine and AccountManager to read outstanding debt.
-
----
-
-### get_total_liquidity_in_pool
-
-```rust
-fn get_total_liquidity_in_pool(env: Env) -> U256
-```
-
-Returns the pool's current native asset balance in WAD (physical tokens held, not including outstanding borrows).
-
----
-
-### get_borrows
-
-```rust
-fn get_borrows(env: Env) -> U256
-```
-
-Returns the total outstanding borrows in WAD (including interest accrued since last update, but not yet written to state).
-
-```
-borrows_live = borrows_wad + floor(borrows_wad × rate_factor_since_last_update / WAD)
-```
-
----
-
-### total_assets
-
-```rust
-fn total_assets(env: Env) -> U256
-```
-
-Returns `liquidity + borrows` — the pool's theoretical total, including outstanding debt.
-
-```
-total_assets = pool_balance_wad + borrows_wad
-```
-
-This is the denominator for vToken exchange rate calculations.
-
----
-
-### get_rate_factor
-
-```rust
-fn get_rate_factor(env: Env) -> U256
-```
-
-Returns `(now - last_updated) × rate_per_sec` in WAD — the accrual factor since the last state update.
-
----
-
-## Conversion Functions
-
-### convert_xlm_to_vtoken
-
-```rust
-fn convert_xlm_to_vtoken(env: Env, amount: U256) -> U256
-```
-
-Computes how many vTokens `amount` of the underlying asset would mint at current exchange rate.
-
-```
-vtokens = floor(amount × vtoken_supply / total_assets)
-```
-
----
-
-### convert_vtoken_to_xlm
-
-```rust
-fn convert_vtoken_to_xlm(env: Env, vtoken_amount: U256) -> U256
-```
-
-Computes how much underlying `vtoken_amount` vTokens would redeem to at current exchange rate.
-
-```
-underlying = floor(vtoken_amount × total_assets / vtoken_supply)
-```
-
----
 
 ### convert_asset_borrow_shares
 
 ```rust
-fn convert_asset_borrow_shares(env: Env, amount: U256) -> U256
+pub fn convert_asset_borrow_shares(env: &Env, amount_wad: U256, round_up: bool) -> U256
 ```
-
-Converts a raw asset amount to borrow shares at current rates.
-
-```
-shares = floor(amount × total_borrow_shares / borrows_live)
-```
-
----
 
 ### convert_borrow_shares_asset
 
 ```rust
-fn convert_borrow_shares_asset(env: Env, shares: U256) -> U256
+pub fn convert_borrow_shares_asset(env: &Env, debt_wad: U256) -> U256
 ```
 
-Converts borrow shares to the underlying asset amount.
-
-```
-amount = floor(shares × borrows_wad / total_borrow_shares)
-```
-
----
-
-## Pool Storage
-
-| Key | Type | Description |
-|---|---|---|
-| `BorrowsWAD` | `U256` | Total outstanding debt (stored, not live) |
-| `TotalBorrowSharesWAD` | `U256` | Sum of all borrow shares |
-| `UserBorrowSharesWAD(Address)` | `U256` | Per-account borrow shares |
-| `LastUpdatedTime` | `u64` | Timestamp of last `update_state()` call |
-| `TotalTokensMintedWAD(Symbol)` | `U256` | Cumulative vTokens minted |
-| `TotalTokensBurntWAD(Symbol)` | `U256` | Cumulative vTokens burned |
-| `VTokenContractAddress(Symbol)` | `Address` | vToken contract address |
-
----
-
-## Pool Configuration
-
-| Parameter | Description |
-|---|---|
-| `origination_fee` | Per-borrow fee rate in WAD (testnet: 10^16 = 1%) |
-| `RateModel` | Address of the RateModel contract |
-| `AccountManager` | Address of the AccountManager (only authorized caller for lend_to/collect_from) |
-| `Treasury` | Destination for origination fees |
-
----
-
-## Error Codes
+### update_state
 
 ```rust
-enum LendingError {
-    AdminError,
-    InsufficientBalance,        // Depositor balance too low
-    InsufficientPoolBalance,    // Pool can't cover withdrawal
-    PoolAlreadyInitialized,
-    InterestRateError,          // Forwarded from RateModel
-}
+pub fn update_state(env: &Env)
 ```
 
----
+### set_paused
 
-## Related
+```rust
+pub fn set_paused(env: Env, paused: bool)
+```
 
-- [vTokens](/developers/contracts/vtokens) — the fungible tokens minted by lending pools
-- [Rate Model](/developers/contracts/rate-model) — the interest rate curve
-- [Math Reference](/developers/math-reference) — vToken exchange rate and borrow share formulas
-- [Integrate Lending](/developers/guides/integrate-lending) — end-to-end guide for supply/withdraw integration
-- [Core Concepts: Lending Pools](/learn/lending-pools) — pool accounting, borrow shares, and interest accrual explained
-- [User Guide: Earn](/guides/earn/overview) — how liquidity providers interact with lending pools
+### is_paused
+
+```rust
+pub fn is_paused(env: &Env) -> bool
+```
+
+### before_deposit
+
+```rust
+pub fn before_deposit(env: &Env)
+```
+
+### before_withdraw
+
+```rust
+pub fn before_withdraw(env: &Env)
+```
+
+### get_user_borrow_shares
+
+```rust
+pub fn get_user_borrow_shares(env: &Env, trader: Address) -> U256
+```
+
+### get_borrow_balance
+
+```rust
+pub fn get_borrow_balance(env: &Env, trader: Address) -> U256
+```
+
+### get_total_borrow_shares
+
+```rust
+pub fn get_total_borrow_shares(env: &Env) -> U256
+```
+
+### total_assets
+
+```rust
+pub fn total_assets(env: &Env) -> U256
+```
+
+### get_borrows
+
+```rust
+pub fn get_borrows(env: &Env) -> U256
+```
+
+### get_rate_factor
+
+```rust
+pub fn get_rate_factor(env: &Env) -> Result<U256, InterestRateError>
+```
+
+### get_total_liquidity_in_pool
+
+```rust
+pub fn get_total_liquidity_in_pool(env: &Env) -> U256
+```
+
+### get_last_updated_time
+
+```rust
+pub fn get_last_updated_time(env: &Env) -> u64
+```
+
+### get_current_total_vtoken_balance
+
+```rust
+pub fn get_current_total_vtoken_balance(env: &Env) -> U256
+```
+
+### get_total_vtokens_minted
+
+```rust
+pub fn get_total_vtokens_minted(env: &Env) -> U256
+```
+
+### get_total_vtokens_burnt
+
+```rust
+pub fn get_total_vtokens_burnt(env: &Env) -> U256
+```
+
+### get_lenders
+
+```rust
+pub fn get_lenders(env: Env) -> Vec<Address>
+```
+
+### is_pool_initialised
+
+```rust
+pub fn is_pool_initialised(env: &Env) -> bool
+```
+
+### get_native_asset_address
+
+```rust
+pub fn get_native_asset_address(env: &Env) -> Address
+```
+
+### get_asset_config
+
+```rust
+pub fn get_asset_config(env: &Env) -> AssetConfig
+```
+
+### convert_asset_to_vtoken
+
+```rust
+pub fn convert_asset_to_vtoken(env: &Env, amount_wad: U256) -> U256
+```
+
+### convert_vtoken_to_asset
+
+```rust
+pub fn convert_vtoken_to_asset(env: &Env, vtokens_to_be_burnt_wad: U256) -> U256
+```
+
+### update_origination_fee
+
+```rust
+pub fn update_origination_fee(env: &Env, origination_fee: U256)
+```
+
+### update_rate_model
+
+```rust
+pub fn update_rate_model(env: &Env, new_rate_model: Address)
+```
+
+### get_origination_fee
+
+```rust
+pub fn get_origination_fee(env: &Env) -> U256
+```
+
+### get_treasury
+
+```rust
+pub fn get_treasury(env: &Env) -> Address
+```
+
+### get_max_utilization_wad
+
+```rust
+pub fn get_max_utilization_wad(_env: &Env) -> u128
+```
+
+### upgrade
+
+```rust
+pub fn upgrade(env: &Env, new_wasm_hash: BytesN<32>)
+```
+
+
+## Source reference
+
+- `Protocol_V1_Soroban_testnet/contracts/lending-pool/src/pool.rs`

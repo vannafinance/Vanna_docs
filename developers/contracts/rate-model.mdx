@@ -1,149 +1,76 @@
 ---
-title: "RateModel"
-description: "Interest rate model contract. Computes per-second borrow rates as a polynomial function of pool utilization."
+title: "Rate Model"
+description: "Current testnet implementation, behavior, authorization, and Rust signatures."
 mode: "wide"
 ---
 
-The `RateModel` contract computes the borrow rate per second for a given pool utilization. It is called by every LendingPool during `update_state()` to determine how much interest has accrued since the last update.
+The rate model uses a smooth utilization polynomial. It is not a two-slope kinked model.
 
-**Testnet address:** `CCJAUPCU6EIFQK6GTAAYLW3Y4YETJAAUPAGBPFGQ2OUJPSW3WWHUCL2Z`
+```text
+u = borrows / (liquidity + borrows)
+annual_rate = c3 × (c1×u + c1×u^32 + c2×u^64)
+rate_per_second = annual_rate / 31,556,952
+```
 
----
+All contract values are WAD-scaled. Defaults are `c1 = 0.1`, `c2 = 0.3`, `c3 = 3.5`; these are configurable, not immutable market rates. `get_coefficients` returns current values. The admin setter rejects coefficients whose implied 100%-utilization APR exceeds **1000%**. Utilization is clamped to 100%, and inputs to the borrow-rate calculation are capped at 10^36.
 
-## Functions
+The constructor accepts a Registry argument for deployment compatibility but does not persist or use it. The model's admin may change coefficients and upgrade WASM. See [Math Reference](/developers/math-reference) for integer scaling and interest rounding.
 
-### get_utilisation_ratio
+## Function signatures
+
+These signatures are copied from the reviewed Rust implementation. `env` is supplied by Soroban and is not a transaction argument. `Result` errors and panics must be handled by the caller; simulation does not guarantee later execution. Public methods include privileged and internal-contract callbacks, not just user entrypoints.
+
+### __constructor
 
 ```rust
-fn get_utilisation_ratio(
-    env: Env,
-    liquidity_wad: U256,
-    borrows_wad: U256,
-) -> U256
+pub fn __constructor(env: &Env, admin: Address, _registry_contract: Address)
 ```
 
-Returns the pool's current utilization ratio in WAD format.
+### set_coefficients
 
+```rust
+pub fn set_coefficients(env: &Env, c1: u128, c2: u128, c3: u128)
 ```
-util = borrows_wad / (liquidity_wad + borrows_wad)
+
+### get_coefficients
+
+```rust
+pub fn get_coefficients(env: &Env) -> (u128, u128, u128)
 ```
 
-**Parameters:**
+### get_admin
 
-| Parameter | Type | Description |
-|---|---|---|
-| `liquidity_wad` | `U256` | Pool's available liquidity in WAD |
-| `borrows_wad` | `U256` | Total outstanding borrows in WAD |
+```rust
+pub fn get_admin(env: &Env) -> Address
+```
 
-**Returns:** Utilization in WAD (0 = 0%, 10¹⁸ = 100%)
+### upgrade
 
-**Edge case:** If both `liquidity_wad` and `borrows_wad` are zero, returns 0 (empty pool, 0% utilization).
-
----
+```rust
+pub fn upgrade(env: &Env, new_wasm_hash: BytesN<32>)
+```
 
 ### get_borrow_rate_per_sec
 
 ```rust
-fn get_borrow_rate_per_sec(
-    env: Env,
-    liquidity_wad: U256,
-    borrows_wad: U256,
-) -> U256
+pub fn get_borrow_rate_per_sec(
+        env: &Env,
+        liquidity_wad: U256,
+        borrows_wad: U256,
+    ) -> Result<U256, InterestRateError>
 ```
 
-Returns the per-second borrow rate in WAD format.
-
-**Formula:**
-```
-util = borrows / (liquidity + borrows)
-
-rate_per_sec = c3 × (util×c1 + util^32×c1 + util^64×c2) / SECS_PER_YEAR
-```
-
-| Coefficient | WAD Value | Decimal |
-|---|---|---|
-| `c1` | `10^17` | 0.1 |
-| `c2` | `3 × 10^17` | 0.3 |
-| `c3` | `35 × 10^17` | 3.5 |
-
-**Returns:** Borrow rate per ledger second in WAD. Multiply by `SECS_PER_YEAR` to get the annual rate.
-
----
-
-## Rate Curve Behavior
-
-The polynomial curve produces the following behavior:
-
-| Utilization | Approximate Annual Rate |
-|---|---|
-| 0% | ~0% |
-| 20% | ~7% |
-| 50% | ~18% |
-| 70% | ~35% |
-| 80% | ~60% |
-| 90% | ~150% |
-| 95% | ~300%+ |
-
-The `util^32` and `util^64` terms are nearly zero at low utilization but dominate at high utilization, creating a sharp increase in rates as the pool approaches full capacity. This is intentional — high rates at high utilization attract new deposits and incentivize repayments.
-
----
-
-## Exponentiation
-
-The `util^32` and `util^64` terms are computed via `rpow_wad(util, n)`, which uses repeated squaring (exponentiation by squaring) in WAD arithmetic:
-
-```
-rpow_wad(x, 0) = WAD   (= 1.0)
-rpow_wad(x, n) = x × rpow_wad(x, n-1)  [iterative, via squaring]
-```
-
-This preserves WAD scale at each step.
-
----
-
-## Constants
-
-| Constant | Value |
-|---|---|
-| `WAD_U128` | `10^18` |
-| `C1` | `10^17` (= 0.1) |
-| `C2` | `3 × 10^17` (= 0.3) |
-| `C3` | `35 × 10^17` (= 3.5) |
-| `SECS_PER_YEAR` | `31,556,952 × 10^18` |
-
----
-
-## Error Codes
+### get_utilisation_ratio
 
 ```rust
-enum RateModelError {
-    InterestRateNotInitialized,
-}
+pub fn get_utilisation_ratio(
+        env: &Env,
+        liquidity_wad: U256,
+        borrows_wad: U256,
+    ) -> Result<U256, InterestRateError>
 ```
 
----
 
-## Calling Pattern
+## Source reference
 
-LendingPools call the RateModel on every `update_state()`:
-
-```rust
-// Inside LendingPool.update_state():
-let liquidity = get_total_liquidity_in_pool(env);
-let borrows   = get_borrows_wad(env);
-let rate_per_sec = rate_model_client.get_borrow_rate_per_sec(liquidity, borrows);
-
-let elapsed = now - last_updated;
-let rate_factor = elapsed × rate_per_sec;   // in WAD
-let interest = mul_wad_down(borrows, rate_factor);
-borrows_wad += interest;
-last_updated = now;
-```
-
----
-
-## Related
-
-- [Math Reference](/developers/math-reference#interest-rate-model) — full formula derivation
-- [Lending Pools](/developers/contracts/lending-pools) — `update_state()` integration
-- [Interest Rate Model](/learn/interest-rate-model) — user-facing explanation of the curve shape
+- `Protocol_V1_Soroban_testnet/contracts/RateModelContract/src/rate_model.rs`

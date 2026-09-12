@@ -1,108 +1,13 @@
 ---
-title: "Earn + Borrow Hedge"
-description: "Supply XLM to Vanna's Earn pool for yield, then borrow an equal value of XLM and swap it to USDC - creating a delta-neutral position that earns on both sides."
+title: "Earn, Borrow, and Hedge"
+description: "Illustrative testnet workflow and its accounting limits."
 mode: "wide"
 ---
 
-<Info>
-  **Sections used:** Earn · Margin · Trade &nbsp;·&nbsp; **Delta exposure:** None (XLM-neutral) &nbsp;·&nbsp; **Risk level:** Medium &nbsp;·&nbsp; **Complexity:** Medium
-</Info>
+Supply a chosen wallet asset in Earn, then separately manage collateral and borrowing in Margin. The Earn position and SmartAccount use different custody and accounting.
 
-Supply XLM to Vanna's Earn pool to earn XLM lending yield. Simultaneously, open a Margin Account with USDC collateral, borrow an equal dollar value of XLM, and swap the borrowed XLM to USDC via Spot. The Earn position creates a long exposure to XLM; the borrow-and-swap creates an exact short of the same size. The two cancel out - net XLM delta is zero - while both legs continue to generate yield.
+Any hedge must specify the exposure being offset and the actual spot assets held or owed. Holding an Earn receipt while borrowing another asset does not by itself create a hedge. Perpetual and options trading are not supported in this Stellar build.
 
-## Why this is delta-neutral
+Review both pool liquidity and margin health. To exit, redeem Earn receipts subject to payout caps and unwind/repay the margin leg independently.
 
-- **Earn position:** you hold XLM in Vanna's pool. If XLM rises, the USD value of your position rises - gain. If XLM falls, it falls - loss.
-- **Borrow + swap:** you owe XLM debt. If XLM rises, your debt's USD cost rises - loss. If XLM falls, your debt's USD cost falls - gain.
-
-Sized equally in dollar terms, these two effects cancel exactly. What remains is purely the yield arithmetic: XLM Earn APY plus any yield from the swapped USDC, minus XLM borrow cost.
-
-## How to execute
-
-<Steps>
-  <Step title="Supply XLM to Earn">
-    Go to **Earn** → select the XLM pool → **Supply** your XLM. Note the dollar value of your position - you will match this amount in the borrow step.
-  </Step>
-  <Step title="Open a Margin Account">
-    Go to **Margin** → **Open Account** if you don't have one yet.
-  </Step>
-  <Step title="Deposit USDC as Margin collateral">
-    Go to **Margin** → **Deposit & Borrow** → deposit USDC as collateral. This backs the XLM borrow - your USDC is not exposed to XLM price movement.
-  </Step>
-  <Step title="Borrow XLM equal to your Earn position">
-    Borrow the same dollar value of XLM that you supplied to Earn. This is the hedge - the borrow offsets the Earn position's price exposure. Keep Health Factor at 1.5× or above.
-  </Step>
-  <Step title="Swap borrowed XLM to USDC">
-    Go to **Trade** → **Spot Swap** → swap the borrowed XLM to USDC. Choose Soroswap or Aquarius, review price impact, and confirm. The USDC lands in your Margin Account.
-  </Step>
-  <Step title="Deploy USDC for additional yield (optional)">
-    Deploy the USDC from the swap to a Blend USDC pool via Farm to earn an additional yield layer on top of the Earn position.
-  </Step>
-</Steps>
-
-## Example
-
-| | |
-|---|---|
-| XLM supplied to Earn | $500 worth of XLM |
-| XLM Earn APY | 12% → earns $60/year |
-| USDC Margin collateral | $300 USDC |
-| XLM borrowed (equal to Earn value) | $500 worth of XLM |
-| Borrowed XLM swapped to USDC | $500 USDC |
-| USDC deployed to Blend pool (10% APY) | earns $50/year |
-| XLM borrow cost (15% APR) | −$75/year |
-| **Net annual yield** | **$60 + $50 − $75 = $35** |
-| **Net XLM price exposure** | **Zero** |
-
-<Note>
-  This strategy is profitable when XLM Earn APY + USDC farm APY exceeds the XLM borrow APR. If borrow costs rise, the net yield narrows - monitor all three rates regularly.
-</Note>
-
-## Exiting the position
-
-Exit in reverse order to avoid leaving open debt:
-
-<Steps>
-  <Step title="Withdraw from Blend USDC pool">
-    Go to **Farm** → select the Blend USDC pool → **Remove Liquidity** → withdraw your full position.
-  </Step>
-  <Step title="Swap USDC back to XLM">
-    Go to **Trade** → **Spot Swap** → swap enough USDC to cover the full XLM debt, including accrued interest.
-  </Step>
-  <Step title="Repay the XLM borrow">
-    Go to **Margin** → **Repay** → repay the full XLM debt.
-  </Step>
-  <Step title="Withdraw USDC collateral">
-    Withdraw your USDC collateral back to your wallet.
-  </Step>
-  <Step title="Withdraw from Earn">
-    Go to **Earn** → **Withdraw** → redeem your vTokens and receive your XLM plus all accrued yield.
-  </Step>
-</Steps>
-
-## Risk profile
-
-| Risk | Level | Notes |
-|---|---|---|
-| XLM price risk | None | Earn position and borrow debt cancel exactly when sized equally |
-| Liquidation risk | Medium | Health Factor drops as borrow interest accrues |
-| Rate risk | Medium | Strategy turns negative if XLM borrow APR exceeds combined yield |
-| Swap slippage | Low | Check price impact on the XLM → USDC swap before confirming |
-| Smart contract risk | Low | Inherent to all on-chain protocols |
-
-## What to monitor
-
-**Rate condition** - The strategy earns positively only when XLM Earn APY + USDC farm APY > XLM borrow APR. If borrow rates spike, exit before the yield goes negative.
-
-**Hedge ratio** - The XLM borrow must equal the Earn position's dollar value. If XLM moves significantly between the two operations, the hedge may be slightly off - rebalance if needed.
-
-**Health Factor** - Monitor regularly. Accruing borrow interest reduces HF over time even without price movement.
-
-## Related
-
-- [Supply to Earn](/guides/earn/supply)
-- [Borrow](/guides/margin/borrow)
-- [Spot Swap](/guides/trade/spot-swap)
-- [Single-Asset Pools](/guides/farm/blend-pools)
-- [Health Factor](/guides/margin/health-factor)
-- [Repay](/guides/margin/repay)
+See [Sample Strategies](/guides/sample-strategies), [Borrow](/guides/margin/borrow), and [Repay](/guides/margin/repay).

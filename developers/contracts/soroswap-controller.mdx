@@ -1,0 +1,64 @@
+---
+title: "Soroswap Controller"
+description: "Current testnet implementation, behavior, authorization, and Rust signatures."
+mode: "wide"
+---
+
+SoroswapController supports `Swap`, `AddLiquidity`, and `RemoveLiquidity` through the configured Soroswap router. It validates the action/token combination and uses SmartAccount custody and contract authorization.
+
+Swap and add-liquidity input amounts are WAD. The remove-liquidity path accepts **raw native LP units** in its amount vector. Swap `min_out` is native output-token units. Add/remove pass `min_out / 2` as each native leg minimum and use router deadlines; do not apply a single generic WAD interpretation to every argument.
+
+The controller sizes liquidity using committed reserve ratios, calls the router, synchronizes LP tracking membership, and returns signed WAD ledger deltas. Swap output credit is limited by accounted input and oracle value, so received token balance can exceed collateral credit.
+
+The testnet pair uses **SoUSDC**, not Blend USDC or AqUSDC. Exact addresses and pair configuration come from Registry and frontend configuration.
+
+## Function signatures
+
+These signatures are copied from the reviewed Rust implementation. `env` is supplied by Soroban and is not a transaction argument. `Result` errors and panics must be handled by the caller; simulation does not guarantee later execution. Public methods include privileged and internal-contract callbacks, not just user entrypoints.
+
+### __constructor
+
+```rust
+pub fn __constructor(env: Env, registry: Address, admin: Address)
+```
+
+### upgrade
+
+```rust
+pub fn upgrade(env: &Env, new_wasm_hash: BytesN<32>)
+```
+
+### can_call
+
+```rust
+pub fn can_call(
+        env: &Env,
+        target: Address,
+        action: ExternalAction,
+        tokens: Vec<Address>,
+    ) -> (bool, Vec<Address>, Vec<Address>)
+```
+
+### execute
+
+```rust
+pub fn execute(
+        env: &Env,
+        account: Address,
+        action: ExternalAction,
+        tokens: Vec<Address>,
+        amounts: Vec<u128>,
+        min_out: u128,
+    ) -> TokenDeltas
+```
+
+### get_registry
+
+```rust
+pub fn get_registry(env: &Env) -> Address
+```
+
+
+## Source reference
+
+- `Protocol_V1_Soroban_testnet/contracts/SoroswapControllerContract/src/controller.rs`

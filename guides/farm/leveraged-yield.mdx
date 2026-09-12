@@ -1,104 +1,31 @@
 ---
 title: "Lite Mode"
-description: "Lite Mode is Vanna's simplified one-click leveraged yield strategy - deposit collateral, borrow, and deploy into a yield pool in a single transaction."
+description: "Using lite mode in the current Stellar testnet application."
 mode: "wide"
 ---
 
-Lite Mode is Vanna's simplified **one-click leveraged yield strategy**. It automates the complete flow - deposit collateral, borrow undercollateralized credit from Vanna, and deploy both into a yield pool - in a single transaction.
+Lite Mode provides a simplified strategy interface and a view of current positions. It uses the same SmartAccount, collateral, and debt as Pro mode.
 
-Switch between Lite and Pro using the **Pro / Lite** toggle in the top navigation bar.
+## Open a strategy
 
-<Note>
-  In Pro Mode you perform the same steps manually across the Margin and Farm sections. Lite Mode handles everything automatically.
-</Note>
+1. Switch to Lite Mode and select a supported strategy/pool.
+2. Choose collateral, amount, and leverage inputs.
+3. Review the deposit, borrowing, deployment amounts, rates, and health preview.
+4. Confirm and complete each required signing step.
+5. Wait for all steps to finish and check the resulting position and account debt.
 
-## Two tabs
+Same-asset Blend strategies can try one atomic deposit/borrow/deploy transaction. The app can fall back to separate deposit/borrow and supply transactions. LP and cross-asset paths can require additional borrows, swaps, and liquidity operations. A no-borrow strategy uses standalone deposit rather than a zero-amount borrow.
 
-Lite Mode has two tabs:
+**One-click does not guarantee one transaction.** If a later step fails, earlier confirmed steps remain. Inspect free balances and debt before retrying.
 
-- **Deposit & Deploy** - open new leveraged yield positions
-- **Position** - view and manage your open positions
+<Frame caption="Earlier Lite preview illustrating how borrowing costs can exceed supply returns. Amounts, leverage ranges, and rates are historical examples. Click the image to zoom.">
+  <img src="/images/farm/LiteMode4.png" alt="Lite leverage slider with borrowing, deployed amount, and a negative net APR preview" width="1112" height="802" loading="lazy" decoding="async" style={{ width: "100%", maxWidth: "560px", height: "auto" }} />
+</Frame>
 
-## How to open a position
+## Position recovery and exit
 
-<Steps>
-  <Step title="Switch to Lite Mode">
-    Click the **Pro / Lite** toggle in the top navigation and select **Lite**.
-  </Step>
-  <Step title="Select a yield pool">
-    Choose the pool you want to deploy into. Each pool card shows its current Supply APR. The right panel shows live pool statistics - Supply APY, Borrow APY, Total TVL, and Utilization.
-    <div style={{ display: "flex", justifyContent: "center", margin: "12px 0" }}>
-      <img src="/images/farm/LiteMode1.png" alt="Select yield pool" style={{ maxWidth: "700px", width: "100%", borderRadius: "12px" }} />
-    </div>
-  </Step>
-  <Step title="Deposit collateral">
-    Enter the amount and asset you want to deposit as collateral. The interface shows your wallet balance and the USD equivalent in real time.
-    <div style={{ display: "flex", justifyContent: "center", margin: "12px 0" }}>
-      <img src="/images/farm/LiteMode3.png" alt="Deposit collateral and set leverage" style={{ maxWidth: "700px", width: "100%", borderRadius: "12px" }} />
-    </div>
-  </Step>
-  <Step title="Set leverage">
-    Use the leverage slider to set how much to borrow on top of your collateral. The interface shows exactly what will be borrowed, the total amount deployed, and the deployment route.
+Positions are reconstructed from chain-backed Blend/LP balances and SmartAccount debt. Recovered leverage and opening/cost-basis metadata may be estimates rather than original trade history. Multiple positions share account debt.
 
-    At **1× leverage** no borrowing occurs - only your deposited capital is deployed. The button shows **Deposit Margin**.
+Closing a Lite position withdraws/removes liquidity and repays applicable debt with available tokens. This can require several transactions and can leave residual assets or debt. It is separate from closing the SmartAccount contract. Check account-wide state after the exit.
 
-    At **higher leverage**, the interface shows the **Estimated Returns** section with:
-    - **Net APR** - your yield after borrow cost (daily, monthly, yearly)
-    - Full breakdown: Pool Supply APR × leverage minus Vanna Borrow Cost
-    <div style={{ display: "flex", justifyContent: "center", margin: "12px 0" }}>
-      <img src="/images/farm/LiteMode7.png" alt="Leverage slider and estimated returns" style={{ maxWidth: "700px", width: "100%", borderRadius: "12px" }} />
-    </div>
-  </Step>
-  <Step title="Review position metrics">
-    Before deploying, review the **Position Overview** metrics:
-    <div style={{ display: "flex", justifyContent: "center", margin: "12px 0" }}>
-      <img src="/images/farm/LiteMode5.png" alt="Position overview metrics" style={{ maxWidth: "700px", width: "100%", borderRadius: "12px" }} />
-    </div>
-
-    | Metric | What it means |
-    |---|---|
-    | **Health Factor** | Must stay above 1.1× to avoid liquidation. Aim for 1.5× or higher. |
-    | **LTV** | Debt as a percentage of your total assets. |
-    | **Liq. Buffer** | How much room you have before reaching the liquidation threshold. |
-    | **Borrow Cost** | The APR you pay for the borrowed capital. |
-    | **Effective Leverage** | Your actual leverage multiplier. |
-
-    The **How This Works** section explains the exact flow - what gets deposited, what gets borrowed, and the final net result.
-  </Step>
-  <Step title="Deploy">
-    Click **Deploy Strategy** and approve the transaction in your wallet. The protocol deposits your collateral, borrows the required amount, and deploys both to the yield pool in a single transaction.
-  </Step>
-</Steps>
-
-## Managing your position
-
-Go to the **Position** tab to see all open positions. Each row shows Pool, Collateral, Borrowed, Net APR, Earnings to date, and Health Factor status.
-
-<div style={{ display: "flex", justifyContent: "center", margin: "12px 0" }}>
-  <img src="/images/farm/LiteMode9.png" alt="Position tab" style={{ maxWidth: "700px", width: "100%", borderRadius: "12px" }} />
-</div>
-
-Health Factor is color-coded:
-- 🟢 **Safe** - HF ≥ 1.5
-- 🟠 **At Risk** - HF between 1.1 and 1.5
-- 🔴 **Liquidation** - HF below 1.1
-
-Click any position to view full details and manage it.
-
-## Exiting a position
-
-In the position detail view, choose how much to exit:
-
-- **Partial exit (25% / 50% / 75%)** - repays and withdraws proportionally. Health Factor stays unchanged.
-- **Full exit (100%)** - closes all debt and returns all collateral in one transaction.
-
-<Warning>
-  Leveraged yield amplifies both returns and risk. If your Health Factor falls below 1.1×, your position can be liquidated. Monitor your Health Factor regularly, especially at high leverage.
-</Warning>
-
-## Related
-
-- [Health Factor](/guides/margin/health-factor)
-- [Liquidation](/guides/margin/liquidation)
-- [Farm Overview](/guides/farm/overview)
-- [For Traders](/guides/for-traders)
+Use Pro for advanced controls hidden by Lite mode. See [Farm](/guides/farm/overview) and [Repay](/guides/margin/repay).

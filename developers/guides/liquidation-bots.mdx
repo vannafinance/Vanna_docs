@@ -1,323 +1,39 @@
 ---
 title: "Liquidation Bots"
-description: "How to build a liquidation bot for Vanna Protocol: discover accounts, monitor health factors, and trigger liquidations."
+description: "Eligibility, allowances, full-debt funding, external collateral, and reconciliation."
 mode: "wide"
 ---
 
-Liquidation bots keep Vanna Protocol solvent by calling `AccountManager.liquidate()` on undercollateralized accounts. Anyone can run one — no whitelist, no special permissions.
+## Candidate discovery
 
----
+Discover SmartAccounts from Registry/account events and indexed or RPC account readers. Read `RiskEngine.liquidation_snapshot` for current valuation and the unpriceable-plain-collateral flag. HF at or below 1.1 is a candidate condition, not guaranteed execution or profit.
 
-## How Liquidation Works
+## Prepare funding and authorization
 
-When a margin account's health factor drops to or below 1.1×:
+For each recognized debt leg, resolve the underlying address and current lending-pool debt. Fund the liquidator with the exact test-token variant and enough allowance headroom for interest. Approve **AccountManager as spender**, using native token units and a suitable expiration ledger. The liquidation method calls token `transfer_from` from the liquidator directly to the pool. Approving SmartAccount or sending tokens to it is not the required liquidator funding path.
 
-1. Any external caller can call `AccountManager.liquidate(liquidator, smart_account)`
-2. The liquidator pays all outstanding debt from **their own wallet** — token balances are pulled from the liquidator address
-3. **All collateral** in the SmartAccount is transferred to the liquidator
-4. The liquidator profits from the spread: at 1.1× collateralization, collateral received is worth at least 10% more than the debt paid
+## Execute
 
-<Note>
-The liquidator's profit is structural: accounts only become liquidatable when collateral ≥ 1.1× debt. A timely liquidation always yields a positive spread (before gas). Race conditions between bots are possible — the first confirmed transaction wins.
-</Note>
+Call `AccountManager.liquidate(liquidator, smart_account)` with liquidator authorization. There is no partial debt parameter or borrower-signature requirement. Manager pause, missing configuration, external liquidity, oracle failure, insufficient allowance, and transaction resource limits can all prevent success.
 
----
+The current implementation:
 
-## Architecture of a Liquidation Bot
+1. Takes one eligibility snapshot and rejects healthy accounts or unpriceable plain collateral.
+2. Accrues each recognized pool, transfers debt payment from the liquidator, and clears corresponding debt shares.
+3. Batch-withdraws Blend collateral to the liquidator and hands AMM LP tokens to the liquidator without forcing a router exit.
+4. Sweeps all remaining direct collateral and emits `Trader_Liquidate_Event`.
 
-```
-┌─────────────────────────────────────────────────────────┐
-│                  LIQUIDATION BOT                         │
-│                                                          │
-│  1. Discovery      2. Monitoring      3. Execution       │
-│  ─────────────    ─────────────────  ───────────────    │
-│  Get all accounts  Poll health factor  Call liquidate()  │
-│  from Registry     every N ledgers     if HF ≤ 1.1×      │
-└─────────────────────────────────────────────────────────┘
-```
+Unrecognized debt symbols are reported and prevent the blanket debt-cleared flag. Inspect remaining shares/debt after execution. The SmartAccount is not deactivated by this function.
 
----
+## Proceeds and limits
 
-## Step 1: Discover All Margin Accounts
+The liquidation configuration getter reports a 10% bonus value, but current execution does not compute a capped debt-plus-bonus payout or return surplus through `sweep_to_split`. Estimate proceeds using actual external exit value and LP liquidity. An LP token handed to the liquidator is not already converted underlying.
 
-Fetch the full list of accounts from AccountManager events (Mercury) or read from Registry:
+Simulate the complete account shape and approval state. An indexed liquidation candidate, a quoted bonus, or a successful simple-account test does not establish that a multi-position transaction fits the network budget.
 
-### Via Mercury (recommended for production)
 
-```typescript
-import { decodeScVal, fetchContractEvents } from './mercury-client';
+## Source reference
 
-const ACCOUNT_MANAGER = 'CAWVGDG3TMGU4DC7POLSMDSBAJNJ363MHYPEAQHBRKOCLQIFP6WDXPJF';
-
-async function getAllSmartAccounts(): Promise<string[]> {
-  // Fetch all AccountCreationEvents
-  const events = await fetchContractEvents(ACCOUNT_MANAGER, { limit: 1000 });
-
-  const creationEvents = events.filter(
-    e => decodeScVal(e.topic1) === 'AccountCreationEvent'
-  );
-
-  const accounts = creationEvents.map(e => {
-    const data = decodeScVal(e.data) as { smart_account: string };
-    return data.smart_account;
-  });
-
-  // Remove duplicates (users may have created multiple accounts)
-  return [...new Set(accounts)];
-}
-```
-
-### Via Registry Contract
-
-```typescript
-async function getAccountsForUser(userAddress: string): Promise<string[]> {
-  const result = await readContract(
-    REGISTRY,
-    'get_accounts',
-    [nativeToScVal(userAddress, { type: 'address' })],
-  );
-  return result as string[];
-}
-```
-
----
-
-## Step 2: Check Health Factor for Each Account
-
-```typescript
-const RISK_ENGINE = 'CBL7RCG5H4VIZCNF7BRM2FQFXK7N5KRQKW7ZVEQZJKNXHA6FEU4OXK5I';
-const WAD = 10n ** 18n;
-const LIQUIDATION_THRESHOLD = 1_100_000_000_000_000_000n; // 1.1 × WAD
-
-interface AccountHealth {
-  smartAccount: string;
-  collateralUsd: bigint;
-  debtUsd: bigint;
-  healthFactor: number | null;
-  isLiquidatable: boolean;
-}
-
-async function checkAccountHealth(smartAccount: string): Promise<AccountHealth> {
-  const [collateralScVal, debtScVal] = await Promise.all([
-    readContract(
-      RISK_ENGINE,
-      'get_current_total_balance',
-      [nativeToScVal(smartAccount, { type: 'address' })],
-    ),
-    readContract(
-      RISK_ENGINE,
-      'get_current_total_borrows',
-      [nativeToScVal(smartAccount, { type: 'address' })],
-    ),
-  ]);
-
-  const collateralUsd = collateralScVal as bigint;
-  const debtUsd       = debtScVal as bigint;
-
-  if (debtUsd === 0n) {
-    return {
-      smartAccount,
-      collateralUsd,
-      debtUsd,
-      healthFactor: null,
-      isLiquidatable: false,
-    };
-  }
-
-  const hfWad = (collateralUsd * WAD) / debtUsd;
-  const isLiquidatable = hfWad <= LIQUIDATION_THRESHOLD;
-
-  return {
-    smartAccount,
-    collateralUsd,
-    debtUsd,
-    healthFactor: Number(hfWad) / 1e18,
-    isLiquidatable,
-  };
-}
-```
-
----
-
-## Step 3: Execute Liquidation
-
-```typescript
-async function liquidateAccount(
-  botAddress: string,
-  smartAccount: string,
-): Promise<string> {
-  console.log(`Liquidating ${smartAccount}...`);
-
-  // liquidate(liquidator, smart_account)
-  // The liquidator (botAddress) must sign and will pay all debt, receiving all collateral
-  const txHash = await invokeContract(
-    botAddress,
-    ACCOUNT_MANAGER,
-    'liquidate',
-    [
-      nativeToScVal(botAddress, { type: 'address' }),    // liquidator
-      nativeToScVal(smartAccount, { type: 'address' }),  // smart_account
-    ],
-  );
-
-  console.log(`Liquidation submitted: ${txHash}`);
-  return txHash;
-}
-```
-
----
-
-## Full Bot Loop
-
-```typescript
-import { Horizon } from '@stellar/stellar-sdk';
-
-const BOT_ADDRESS = 'G...'; // your bot's Stellar account
-const POLL_INTERVAL_LEDGERS = 3; // check every ~15 seconds (one ledger ≈ 5s)
-
-async function runLiquidationBot() {
-  const horizon = new Horizon.Server('https://horizon-testnet.stellar.org');
-
-  // Start: discover all accounts
-  let accounts = await getAllSmartAccounts();
-  console.log(`Monitoring ${accounts.length} accounts`);
-
-  // Subscribe to ledger closes
-  horizon.ledgers().cursor('now').stream({
-    onmessage: async (ledger) => {
-      if (ledger.sequence % POLL_INTERVAL_LEDGERS !== 0) return;
-
-      // Refresh account list periodically
-      if (ledger.sequence % 60 === 0) {
-        accounts = await getAllSmartAccounts();
-      }
-
-      // Check all accounts in parallel (batched to avoid rate limits)
-      const BATCH_SIZE = 10;
-      for (let i = 0; i < accounts.length; i += BATCH_SIZE) {
-        const batch = accounts.slice(i, i + BATCH_SIZE);
-        const healthChecks = await Promise.allSettled(
-          batch.map(checkAccountHealth)
-        );
-
-        for (const result of healthChecks) {
-          if (result.status === 'rejected') continue;
-          const health = result.value;
-
-          if (!health.isLiquidatable) continue;
-
-          console.log(
-            `Liquidatable account found: ${health.smartAccount}`,
-            `HF: ${health.healthFactor?.toFixed(3)}`,
-            `Debt: $${Number(health.debtUsd) / 1e18}`,
-          );
-
-          try {
-            const txHash = await liquidateAccount(BOT_ADDRESS, health.smartAccount);
-            console.log(`Liquidation successful: ${txHash}`);
-          } catch (err) {
-            console.error(`Liquidation failed for ${health.smartAccount}:`, err);
-          }
-        }
-
-        // Small delay between batches
-        await new Promise(r => setTimeout(r, 500));
-      }
-    },
-    onerror: console.error,
-  });
-}
-
-runLiquidationBot().catch(console.error);
-```
-
----
-
-## Handling Race Conditions
-
-Multiple bots may attempt to liquidate the same account simultaneously. The `liquidate()` function will succeed for one and fail for the others (the account is no longer unhealthy after the first liquidation).
-
-Handle this gracefully:
-
-```typescript
-try {
-  await liquidateAccount(BOT_ADDRESS, smartAccount);
-} catch (err) {
-  const msg = (err as Error).message;
-  if (msg.includes('AccountNotUnhealthy') || msg.includes('healthy')) {
-    console.log(`Account ${smartAccount} already liquidated`);
-  } else {
-    throw err;
-  }
-}
-```
-
----
-
-## Monitoring with Mercury Events
-
-Set up event tracking to know when liquidations happen in real time:
-
-```typescript
-async function watchLiquidationEvents() {
-  // On each ledger close, fetch new liquidation events since last cursor
-  let cursor: string | undefined;
-
-  setInterval(async () => {
-    const events = await fetchContractEvents(ACCOUNT_MANAGER, {
-      limit: 50,
-      cursor,
-    });
-
-    const liquidations = events.filter(
-      e => decodeScVal(e.topic1) === 'TraderLiquidateEvent'
-    );
-
-    for (const event of liquidations) {
-      const data = decodeScVal(event.data) as {
-        smart_account: string;
-        timestamp: bigint;
-      };
-      console.log(`Liquidation detected:`, data.smart_account, event.tx);
-    }
-
-    if (events.length > 0) {
-      cursor = events[events.length - 1].id;
-    }
-  }, 5_000); // every 5 seconds
-}
-```
-
----
-
-## Bot Account Setup
-
-Your bot needs a funded Stellar testnet account with enough XLM to pay transaction fees:
-
-```bash
-# Create account via Friendbot
-curl "https://friendbot.stellar.org?addr=<your-bot-address>"
-```
-
-Each `liquidate()` call costs ~0.001–0.01 XLM in fees. Keep the bot account funded.
-
----
-
-## Production Considerations
-
-| Concern | Recommendation |
-|---|---|
-| Bot key security | Use a dedicated keypair stored in environment variables or a secrets manager |
-| Rate limiting | Batch RPC calls, add delays between batches |
-| Bot uptime | Run on a VPS or cloud instance with monitoring/alerting |
-| Failed transactions | Implement retry with exponential backoff |
-| Stale account list | Refresh from Mercury every N ledgers |
-
----
-
-## Related
-
-- [AccountManager Reference](/developers/contracts/account-manager) — `liquidate()` function details
-- [Risk Engine Reference](/developers/contracts/risk-engine) — health factor computation
-- [Mercury Indexer](/developers/sdk/mercury-indexer) — fetching liquidation events
-- [Math Reference](/developers/math-reference#health-factor) — liquidation condition formula
+- `Protocol_V1_Soroban_testnet/contracts/AccountManagerContract/src/account_manager.rs`
+- `Protocol_V1_Soroban_testnet/contracts/RiskEngineContract/src/risk_engine.rs`
+- `mercury-stellar-backend/lib/margin-utils.ts`

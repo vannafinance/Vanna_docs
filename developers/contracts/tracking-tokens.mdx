@@ -1,178 +1,188 @@
 ---
 title: "Tracking Tokens"
-description: "Single contract tracking Blend b-token positions and Aquarius/Soroswap LP token balances per margin account."
+description: "Current testnet implementation, behavior, authorization, and Rust signatures."
 mode: "wide"
 ---
 
-The `TrackingToken` contract is a single on-chain token registry that tracks synthetic position balances for each SmartAccount. Instead of querying external protocols (Blend, Aquarius, Soroswap) directly during health checks, the RiskEngine reads TrackingToken balances to determine a margin account's external positions.
+TrackingToken stores per-account, per-symbol external-position receipts. It is an accounting registry, not a freely transferable wallet token or a lending-pool vToken.
 
-**Testnet address:** `CA2T3IQLIB66T5S3DL3IKBOVINPKQ64VZKMCC2AKYOO6GX5T7CVPBRV4`
+## Metadata and balances
 
----
+Initialization is per symbol. The contract has admin and deployer roles, with admin-authorized minters for controller operations. `mint_by` and `burn_by` require the specified authorized minter; `mint` and `burn` use the admin path. Freeze and supply/balance checks apply as implemented by each entrypoint.
 
-## Tracked Symbols
+Registry metadata, not a fixed list in RiskEngine, determines what a symbol represents. Blend receipts track b-token units. AMM position accounting also consults actual LP token balances and synchronizes tracking membership; do not assume every LP operation mints synthetic receipts by the legacy `execute()` return value.
 
-| Symbol | Represents | Value in risk model |
-|---|---|---|
-| `BLEND_XLM` | XLM b-tokens held in Blend pool | Valued via `b_rate × oracle price` |
-| `BLEND_USDC` | USDC b-tokens held in Blend pool | Valued via `b_rate × oracle price` |
-| `AQ_XLM_USDC` | Aquarius XLM/USDC LP tokens | `$0` (no oracle feed) |
-| `SS_XLM_USDC` | Soroswap XLM/USDC LP tokens | `$0` (no oracle feed) |
+| Configured symbol | Position |
+|---|---|
+| `BLEND_XLM` | Blend XLM supply |
+| `BLEND_USDC` | Blend's USDC supply |
+| `AQ_XLM_USDC` | Aquarius XLM/AqUSDC LP |
+| `SS_XLM_USDC` | Soroswap XLM/SoUSDC LP |
 
-<Note>
-LP tokens (AQ_XLM_USDC, SS_XLM_USDC) are tracked to prevent double-counting but are valued at $0 in health factor calculations. Only Blend b-tokens receive non-zero collateral valuation.
-</Note>
+Blend and registered AMM LP positions can contribute collateral value. `Unpriced` metadata and frozen/revoked positions are treated differently. See [Risk Engine](/developers/contracts/risk-engine).
 
----
+## Function signatures
 
-## Mint / Burn Flow
+These signatures are copied from the reviewed Rust implementation. `env` is supplied by Soroban and is not a transaction argument. `Result` errors and panics must be handled by the caller; simulation does not guarantee later execution. Public methods include privileged and internal-contract callbacks, not just user entrypoints.
 
-TrackingTokens are minted and burned by the AccountManager based on the return value from `SmartAccount.execute()`:
+### __constructor
 
-```
-SmartAccount.execute() → returns (success, token_delta)
-
-if token_delta > 0:
-    AccountManager → TrackingToken.mint(symbol, smart_account, token_delta)
-if token_delta < 0:
-    AccountManager → TrackingToken.burn(symbol, smart_account, -token_delta)
+```rust
+pub fn __constructor(env: Env, admin: Address, deployer: Address)
 ```
 
-**Blend deposit:** mint `BLEND_XLM` equal to b-tokens received  
-**Blend withdrawal:** burn `BLEND_XLM` equal to b-tokens returned  
-**Aquarius add liquidity:** mint `AQ_XLM_USDC` equal to LP tokens received  
-**Aquarius remove liquidity:** burn `AQ_XLM_USDC` equal to LP tokens burned
+### rotate_deployer
 
----
-
-## Functions
+```rust
+pub fn rotate_deployer(env: Env, new_deployer: Address)
+```
 
 ### initialize
 
 ```rust
-fn initialize(
-    env: Env,
-    admin: Address,
-    symbol: Symbol,
-    decimals: u32,
-    name: String,
-) -> ()
+pub fn initialize(
+        env: Env,
+        admin: Address,
+        token_symbol: Symbol,
+        decimal: u32,
+        name: String,
+    ) -> Result<(), TokenError>
 ```
-
-One-time initialization per symbol. Sets the token info for a given tracking symbol.
-
----
-
-### mint
-
-```rust
-fn mint(
-    env: Env,
-    symbol: Symbol,
-    to: Address,
-    amount: i128,
-) -> ()
-```
-
-Increases `to`'s balance for `symbol` by `amount`. Only callable by admin (AccountManager).
-
-**Called when:** A SmartAccount deposits into Blend or adds liquidity to Aquarius/Soroswap.
-
----
-
-### burn
-
-```rust
-fn burn(
-    env: Env,
-    symbol: Symbol,
-    from: Address,
-    amount: i128,
-) -> ()
-```
-
-Decreases `from`'s balance for `symbol` by `amount`. Only callable by admin (AccountManager).
-
-**Called when:** A SmartAccount withdraws from Blend or removes liquidity from Aquarius/Soroswap.
-
----
-
-### balance
-
-```rust
-fn balance(env: Env, id: Address, symbol: Symbol) -> i128
-```
-
-Returns the tracking token balance for `id` and `symbol`. The primary read function used by RiskEngine during collateral valuation.
-
----
-
-### total_supply
-
-```rust
-fn total_supply(env: Env, symbol: Symbol) -> i128
-```
-
-Returns the total tracking tokens minted across all accounts for `symbol`.
-
----
 
 ### admin
 
 ```rust
-fn admin(env: Env) -> Address
+pub fn admin(env: Env) -> Address
 ```
-
-Returns the admin address (AccountManager).
-
----
 
 ### set_admin
 
 ```rust
-fn set_admin(env: Env, new_admin: Address) -> ()
+pub fn set_admin(env: Env, new_admin: Address) -> Result<(), TokenError>
 ```
 
-Changes the admin. Requires current admin auth.
+### decimals
 
----
-
-## Storage Layout
-
-| Key | Type | Description |
-|---|---|---|
-| `TokenInfo(Symbol)` | `{decimals, name, symbol}` | Metadata per symbol |
-| `Admin` | `Address` | Admin (AccountManager) |
-| `TotalSupply(Symbol)` | `i128` | Total minted per symbol |
-| `Balance(Address, Symbol)` | `i128` | Per-account, per-symbol balance |
-
----
-
-## Reading TrackingToken Balances (TypeScript)
-
-```typescript
-const TRACKING_TOKEN = 'CA2T3IQLIB66T5S3DL3IKBOVINPKQ64VZKMCC2AKYOO6GX5T7CVPBRV4';
-
-// Check how many Blend XLM b-tokens a smart account has
-const blendXlmBalance = await simulateCall(
-  TRACKING_TOKEN,
-  'balance',
-  [smartAccountAddress, Symbol('BLEND_XLM')]
-);
-
-// Check Aquarius LP position
-const aqLpBalance = await simulateCall(
-  TRACKING_TOKEN,
-  'balance',
-  [smartAccountAddress, Symbol('AQ_XLM_USDC')]
-);
+```rust
+pub fn decimals(env: Env, token_symbol: Symbol) -> u32
 ```
 
----
+### name
 
-## Related
+```rust
+pub fn name(env: Env, token_symbol: Symbol) -> String
+```
 
-- [SmartAccount](/developers/contracts/smart-account) — triggers mint/burn via `execute()` return value
-- [AccountManager](/developers/contracts/account-manager) — calls `mint`/`burn` based on `token_delta`
-- [Risk Engine](/developers/contracts/risk-engine) — reads balances for collateral valuation
-- [Math Reference](/developers/math-reference#blend-b-token-valuation) — how Blend positions are priced
+### symbol
+
+```rust
+pub fn symbol(env: Env, token_symbol: Symbol) -> Symbol
+```
+
+### balance
+
+```rust
+pub fn balance(env: Env, id: Address, token_symbol: Symbol) -> i128
+```
+
+### total_supply
+
+```rust
+pub fn total_supply(env: Env, token_symbol: Symbol) -> i128
+```
+
+### mint
+
+```rust
+pub fn mint(
+        env: Env,
+        token_symbol: Symbol,
+        to: Address,
+        amount: i128,
+    ) -> Result<(), TokenError>
+```
+
+### set_authorized_minter
+
+```rust
+pub fn set_authorized_minter(
+        env: Env,
+        minter: Address,
+        authorized: bool,
+    ) -> Result<(), TokenError>
+```
+
+### is_authorized_minter
+
+```rust
+pub fn is_authorized_minter(env: Env, minter: Address) -> bool
+```
+
+### mint_by
+
+```rust
+pub fn mint_by(
+        env: Env,
+        minter: Address,
+        token_symbol: Symbol,
+        to: Address,
+        amount: i128,
+    ) -> Result<(), TokenError>
+```
+
+### burn_by
+
+```rust
+pub fn burn_by(
+        env: Env,
+        minter: Address,
+        token_symbol: Symbol,
+        from: Address,
+        amount: i128,
+    ) -> Result<(), TokenError>
+```
+
+### burn
+
+```rust
+pub fn burn(
+        env: Env,
+        token_symbol: Symbol,
+        from: Address,
+        amount: i128,
+    ) -> Result<(), TokenError>
+```
+
+### burn_from
+
+```rust
+pub fn burn_from(
+        env: Env,
+        token_symbol: Symbol,
+        from: Address,
+        amount: i128,
+    ) -> Result<(), TokenError>
+```
+
+### set_frozen
+
+```rust
+pub fn set_frozen(env: Env, id: Address, freeze: bool) -> Result<(), TokenError>
+```
+
+### frozen
+
+```rust
+pub fn frozen(env: Env, id: Address) -> bool
+```
+
+### upgrade
+
+```rust
+pub fn upgrade(env: Env, new_wasm_hash: BytesN<32>)
+```
+
+
+## Source reference
+
+- `Protocol_V1_Soroban_testnet/contracts/TrackingTokenContract/src/tracking_token.rs`

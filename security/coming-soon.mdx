@@ -1,8 +1,41 @@
 ---
-title: "Coming Soon"
-description: "Security documentation is on its way."
+title: "Security and Protocol Controls"
+description: "Controls present in the reviewed testnet implementation."
+mode: "wide"
 ---
 
-Security documentation — including audit reports, the risk model, emergency mechanisms, and bug bounty details — is currently being prepared.
+This page describes implemented controls in the reviewed source. It does not certify a deployed version or establish an audit or bounty program.
 
-In the meantime, join us on [Discord](https://discord.gg/vanna) or follow [@vannafinance](https://x.com/vannafinance) for updates.
+## Contract controls
+
+| Control | Scope |
+|---|---|
+| Owner authorization | Margin creation/actions and voluntary settlement |
+| Per-account reentrancy lock | Financial manager paths, including close and liquidation |
+| Separate pause flags | Manager, RiskEngine, and lending pools |
+| Two-step admin succession | Core contracts exposing propose/accept methods |
+| Timelocked configuration | After finalization: 48-hour controller registration; 24-hour asset/permission/tracking changes |
+| Token/controller permissions | Approved external target/action/token execution |
+| Asset and controller caps | Default account asset cap 5; configured controller probation TVL caps |
+| Pool utilization ceiling | 95% for new borrowing |
+| Conservative valuation | Oracle-bounded swap credits and smaller-side LP valuation |
+| Oracle freshness | 600-second upstream window, 24-hour fallback lifetime |
+| Receipt controls | Authorized mint/burn, token freeze/authorization and supply controls |
+
+Pool pause blocks deposit, redemption, and borrow, while repayment accounting stays available. AccountManager pause also blocks liquidation, while owner repayment and settlement remain available. Standalone collateral top-ups and explicit account close also omit the manager pause check. Registry queue methods apply immediately before configuration finalization, so timelock protection must not be assumed during bootstrap. Separate flags must be checked independently.
+
+## Upgrade and execution policy
+
+Contracts expose privileged upgrade paths where listed in the [reference](/developers/contracts/account-manager). AccountManager's live post-exec/post-borrow health gate defaults to true but can be disabled by admin. Do not claim immutable deployment behavior or an unconditional live health check after every strategy action.
+
+## Liquidation and data limits
+
+Liquidation takes remaining collateral, including external positions handled by dedicated exit/transfer paths. It is not a capped fixed-bonus seizure. Plain-collateral pricing failure blocks the liquidation attempt; other missing valuation data has different handling.
+
+Historical fixtures, cached dashboard data, and configured addresses cannot establish that a transaction is currently safe or executable. Read the selected contracts and simulate the actual operation.
+
+## Application signing
+
+Freighter and configured Privy flows sign transactions through the wallet adapter. Mercury credentials remain in server routes. Copilot delegated signing adds explicit wallet binding and signer consent; external signing-service operation is outside these two source trees.
+
+No public audit conclusion, bounty terms, or incident-response promise is inferred from filenames or development comments. See [Review Scope](/developers/review-scope).

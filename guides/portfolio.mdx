@@ -1,0 +1,21 @@
+---
+title: "Portfolio"
+description: "Using portfolio in the current Stellar testnet application."
+mode: "wide"
+---
+
+Portfolio brings together wallet holdings, Earn receipts, margin balances/debt, and Farm positions available through the application's data services.
+
+## Read holdings in context
+
+Wallet assets are spendable by wallet flows. Earn receipts represent lending-pool claims. Margin-held tokens back shared account debt. Farm positions represent external supply or LP assets, which may need to be exited before their underlying can be spent.
+
+Do not add debt-funded position value to net equity a second time. Recognized collateral, raw token value, and immediately withdrawable liquidity can differ.
+
+## Refresh and history
+
+The application uses cached snapshots, live contract reads, and indexed/RPC history. A recent transaction may appear in balances before its activity row. Missing opening history or a recovered position does not establish a precise cost basis or realized P&L.
+
+Use the relevant Earn, Margin, or Farm screen to act on a position, and verify the transaction outcome and account-wide debt afterward.
+
+See [Earn](/guides/earn/overview), [Margin](/guides/margin/overview), and [Farm](/guides/farm/overview).

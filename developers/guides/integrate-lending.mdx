@@ -1,253 +1,30 @@
 ---
 title: "Integrate Lending"
-description: "End-to-end guide for integrating Vanna's lending pools: supply liquidity, read pool state, and redeem vTokens."
+description: "Supply and redeem from the four configured testnet lending markets."
 mode: "wide"
 ---
 
-This guide covers integrating Vanna's lending pools — depositing assets to earn yield, reading pool metrics, and redeeming vTokens.
+## Supply
 
----
+Resolve the exact asset's pool with `lendingPoolAddress(assetType)`. The app-local `ContractService.deposit(walletAddress, amount, assetType)` accepts a human-unit number, constructs WAD arguments, prepares/signs/submits, and returns a success result or error. For precise external integrations, build amounts from strings/bigint directly.
 
-## Overview
+At the contract boundary call `deposit(lender, amount_wad)`. The lender authorizes the call and underlying transfer. This is a wallet-to-pool flow; no SmartAccount is required.
 
-Vanna has four lending pools:
+## Redeem
 
-| Pool | Asset | Supply to earn |
-|---|---|---|
-| LendingPoolXLM | XLM | Interest from XLM borrowers |
-| LendingPoolUSDC | USDC | Interest from USDC borrowers |
-| LendingPoolAquariusUSDC | Aquarius USDC | Interest from AQ USDC borrowers |
-| LendingPoolSoroswapUSDC | Soroswap USDC | Interest from SO USDC borrowers |
+Read the receipt balance and its own decimals. Convert the desired receipt quantity to WAD and call `redeem_vtokens(lender, tokens_to_redeem_wad)`. The app-local `ContractService.withdraw` passes receipt quantities, despite the generic parameter name `amount`.
 
-Depositors receive **vTokens** (vXLM, vUSDC, etc.) that appreciate in value as interest accrues. Redeem them at any time for the underlying asset.
+Redemption can partially fill because the pool limits a single payout to 50% of total assets and available cash. Read `withdraw_event.asset_amount`, `vtoken_amount`, and the refreshed balance. Do not show the requested quantity as the completed payout.
 
----
+## Pool data
 
-## Prerequisites
+Use `get_total_liquidity_in_pool`, `get_borrows`, `total_assets`, and conversion getters to distinguish available cash from outstanding debt and receipt value. Read the current rate model and fee. Borrowers are subject to the pool's 95% utilization cap.
 
-Set up the Stellar SDK and server connection — see [Getting Started](/developers/sdk/getting-started).
+See [Lending Pools](/developers/contracts/lending-pools) for signatures and [Math Reference](/developers/math-reference) for scaling.
 
----
 
-## Step 1: Read Pool State
+## Source reference
 
-Before depositing, read the pool's current metrics:
-
-```typescript
-import { scValToNative, nativeToScVal } from '@stellar/stellar-sdk';
-
-const POOL_XLM = 'CBA4E4ZMXUKCDTNT7LDKSO3LGNGKHRCE4GUVPSRCAKU3TKAONUY7SVOB';
-const VXLM    = 'CCQAAPNBYF6I7PRM2NZ4NRDYZUVJJANMX3RZ4ZLMQH6Z5WAUL2MHU2RZ';
-const WAD     = 10n ** 18n;
-
-async function getPoolStats() {
-  const [liquidityScVal, borrowsScVal] = await Promise.all([
-    readContract(POOL_XLM, 'get_total_liquidity_in_pool'),
-    readContract(POOL_XLM, 'get_borrows'),
-  ]);
-
-  const liquidityWad = liquidityScVal as bigint;
-  const borrowsWad   = borrowsScVal as bigint;
-  const totalAssets  = liquidityWad + borrowsWad;
-
-  const utilizationRate = borrowsWad * WAD / totalAssets;
-  // utilizationRate / WAD = 0.0 to 1.0
-
-  // Get vToken exchange rate
-  const vtokenSupplyScVal = await readContract(VXLM, 'total_supply');
-  const vtokenSupply = vtokenSupplyScVal as bigint;
-
-  const exchangeRate = totalAssets * WAD / vtokenSupply;
-  // exchangeRate / WAD = underlying per vToken
-
-  return {
-    liquidityXlm: Number(liquidityWad) / 1e18,
-    borrowsXlm:   Number(borrowsWad) / 1e18,
-    utilization:  Number(utilizationRate) / 1e18, // 0.0 to 1.0
-    exchangeRate: Number(exchangeRate) / 1e18,
-  };
-}
-```
-
----
-
-## Step 2: Get the Borrow APY
-
-Query the Rate Model for the current borrow rate:
-
-```typescript
-const RATE_MODEL = 'CCJAUPCU6EIFQK6GTAAYLW3Y4YETJAAUPAGBPFGQ2OUJPSW3WWHUCL2Z';
-const SECS_PER_YEAR = 31_556_952n;
-
-async function getBorrowAPY(liquidityWad: bigint, borrowsWad: bigint): Promise<number> {
-  const ratePerSecWad = await readContract(
-    RATE_MODEL,
-    'get_borrow_rate_per_sec',
-    [
-      nativeToScVal(liquidityWad, { type: 'u256' }),
-      nativeToScVal(borrowsWad,   { type: 'u256' }),
-    ],
-  ) as bigint;
-
-  // Annual rate = rate_per_sec * SECS_PER_YEAR (in WAD)
-  const annualRateWad = ratePerSecWad * SECS_PER_YEAR;
-  return Number(annualRateWad) / 1e18; // 0.05 = 5% APY
-}
-```
-
-The **supply APY** is approximately `borrow_APY × utilization_rate` (interest earned by LPs is the fraction of borrow interest from deployed capital).
-
----
-
-## Step 3: Read a User's vToken Balance
-
-```typescript
-async function getUserVtokenBalance(userAddress: string): Promise<bigint> {
-  const balance = await readContract(
-    VXLM,
-    'balance',
-    [nativeToScVal(userAddress, { type: 'address' })],
-  ) as bigint;
-  return balance;  // in i128, same scale as underlying
-}
-
-// Compute underlying value
-async function getRedemptionValue(
-  vtokenBalance: bigint,
-  vtokenSupply: bigint,
-  totalAssets: bigint,
-): Promise<bigint> {
-  return (vtokenBalance * totalAssets) / vtokenSupply;
-}
-```
-
----
-
-## Step 4: Deposit (Supply Liquidity)
-
-```typescript
-async function depositXlm(
-  userAddress: string,
-  amountXlm: number,  // human-readable (e.g., 10 for 10 XLM)
-): Promise<string> {
-  const WAD = 10n ** 18n;
-  const amountWad = BigInt(Math.floor(amountXlm * 1e18));  // convert to WAD
-
-  return await invokeContract(
-    userAddress,
-    POOL_XLM,
-    'deposit_xlm',
-    [
-      nativeToScVal(userAddress, { type: 'address' }),
-      nativeToScVal(amountWad,   { type: 'u256' }),
-    ],
-  );
-}
-```
-
-<Note>
-The LendingPool transfers XLM from the caller's account. Freighter will prompt the user to authorize the native XLM transfer during the signing step — no separate `approve()` needed for XLM. For USDC pools, the `approve()` pattern is required.
-</Note>
-
----
-
-## Step 5: Redeem vTokens (Withdraw)
-
-```typescript
-async function redeemVxlm(
-  userAddress: string,
-  vtokensToRedeem: bigint,  // in i128 (from balance() call)
-): Promise<string> {
-  return await invokeContract(
-    userAddress,
-    POOL_XLM,
-    'redeem_vxlm',
-    [
-      nativeToScVal(userAddress,     { type: 'address' }),
-      nativeToScVal(vtokensToRedeem, { type: 'u256' }),
-    ],
-  );
-}
-```
-
-**To withdraw all:** fetch the user's vToken balance and pass it as `vtokensToRedeem`.
-
----
-
-## Step 6: Fetch Deposit/Withdrawal History
-
-Use Mercury to fetch historical events:
-
-```typescript
-async function getEarnHistory(userAddress: string) {
-  // Fetch deposit events where topic2 = user address
-  const events = await fetchContractEvents(POOL_XLM, {
-    account: userAddress,
-    limit: 50,
-  });
-
-  return events.map(e => {
-    const name = decodeScVal(e.topic1) as string;
-    const data = decodeScVal(e.data) as {
-      lender: string;
-      amount: bigint;
-      timestamp: bigint;
-      asset_symbol: string;
-    };
-    return {
-      type: name === 'deposit_event' ? 'deposit' : 'withdraw',
-      amount: Number(data.amount) / 1e18,
-      timestamp: Number(data.timestamp),
-      asset: data.asset_symbol,
-      txHash: e.tx,
-    };
-  });
-}
-```
-
----
-
-## Full Pool Data Component (React)
-
-```typescript
-import { useQuery } from '@tanstack/react-query';
-
-function usePoolData(poolAddress: string, vtokenAddress: string) {
-  return useQuery({
-    queryKey: ['pool-data', poolAddress],
-    queryFn: async () => {
-      const [liquidity, borrows, vtokenSupply] = await Promise.all([
-        readContract(poolAddress, 'get_total_liquidity_in_pool') as Promise<bigint>,
-        readContract(poolAddress, 'get_borrows') as Promise<bigint>,
-        readContract(vtokenAddress, 'total_supply') as Promise<bigint>,
-      ]);
-
-      const totalAssets = liquidity + borrows;
-      const utilizationRate = borrows * WAD / totalAssets;
-      const exchangeRate = vtokenSupply > 0n ? totalAssets * WAD / vtokenSupply : WAD;
-
-      return { liquidity, borrows, totalAssets, utilizationRate, exchangeRate };
-    },
-    staleTime: 5_000,  // 5 seconds — one ledger
-  });
-}
-```
-
----
-
-## Error Handling
-
-| Error | Cause | Fix |
-|---|---|---|
-| `InsufficientBalance` | Caller doesn't have enough XLM/USDC | Check balance before calling |
-| `InsufficientPoolBalance` | Pool can't cover withdrawal | Pool is fully utilized; wait for repayments |
-| Simulation fails | Contract panic | Decode the error code from `simResult.error` |
-
----
-
-## Related
-
-- [Lending Pools Reference](/developers/contracts/lending-pools) — full function reference
-- [vTokens Reference](/developers/contracts/vtokens) — vToken balance and transfer
-- [Transaction Flow](/developers/sdk/transaction-flow) — build/sign/submit pattern
-- [Math Reference](/developers/math-reference) — exchange rate and APY formulas
+- `mercury-stellar-backend/lib/stellar-utils.ts`
+- `mercury-stellar-backend/hooks/use-earn.ts`
+- `Protocol_V1_Soroban_testnet/contracts/lending-pool/src/pool.rs`

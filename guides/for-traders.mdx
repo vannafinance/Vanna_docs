@@ -1,45 +1,19 @@
 ---
-title: "For Traders"
-description: "Access leveraged yield strategies and composable margin trading on Vanna - choose Lite Mode for simplicity or Pro Mode for full control."
+title: "For Traders and Borrowers"
+description: "Using for traders and borrowers in the current Stellar testnet application."
 mode: "wide"
 ---
 
-Vanna gives traders access to undercollateralized leverage without locking up excess capital. Whether you're new to leverage or an experienced DeFi trader, Vanna offers two ways to participate - switch between them anytime using the **Pro / Lite** toggle in the top navigation.
+Use a **Margin Account** to hold collateral, borrow, swap, and deploy approved strategies. Each account is a Stellar contract controlled through your wallet's authorization.
 
-## Lite Mode
+1. Create or reconnect to your margin account.
+2. Deposit the correct test assets through Transfer Collateral or the deposit-and-borrow panel.
+3. Review debt, health factor, pool liquidity, and the transaction preview before borrowing.
+4. Use free account-held balances in Spot or Farm.
+5. Unwind assets and repay debt when reducing exposure.
 
-Lite Mode is Vanna's simplified one-click leveraged yield strategy. Select a pool, deposit collateral, set your leverage, and deploy - all in a single transaction. No manual collateral management, no separate borrow step.
+The account shares risk across its positions. Health factor at or below 1.1 makes a priced account with debt a liquidation candidate. Borrow availability depends on more than health, including asset permissions, available cash, the pool's 95% utilization ceiling, and execution resources.
 
-<Card title="Lite Mode - Full Guide" href="/guides/farm/leveraged-yield" icon="bolt">
-  Step-by-step guide to opening, managing, and exiting leveraged yield positions in Lite Mode.
-</Card>
+BLUSDC, AqUSDC, and SoUSDC are different tokens. Borrowing one does not fund another protocol's USDC leg.
 
-## Pro Mode
-
-Pro Mode gives you full access to Vanna's Margin Account system - complete control over collateral, borrowing, and capital deployment across DeFi markets.
-
-- **Open a Margin Account** - your own isolated smart contract for trading
-- **Deposit collateral** - XLM or USDC
-- **Borrow up to 10× leverage** - undercollateralized, against your deposited collateral
-- **Deploy composably** - use borrowed funds across spot swaps, yield farming, AMM pools - all from within one account
-- **Monitor your Health Factor** - real-time risk tracking so you stay in control
-- **Access Trade and Farm** - full access to spot trading and farming strategies
-
-Pro Mode is for traders who want full flexibility: multi-asset collateral, composable strategies, and precise control over every position.
-
-## Ready to trade?
-
-<CardGroup cols={2}>
-  <Card title="Open a Margin Account" href="/guides/margin/open-account" icon="chart-candlestick">
-    Start with Pro Mode - create your Margin Account and get ready to borrow and trade.
-  </Card>
-  <Card title="Margin Overview" href="/guides/margin/overview" icon="book-open">
-    Full guide to the Margin Account system - collateral, borrowing, health factor, and liquidation.
-  </Card>
-  <Card title="Leveraged Spot" href="/guides/trade/spot-swap" icon="arrow-right-arrow-left">
-    Swap assets using borrowed margin - amplify your spot positions with undercollateralized credit.
-  </Card>
-  <Card title="Leveraged Farm" icon="seedling">
-    Deploy borrowed capital into yield farming strategies. Guide coming soon.
-  </Card>
-</CardGroup>
+See [Margin](/guides/margin/overview), [Spot](/guides/trade/spot-swap), and [Farm](/guides/farm/overview).

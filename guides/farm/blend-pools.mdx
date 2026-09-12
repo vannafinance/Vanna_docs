@@ -1,78 +1,33 @@
 ---
-title: "Single-Asset Pools"
-description: "Deposit one asset into a lending pool, receive b-Tokens, and earn yield from borrower interest."
+title: "Blend Single-Asset Pools"
+description: "Using blend single-asset pools in the current Stellar testnet application."
 mode: "wide"
 ---
 
-Single-asset pools let you deploy one asset from your Margin Account into an external lending pool and earn yield passively. When you deposit, you receive **b-Tokens** - receipt tokens that track your share and accrue interest automatically.
+Blend supply deploys XLM or **BLUSDC** from your SmartAccount into the configured Blend pool.
 
-## Understanding b-Tokens
+## Supply
 
-b-Tokens work similarly to vTokens in the Earn section, but they come from a different external protocol. The key concept is the **b-Rate** - the exchange rate between your b-Token and the underlying asset.
+1. Open Farm and choose the relevant Blend single-asset pool.
+2. Use **Add Liquidity** and enter an amount within your free margin balance.
+3. Review asset identity, amount, and account health.
+4. Confirm/sign and wait for completion.
+5. Check the external supply position and remaining free account balance.
 
-**Example:** If `1 bXLM = 1.33 XLM`, depositing 593.99 XLM gives you 447.65 bXLM. As borrowers pay interest, the b-Rate increases - so when you withdraw, your 447.65 bXLM redeems for more than 593.99 XLM. The difference is your earned yield.
+Blend returns b-token supply accounting. Vanna tracks the position and values underlying through Blend's b_rate and the oracle. The receipt quantity is not necessarily equal to the underlying quantity.
 
-Your b-Token balance stays constant. The b-Rate goes up. That's how yield accrues.
+<Frame caption="Example Blend receipt position. Historical rates and quantities are not current yield estimates. Click the image to zoom.">
+  <img src="/images/farm/afterAddingLiquidity.png" alt="Blend Current Position table showing bXLM receipts, underlying value, and b-rate" width="1636" height="847" loading="lazy" decoding="async" />
+</Frame>
 
-## Add Liquidity
+## Withdraw
 
-<Steps>
-  <Step title="Go to Farm">
-    Click **Farm** in the top navigation. On the pool list, select the **Lending/Single Assets** filter to see single-asset pools.
-  </Step>
-  <Step title="Select a pool">
-    Click on a single-asset pool. The pool page shows live statistics: Supply APY, Borrow APY, Utilization Rate, Total Pool Supply, and the current b-Rate.
-    <div style={{ display: "flex", justifyContent: "center", margin: "12px 0" }}>
-      <img src="/images/farm/SingleLendingXLMPool.png" alt="Single-asset pool" style={{ maxWidth: "700px", width: "100%", borderRadius: "12px" }} />
-    </div>
-  </Step>
-  <Step title="Enter an amount">
-    Make sure **Add Liquidity** is selected on the right panel. Enter the amount to deploy from your Margin Account balance. Use the quick-select buttons (10% / 25% / 50% / 100%).
+Select the position's removal/withdrawal flow, choose an amount, and confirm. Ordinary withdrawals return underlying to your SmartAccount. You can then repay debt or transfer available collateral to your wallet as permitted.
 
-    The panel shows:
-    - **b-Tokens you will receive**
-    - **APY** - current supply yield
-    - **Projected monthly and yearly earnings**
-    - **Source** - how much of the amount comes from your borrow vs collateral balance
-  </Step>
-  <Step title="Confirm">
-    Click **Add Liquidity** and approve the transaction in your wallet.
-  </Step>
-  <Step title="View your position">
-    After confirming, go to the **All Transactions** tab. Your position chart shows your supplied value over time. The position table shows your b-Token balance, current value, APY, and b-Rate.
-    <div style={{ display: "flex", justifyContent: "center", margin: "12px 0" }}>
-      <img src="/images/farm/afterAddingLiquidity.png" alt="Position after adding liquidity" style={{ maxWidth: "700px", width: "100%", borderRadius: "12px" }} />
-    </div>
-  </Step>
-</Steps>
+External liquidity, controller permissions, and health checks can prevent an exit. Supply yield is variable, and a positive Blend rate does not mean a leveraged position earns a positive spread after Vanna borrowing costs.
 
-## Analytics tab
+<Frame caption="Earlier Blend withdrawal form. Returned underlying goes to the SmartAccount; debt repayment is a separate action. Click the image to zoom.">
+  <img src="/images/farm/removeLiquidty.png" alt="Blend Remove Liquidity form with XLM amount and percentage controls" width="579" height="350" loading="lazy" decoding="async" style={{ width: "100%", maxWidth: "560px", height: "auto" }} />
+</Frame>
 
-Click the **Analytics** tab on the pool page for detailed pool statistics - Supply APY, Borrow APY, Utilization, Total Supply, Total Borrow, and the current b-Rate.
-
-<div style={{ display: "flex", justifyContent: "center", margin: "12px 0" }}>
-  <img src="/images/farm/farmSingleLendingPoolAnalyticTab.png" alt="Pool analytics" style={{ maxWidth: "700px", width: "100%", borderRadius: "12px" }} />
-</div>
-
-## Remove Liquidity
-
-<Steps>
-  <Step title="Go to Farm and select your pool">
-    Click **Farm** and open the pool where you have a position.
-  </Step>
-  <Step title="Switch to Remove Liquidity">
-    Click **Remove Liquidity** on the right panel. Your full b-Token balance is pre-filled. Use the percentage buttons (25% / 50% / 75% / 100%) to choose how much to withdraw.
-    <div style={{ display: "flex", justifyContent: "center", margin: "12px 0" }}>
-      <img src="/images/farm/removeLiquidty.png" alt="Remove liquidity panel" style={{ maxWidth: "500px", width: "100%", borderRadius: "12px" }} />
-    </div>
-  </Step>
-  <Step title="Confirm">
-    Click **Remove Liquidity** and approve in your wallet. The underlying asset returns to your Margin Account balance.
-  </Step>
-</Steps>
-
-## Related
-
-- [Farm Overview](/guides/farm/overview)
-- [LP Pools](/guides/farm/amm-liquidity)
-- [Earn Overview](/guides/earn/overview) - Vanna's native lending pools (different from Farm)
+See [Repay](/guides/margin/repay) and [Blend Controller](/developers/contracts/blend-controller).
