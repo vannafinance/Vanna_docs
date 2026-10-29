@@ -1,0 +1,33 @@
+---
+title: "Integrate Margin"
+description: "Create an account, deposit, borrow, call integrations, and pass a complete remaining-accounts set."
+mode: "wide"
+---
+
+<Steps>
+  <Step title="Create the margin account">
+    `user_create_margin` if `["margin", authority]` has no data.
+  </Step>
+  <Step title="Deposit collateral">
+    `user_deposit_collateral` for each mint. The token must be collateral-enabled and on the allowed list.
+  </Step>
+  <Step title="Borrow">
+    `user_borrow(assets, max_debt_shares)`. It opens the `DebtPosition` itself. Only USDC, USDT and SOL are borrowable.
+  </Step>
+  <Step title="Deploy">
+    `margin_execute` into Jupiter, Titan, Kamino, Phoenix (via Ember), Perena or a basis vault. Create the receiving margin vault from the wallet first.
+  </Step>
+  <Step title="Unwind">
+    `user_repay_from_margin` (with `repay_all` for the exact debt), `user_withdraw_collateral`, `user_reclaim_rent`, then `user_close_margin` when empty.
+  </Step>
+</Steps>
+
+## Remaining accounts
+
+Borrow, withdraw-with-debt, `margin_execute` and liquidation need **every** allowed-token group, every venue group, and every debt group (except the instruction's own), followed by the oracle segment. See [Architecture](/solana/developers/architecture#remaining-accounts).
+
+The app helper is `buildHealthRemainingAccounts` in `lib/solana/margin.ts`. If you omit a holding or a debt, the program rejects the transaction. Do not "optimize" the list.
+
+## Health preview
+
+Preview health on the client (`lib/account-model.ts`) using the same price sources as the oracle (`lib/solana/oracle.ts`). The chain is the source of truth. The app's own limits target HF ≥ 1.15 so price drift between quote and execution doesn't trip the on-chain `HF > 1.10` check.

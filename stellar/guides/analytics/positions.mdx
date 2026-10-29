@@ -1,0 +1,34 @@
+---
+title: "Positions"
+description: "Look up any wallet or margin account, and see how accounts spread across health, leverage, collateral and debt."
+mode: "wide"
+---
+
+**Analytics → Positions** answers two questions: what does a given account hold, and how are all accounts spread out?
+
+## Look up an account
+
+Paste a **wallet** (starts with G) or **margin account** (starts with C) address into **Look up a wallet**. The account page shows its health, a what-if slider on its own balances, how it ranks, what it holds and owes, and its recent on-chain events. An account outside the latest scan is read live from the chain.
+
+## Distributions
+
+| Chart | What it shows |
+|---|---|
+| **Accounts by health** | How many accounts (and how much debt) sit in each health band |
+| **Debt by leverage** | Debt per leverage band |
+| **Collateral by asset** | What accounts hold, including Blend deposits (BLEND_XLM, BLEND_USDC) and LP positions (SS_XLM_USDC) |
+| **Debt by asset** | What accounts owe, with each asset's share |
+| **Positions by bucket** | The detailed monitor: health and leverage buckets, borrow rates, the health heatmap and the positions in each bucket |
+
+<Frame caption="Collateral by asset and Debt by asset, then the Positions by bucket monitor. Click the image to zoom.">
+  <img src="/images/stellar/analytics/analytics-collateral-debt.png" alt="Collateral by asset bars for SOUSDC, XLM, BLEND_XLM, AQUSDC, BLUSDC, SS_XLM_USDC and BLEND_USDC, Debt by asset bars for SOUSDC 62%, BLUSDC 16%, XLM 14%, AQUSDC 7%, AQUA and WETH, and a Positions by bucket card with Show the detailed bucket monitor" loading="lazy" decoding="async" />
+</Frame>
+
+## Good to know
+
+- A wallet (G…) and its margin account (C…) are different addresses. Debt belongs to the margin account.
+- An account with no debt shows **No debt** instead of a health factor.
+- Health bands and heatmap colours are display choices. The only contract threshold is **1.10**.
+- Click **Refresh** at the top before acting on an account close to the line.
+
+See [Health Factor](/stellar/guides/margin/health-factor) and [Liquidations](/stellar/guides/analytics/liquidations).

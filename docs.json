@@ -18,28 +18,38 @@
   "navbar": {
     "links": [
       {
-        "label": "App",
-        "href": "https://test-stellar.vanna.finance/"
-      },
-      {
         "label": "GitHub",
-        "href": "https://github.com/vanna-finance"
+        "href": "https://github.com/vannafinance"
       }
     ],
     "primary": {
       "type": "button",
       "label": "Launch App",
-      "href": "https://test-stellar.vanna.finance/"
+      "href": "https://test.vanna.finance"
     }
   },
   "navigation": {
-    "anchors": [
+    "global": {
+      "anchors": [
+        {
+          "anchor": "Discord",
+          "icon": "discord",
+          "href": "https://discord.gg/vanna"
+        },
+        {
+          "anchor": "X / Twitter",
+          "icon": "x-twitter",
+          "href": "https://x.com/vannafinance"
+        }
+      ]
+    },
+    "tabs": [
       {
-        "anchor": "Overview",
+        "tab": "Home",
         "icon": "house",
         "groups": [
           {
-            "group": " ",
+            "group": "Welcome",
             "pages": [
               "home"
             ]
@@ -47,218 +57,449 @@
         ]
       },
       {
-        "anchor": "User Guide",
+        "tab": "User Guide",
         "icon": "book-open",
-        "groups": [
+        "menu": [
           {
-            "group": "Get Started",
-            "pages": [
-              "guides/getting-started",
-              "guides/connect-wallet",
-              "guides/portfolio",
-              "guides/copilot"
+            "item": "Stellar",
+            "icon": "/images/chains/stellar.png",
+            "groups": [
+              {
+                "group": "Stellar · Get Started",
+                "pages": [
+                  "stellar/home",
+                  "stellar/guides/getting-started",
+                  "stellar/guides/connect-wallet",
+                  "stellar/guides/portfolio",
+                  "stellar/guides/copilot"
+                ]
+              },
+              {
+                "group": "How Vanna Works",
+                "pages": [
+                  "stellar/guides/how-vanna-works",
+                  "stellar/guides/for-liquidity-providers",
+                  "stellar/guides/for-traders"
+                ]
+              },
+              {
+                "group": "Earn",
+                "pages": [
+                  "stellar/guides/earn/overview",
+                  "stellar/guides/earn/supply",
+                  "stellar/guides/earn/withdraw"
+                ]
+              },
+              {
+                "group": "Margin Account",
+                "pages": [
+                  "stellar/guides/margin/overview",
+                  "stellar/guides/margin/open-account",
+                  "stellar/guides/margin/deposit-collateral",
+                  "stellar/guides/margin/borrow",
+                  "stellar/guides/margin/repay",
+                  "stellar/guides/margin/transfer-collateral"
+                ]
+              },
+              {
+                "group": "Trade",
+                "pages": [
+                  "stellar/guides/trade/spot-swap"
+                ]
+              },
+              {
+                "group": "Farm",
+                "pages": [
+                  "stellar/guides/farm/overview",
+                  "stellar/guides/farm/blend-pools",
+                  "stellar/guides/farm/amm-liquidity",
+                  "stellar/guides/farm/leveraged-yield"
+                ]
+              },
+              {
+                "group": "Risk Management",
+                "pages": [
+                  "stellar/guides/margin/health-factor",
+                  "stellar/guides/margin/liquidation"
+                ]
+              },
+              {
+                "group": "Risk Monitoring Dashboard",
+                "pages": [
+                  "stellar/guides/analytics/overview",
+                  "stellar/guides/analytics/positions",
+                  "stellar/guides/analytics/liquidations",
+                  "stellar/guides/analytics/risk-explorer"
+                ]
+              },
+              {
+                "group": "Sample Strategies",
+                "pages": [
+                  "stellar/guides/sample-strategies",
+                  "stellar/guides/strategies/cross-pool-rate-carry",
+                  "stellar/guides/strategies/earn-borrow-hedge",
+                  "stellar/guides/strategies/parallel-rate-carry",
+                  "stellar/guides/strategies/dual-yield-stack"
+                ]
+              }
             ]
           },
           {
-            "group": "How Vanna Works",
-            "pages": [
-              "guides/how-vanna-works",
-              "guides/for-liquidity-providers",
-              "guides/for-traders"
-            ]
-          },
-          {
-            "group": "Earn",
-            "pages": [
-              "guides/earn/overview",
-              "guides/earn/supply",
-              "guides/earn/withdraw"
-            ]
-          },
-          {
-            "group": "Margin Account",
-            "pages": [
-              "guides/margin/overview",
-              "guides/margin/open-account",
-              "guides/margin/deposit-collateral",
-              "guides/margin/borrow",
-              "guides/margin/repay",
-              "guides/margin/transfer-collateral"
-            ]
-          },
-          {
-            "group": "Trade",
-            "pages": [
-              "guides/trade/spot-swap"
-            ]
-          },
-          {
-            "group": "Farm",
-            "pages": [
-              "guides/farm/overview",
-              "guides/farm/blend-pools",
-              "guides/farm/amm-liquidity",
-              "guides/farm/leveraged-yield"
-            ]
-          },
-          {
-            "group": "Risk Management",
-            "pages": [
-              "guides/margin/health-factor",
-              "guides/margin/liquidation"
-            ]
-          },
-          {
-            "group": "Risk Monitoring Dashboard",
-            "pages": [
-              "guides/analytics/overview",
-              "guides/analytics/positions",
-              "guides/analytics/liquidations",
-              "guides/analytics/risk-explorer"
-            ]
-          },
-          {
-            "group": "Sample Strategies",
-            "pages": [
-              "guides/sample-strategies",
-              "guides/strategies/cross-pool-rate-carry",
-              "guides/strategies/earn-borrow-hedge",
-              "guides/strategies/parallel-rate-carry",
-              "guides/strategies/dual-yield-stack"
+            "item": "Solana",
+            "icon": "/images/chains/solana.png",
+            "groups": [
+              {
+                "group": "Solana · Get Started",
+                "pages": [
+                  "solana/home",
+                  "solana/guides/getting-started",
+                  "solana/guides/connect-wallet",
+                  "solana/guides/faucet",
+                  "solana/guides/why-vanna",
+                  "solana/guides/portfolio"
+                ]
+              },
+              {
+                "group": "How Vanna Works",
+                "pages": [
+                  "solana/guides/how-vanna-works",
+                  "solana/guides/for-liquidity-providers",
+                  "solana/guides/for-traders"
+                ]
+              },
+              {
+                "group": "Earn",
+                "pages": [
+                  "solana/guides/earn/overview",
+                  "solana/guides/earn/supply",
+                  "solana/guides/earn/withdraw"
+                ]
+              },
+              {
+                "group": "Predict",
+                "pages": [
+                  "solana/guides/predict/overview",
+                  "solana/guides/predict/trade",
+                  "solana/guides/predict/earn-while-you-wait"
+                ]
+              },
+              {
+                "group": "Margin Account",
+                "pages": [
+                  "solana/guides/margin/overview",
+                  "solana/guides/margin/open-account",
+                  "solana/guides/margin/deposit-collateral",
+                  "solana/guides/margin/borrow",
+                  "solana/guides/margin/repay",
+                  "solana/guides/margin/transfer-collateral"
+                ]
+              },
+              {
+                "group": "Trade",
+                "pages": [
+                  "solana/guides/trade/spot-swap",
+                  "solana/guides/perps/overview",
+                  "solana/guides/perps/long",
+                  "solana/guides/perps/short"
+                ]
+              },
+              {
+                "group": "Farm",
+                "pages": [
+                  "solana/guides/farm/overview",
+                  "solana/guides/farm/kamino",
+                  "solana/guides/farm/perena",
+                  "solana/guides/farm/delta-neutral",
+                  "solana/guides/farm/positions"
+                ]
+              },
+              {
+                "group": "Analytics & Copilot",
+                "pages": [
+                  "solana/guides/analytics",
+                  "solana/guides/copilot",
+                  "solana/guides/mcp"
+                ]
+              },
+              {
+                "group": "Risk Management",
+                "pages": [
+                  "solana/guides/margin/health-factor",
+                  "solana/guides/margin/liquidation"
+                ]
+              }
             ]
           }
         ]
       },
       {
-        "anchor": "Core Concepts",
+        "tab": "Core Concepts",
         "icon": "graduation-cap",
-        "groups": [
+        "menu": [
           {
-            "group": "Introduction",
-            "pages": [
-              "learn/overview",
-              "learn/protocol-architecture"
+            "item": "Stellar",
+            "icon": "/images/chains/stellar.png",
+            "groups": [
+              {
+                "group": "Stellar · Introduction",
+                "pages": [
+                  "stellar/learn/overview",
+                  "stellar/learn/protocol-architecture"
+                ]
+              },
+              {
+                "group": "Core Mechanics",
+                "pages": [
+                  "stellar/learn/smart-accounts",
+                  "stellar/learn/lending-pools",
+                  "stellar/learn/vtokens",
+                  "stellar/learn/lending-pool-mechanics",
+                  "stellar/learn/composable-leverage"
+                ]
+              },
+              {
+                "group": "Risk & Economics",
+                "pages": [
+                  "stellar/learn/health-factor",
+                  "stellar/learn/liquidation",
+                  "stellar/learn/interest-rate-model",
+                  "stellar/learn/oracle-system"
+                ]
+              },
+              {
+                "group": "Infrastructure",
+                "pages": [
+                  "stellar/learn/registry"
+                ]
+              }
             ]
           },
           {
-            "group": "Core Mechanics",
-            "pages": [
-              "learn/smart-accounts",
-              "learn/lending-pools",
-              "learn/vtokens",
-              "learn/lending-pool-mechanics",
-              "learn/composable-leverage"
-            ]
-          },
-          {
-            "group": "Risk & Economics",
-            "pages": [
-              "learn/health-factor",
-              "learn/liquidation",
-              "learn/interest-rate-model",
-              "learn/oracle-system"
-            ]
-          },
-          {
-            "group": "Infrastructure",
-            "pages": [
-              "learn/registry"
+            "item": "Solana",
+            "icon": "/images/chains/solana.png",
+            "groups": [
+              {
+                "group": "Solana · Introduction",
+                "pages": [
+                  "solana/learn/overview",
+                  "solana/learn/protocol-architecture",
+                  "solana/learn/tokenized-stocks"
+                ]
+              },
+              {
+                "group": "Core Mechanics",
+                "pages": [
+                  "solana/learn/margin-accounts",
+                  "solana/learn/lending-pools",
+                  "solana/learn/vtokens",
+                  "solana/learn/composable-leverage"
+                ]
+              },
+              {
+                "group": "Risk & Economics",
+                "pages": [
+                  "solana/learn/health-factor",
+                  "solana/learn/liquidation",
+                  "solana/learn/interest-rate-model",
+                  "solana/learn/oracle-system"
+                ]
+              },
+              {
+                "group": "Integrations",
+                "pages": [
+                  "solana/learn/kamino-integration",
+                  "solana/learn/perps-on-phoenix",
+                  "solana/learn/yield-vaults",
+                  "solana/learn/predict"
+                ]
+              }
             ]
           }
         ]
       },
       {
-        "anchor": "Developers",
+        "tab": "Developers",
         "icon": "code",
-        "groups": [
+        "menu": [
           {
-            "group": "Introduction",
-            "pages": [
-              "developers/overview",
-              "developers/architecture",
-              "developers/deployed-contracts",
-              "developers/math-reference",
-              "developers/frontend",
-              "developers/review-scope"
+            "item": "Stellar",
+            "icon": "/images/chains/stellar.png",
+            "groups": [
+              {
+                "group": "Stellar · Introduction",
+                "pages": [
+                  "stellar/developers/overview",
+                  "stellar/developers/architecture",
+                  "stellar/developers/deployed-contracts",
+                  "stellar/developers/math-reference",
+                  "stellar/developers/frontend",
+                  "stellar/developers/review-scope"
+                ]
+              },
+              {
+                "group": "Contract Reference",
+                "pages": [
+                  "stellar/developers/contracts/account-manager",
+                  "stellar/developers/contracts/smart-account",
+                  "stellar/developers/contracts/lending-pools",
+                  "stellar/developers/contracts/risk-engine",
+                  "stellar/developers/contracts/rate-model",
+                  "stellar/developers/contracts/vtokens",
+                  "stellar/developers/contracts/registry",
+                  "stellar/developers/contracts/tracking-tokens",
+                  "stellar/developers/contracts/oracle",
+                  "stellar/developers/contracts/controller-facade",
+                  "stellar/developers/contracts/blend-controller",
+                  "stellar/developers/contracts/soroswap-controller",
+                  "stellar/developers/contracts/aquarius-controller",
+                  "stellar/developers/contracts/deployers",
+                  "stellar/developers/contracts/shared-types"
+                ]
+              },
+              {
+                "group": "TypeScript Integration",
+                "pages": [
+                  "stellar/developers/sdk/getting-started",
+                  "stellar/developers/sdk/transaction-flow",
+                  "stellar/developers/sdk/mercury-indexer"
+                ]
+              },
+              {
+                "group": "Integration Guides",
+                "pages": [
+                  "stellar/developers/guides/integrate-lending",
+                  "stellar/developers/guides/integrate-margin",
+                  "stellar/developers/guides/liquidation-bots",
+                  "stellar/developers/guides/events-indexing"
+                ]
+              }
             ]
           },
           {
-            "group": "Contract Reference",
-            "pages": [
-              "developers/contracts/account-manager",
-              "developers/contracts/smart-account",
-              "developers/contracts/lending-pools",
-              "developers/contracts/risk-engine",
-              "developers/contracts/rate-model",
-              "developers/contracts/vtokens",
-              "developers/contracts/registry",
-              "developers/contracts/tracking-tokens",
-              "developers/contracts/oracle",
-              "developers/contracts/controller-facade",
-              "developers/contracts/blend-controller",
-              "developers/contracts/soroswap-controller",
-              "developers/contracts/aquarius-controller",
-              "developers/contracts/deployers",
-              "developers/contracts/shared-types"
-            ]
-          },
-          {
-            "group": "TypeScript Integration",
-            "pages": [
-              "developers/sdk/getting-started",
-              "developers/sdk/transaction-flow",
-              "developers/sdk/mercury-indexer"
-            ]
-          },
-          {
-            "group": "Integration Guides",
-            "pages": [
-              "developers/guides/integrate-lending",
-              "developers/guides/integrate-margin",
-              "developers/guides/liquidation-bots",
-              "developers/guides/events-indexing"
+            "item": "Solana",
+            "icon": "/images/chains/solana.png",
+            "groups": [
+              {
+                "group": "Solana · Introduction",
+                "pages": [
+                  "solana/developers/overview",
+                  "solana/developers/architecture",
+                  "solana/developers/deployed-contracts",
+                  "solana/developers/math-reference",
+                  "solana/developers/setup"
+                ]
+              },
+              {
+                "group": "Contract Reference",
+                "pages": [
+                  "solana/developers/contracts/program",
+                  "solana/developers/contracts/accounts",
+                  "solana/developers/contracts/lending",
+                  "solana/developers/contracts/margin",
+                  "solana/developers/contracts/borrowing",
+                  "solana/developers/contracts/margin-execute",
+                  "solana/developers/contracts/swap",
+                  "solana/developers/contracts/perps",
+                  "solana/developers/contracts/vaults",
+                  "solana/developers/contracts/oracle",
+                  "solana/developers/contracts/validator",
+                  "solana/developers/contracts/liquidation",
+                  "solana/developers/contracts/admin"
+                ]
+              },
+              {
+                "group": "TypeScript Integration",
+                "pages": [
+                  "solana/developers/sdk/getting-started",
+                  "solana/developers/sdk/transaction-flow",
+                  "solana/developers/sdk/pdas"
+                ]
+              },
+              {
+                "group": "Integration Guides",
+                "pages": [
+                  "solana/developers/guides/integrate-lending",
+                  "solana/developers/guides/integrate-margin",
+                  "solana/developers/guides/liquidation-bots"
+                ]
+              }
             ]
           }
         ]
       },
       {
-        "anchor": "Security",
-        "icon": "shield-halved",
-        "groups": [
-          {
-            "group": "Security",
-            "pages": [
-              "security/coming-soon"
-            ]
-          }
-        ]
-      },
-      {
-        "anchor": "Resources",
+        "tab": "Resources",
         "icon": "circle-info",
-        "groups": [
+        "menu": [
           {
-            "group": "Resources",
-            "pages": [
-              "resources/coming-soon"
+            "item": "Stellar",
+            "icon": "/images/chains/stellar.png",
+            "groups": [
+              {
+                "group": "Stellar · Resources",
+                "pages": [
+                  "stellar/resources/faq"
+                ]
+              }
+            ]
+          },
+          {
+            "item": "Solana",
+            "icon": "/images/chains/solana.png",
+            "groups": [
+              {
+                "group": "Solana · Resources",
+                "pages": [
+                  "solana/resources/faq"
+                ]
+              }
             ]
           }
         ]
-      },
-      {
-        "anchor": "Discord",
-        "href": "https://discord.gg/vanna",
-        "icon": "discord"
       }
     ]
   },
   "search": {
-    "prompt": "Search Vanna docs..."
+    "prompt": "Search Vanna docs (Stellar & Solana)..."
   },
+  "redirects": [
+    {
+      "source": "/guides/:slug*",
+      "destination": "/stellar/guides/:slug*"
+    },
+    {
+      "source": "/learn/:slug*",
+      "destination": "/stellar/learn/:slug*"
+    },
+    {
+      "source": "/developers/:slug*",
+      "destination": "/stellar/developers/:slug*"
+    },
+    {
+      "source": "/security/:slug*",
+      "destination": "/stellar/resources/faq"
+    },
+    {
+      "source": "/resources/:slug*",
+      "destination": "/stellar/resources/faq"
+    },
+    {
+      "source": "/solana/guides/farm/one-click",
+      "destination": "/solana/guides/farm/kamino"
+    },
+    {
+      "source": "/solana/developers/contracts/lite",
+      "destination": "/solana/developers/contracts/vaults"
+    },
+    {
+      "source": "/solana/guides/setup",
+      "destination": "/solana/developers/setup"
+    }
+  ],
   "footer": {
     "socials": {
       "x": "https://x.com/vannafinance",
-      "github": "https://github.com/vanna-finance",
+      "github": "https://github.com/vannafinance",
       "discord": "https://discord.gg/vanna"
     }
   }

@@ -1,0 +1,78 @@
+---
+title: "Farm Overview"
+description: "Put your margin account's balances to work in Kamino, Perena and delta-neutral basis vaults."
+mode: "wide"
+---
+
+import RiskNotice from "/snippets/solana/risk-notice.mdx";
+
+**Farm** deploys tokens from your margin account into yield venues. You can farm with your own collateral or with borrowed funds (leveraged yield). Whatever you receive back, a Kamino receipt or vault shares, **stays in your margin account and counts as collateral**, so farming barely moves your health factor.
+
+<Frame caption="Farm: your farm stats, then Vaults / Positions and the Lending/Single Assets and Delta-Neutral categories.">
+  <img src="/images/solana/farm/overview.png" alt="Farm page with a Farm DeFi Yields banner, Net Health Factor, Your Deposit TVL, Your Earnings, Net Farm APY and Pending Rewards, and a Kamino table for SOL and USDC under Lending/Single Assets" loading="lazy" decoding="async" />
+</Frame>
+
+## Stats
+
+| Stat | Meaning |
+|---|---|
+| **Your Deposit TVL** | What you currently have deployed in Farm |
+| **Your Earnings** | Yield earned across your Farm positions |
+| **Net Farm APY** | Your blended APY across positions |
+| **Pending Rewards** | Rewards not yet claimed |
+| **Net Health Factor** | Your margin account's health factor (same number as on Margin) |
+
+## Categories
+
+| Category | Venues | Guide |
+|---|---|---|
+| **Lending / Single Assets** | **Kamino** lending (SOL, USDC, USDT) and **Perena** USD\* vaults | [Kamino](/solana/guides/farm/kamino) · [Perena](/solana/guides/farm/perena) |
+| **Delta-Neutral** | Vanna's **basis vaults**: SOL, ETH, BTC, TSLA and META Basis, earning Phoenix funding | [Delta-Neutral](/solana/guides/farm/delta-neutral) |
+
+**Vaults** lists everything you can farm; **Positions** lists what you hold. Use **All Pools**, search and the column filters to narrow the list.
+
+<Tabs>
+  <Tab title="Lending / Single Assets">
+    Kamino reserves (SOL, USDC, USDT) with total deposits and borrows, supply and borrow APY, utilization and your holding, then the **Perena vaults** (USD\* and USD\* Junior) with TVL, share price, APY (7D), holders and your holding.
+
+    <Frame caption="Lending/Single Assets: Kamino reserves and Perena vaults.">
+      <img src="/images/solana/farm/lending-vaults.png" alt="Kamino rows for SOL, USDC and USDT with total deposits, total borrow, supply APY, borrow APY, utilization and holding, and a Perena vaults table with USD* and USD* Junior showing TVL, share price, APY 7D and holders" loading="lazy" decoding="async" />
+    </Frame>
+  </Tab>
+  <Tab title="Delta-Neutral">
+    Vanna's basis vaults (SOL, ETH, BTC, TSLA and META Basis) with total deposits, capacity used, Vault APY, **Funding Now**, open interest and your holding.
+
+    <Frame caption="Delta-Neutral: five basis vaults, each a spot leg plus a 1× Phoenix short.">
+      <img src="/images/solana/farm/delta-neutral-vaults.png" alt="Delta-Neutral table listing SOL, ETH, BTC, TSLA and META Basis vaults on Jupiter and Phoenix with total deposits, capacity, vault APY, funding now, open interest and holding" loading="lazy" decoding="async" />
+    </Frame>
+  </Tab>
+</Tabs>
+
+## Every vault page looks the same
+
+Click a row to open its page:
+
+- **Stats bar** on top (APY, rates, TVL…)
+- **All Transactions**: your position value, receipt balance and earned yield, with Current Position and Position History tables
+- **Analytics**: charts and details for that venue
+- **Deposit / Withdraw panel** on the right. After you enter an amount, a details box shows the network, the amount, the **estimated receipt** you'll get, the share price, the APY and **projected monthly earnings**
+
+## Why the health factor barely moves
+
+A farm deposit swaps one thing in your margin account (USDC, SOL…) for another of about the same value (kUSDC, USD\*, vbSOL…), so total collateral stays the same. What can move it later is the receipt's own value: a vault's share price can rise or fall.
+
+<RiskNotice />
+
+## Next steps
+
+<CardGroup cols={3}>
+  <Card title="Kamino" icon="building-columns" href="/solana/guides/farm/kamino">
+    Supply SOL, USDC or USDT to Kamino.
+  </Card>
+  <Card title="Perena" icon="dollar-sign" href="/solana/guides/farm/perena">
+    USD* and USD* Junior stablecoin vaults.
+  </Card>
+  <Card title="Delta-neutral" icon="scale-balanced" href="/solana/guides/farm/delta-neutral">
+    Earn Phoenix funding without price exposure.
+  </Card>
+</CardGroup>

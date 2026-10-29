@@ -1,0 +1,37 @@
+---
+title: "TypeScript Getting Started"
+description: "Use the application-local Anchor client. There is no published package yet."
+mode: "wide"
+---
+
+The app's client lives in `vanna-credit-backend/lib/solana`. Copy what you need.
+
+```ts
+import { getProgram } from "@/lib/solana/program";
+import { marginPda, reservePda, protocolConfigPda } from "@/lib/solana/pdas";
+import { VANNA_PROGRAM_ID, ORACLE_PROGRAM_ID, VALIDATOR_PROGRAM_ID } from "@/lib/solana/config";
+import { getToken } from "@/lib/solana/tokens";
+
+const program = getProgram();          // read-only provider; the wallet signs in tx.ts
+const usdc = getToken("USDC");
+const margin = marginPda(owner);
+const reserve = reservePda(usdc.mint);
+```
+
+| Module | Use |
+|---|---|
+| `config.ts` | Program IDs, RPC URLs, HF thresholds (`LIQUIDATION_HEALTH_FACTOR = 1.1`, UI buffer `SAFE_HEALTH_FACTOR = 1.15`) |
+| `tokens.ts` | The token registry: mints, decimals, token programs, which tokens are lendable / depositable |
+| `pdas.ts` | Every PDA and ATA helper |
+| `lend.ts` | Supply and redeem |
+| `margin.ts` | Create, deposit, borrow, repay, withdraw, reclaim rent; `buildHealthRemainingAccounts` |
+| `exec.ts` | `marginExecuteIx`, margin swaps, Kamino farm deposit / withdraw |
+| `aggregator.ts`, `swap.ts`, `titan.ts` | Jupiter / Titan quotes and swaps (one named provider, or best-of both) |
+| `perps.ts`, `phoenix.ts` | Phoenix perps: open, close, withdraw, valuation mirror |
+| `vault-actions.ts`, `perena.ts`, `vault-state.ts` | Basis and Perena vaults |
+| `oracle.ts`, `prices.ts` | Client mirror of the oracle's source selection |
+| `../account-model.ts` | Health factor, leverage and liquidation-price math |
+
+The core IDL is `idl/vanna_credit_layer.json`. After a program change, rebuild with `anchor build` and copy `target/idl/vanna_credit_layer.json` into the app.
+
+Read [Transaction Flow](/solana/developers/sdk/transaction-flow) before sending. Always simulate.

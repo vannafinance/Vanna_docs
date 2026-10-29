@@ -1,0 +1,67 @@
+---
+title: "Earn Overview"
+description: "Vanna's lending pools: supply SOL, USDC or USDT and earn borrow interest."
+mode: "wide"
+---
+
+**Earn** lists Vanna's lending pools. Supplying to a pool lends your tokens to margin accounts; their interest is what you earn.
+
+<Frame caption="Earn: your Overall Deposit and Net Earnings charts, then the pool list.">
+  <img src="/images/solana/earn/overview.png" alt="Earn page with a Multi-Collateral Vaults banner, Overall Deposit and Net Earnings charts with 1 Week, 1 Month, 3 Months and All Time ranges, and Vaults / Positions tabs with pool filters" loading="lazy" decoding="async" />
+</Frame>
+
+## Pools
+
+| Pool | Receipt | Notes |
+|---|---|---|
+| SOL | vSOL | Borrowed for SOL longs and SOL-denominated strategies |
+| USDC | vUSDC | Usually the busiest pool: most leverage, perps collateral and vaults run on USDC |
+| USDT | vUSDT | Stablecoin pool |
+
+## Columns
+
+| Column | Meaning |
+|---|---|
+| **Assets Supplied** | Total supplied to the pool, in tokens and USD |
+| **Supply APY** | What lenders currently earn |
+| **Assets Borrowed** | What margin accounts currently owe the pool |
+| **Borrow APY** | What borrowers currently pay |
+| **Utilization Rate** | Borrowed ÷ supplied. Rates rise with utilization |
+| **Your Supply** | Your share of the pool, in tokens and USD |
+
+<Frame caption="The pool table: SOL, USDC and USDT with supply, borrow, rates, utilization and your supply.">
+  <img src="/images/solana/earn/pools.png" alt="Earn pool table listing SOL, USDC and USDT pools, each Active, with Assets Supplied, Supply APY, Assets Borrowed, Borrow APY, Utilization Rate and Your Supply" loading="lazy" decoding="async" />
+</Frame>
+
+Use **Vaults / Positions** to switch between all pools and just yours, and **All Pools**, search, **Deposit** and **Supply APY is** to filter. The charts above the table show your **Overall Deposit** and **Net Earnings** over 1 week, 1 month, 3 months or all time.
+
+## Pool page
+
+Click a pool for its detail page: Total Supply, Available Liquidity, Utilization Rate and Supply APY on top, the **Supply Liquidity / Withdraw Liquidity** panel on the right, and these tabs:
+
+| Tab | What it shows |
+|---|---|
+| **Your Positions** | Your supply in this pool over time (**My Supply** chart) |
+| **Details** | Statistics: total supplied and borrowed, available liquidity, supply and borrow APY, utilization, liquidation bonus, oracle price and source, share-token exchange rate, reserve factor, supply and borrow caps, status and rate curve |
+| **Activity** | The pool's split between idle and borrowed funds, and your own supplies and withdrawals in this pool |
+| **Collateral and Limits** | The account-wide liquidation rule, each asset's collateral parameters and how much of each cap is used |
+| **Analytics** | The rate curve; on the USDC pool, also how much USDC came from each [Predict market](/solana/guides/predict/earn-while-you-wait#where-to-see-it) |
+
+<Frame caption="SOL pool → Details: statistics, oracle price (Kamino Scope, Pyth fallback) and the 1.10 liquidation line.">
+  <img src="/images/solana/earn/pool-details.png" alt="SOL pool Details tab with Total Supplied and Total Borrowed rings, Available Liquidity, Supply APY, Borrow APY, Utilization Rate, Liquidation Bonus 5% liquidatable at HF 1.10 or below, Oracle Price from Kamino Scope with Pyth fallback, Share Token Exchange Rate, Reserve Factor 10%, Supply Cap and Borrow Cap Uncapped, and the Supply Liquidity panel" loading="lazy" decoding="async" />
+</Frame>
+
+## Your receipt: vTokens
+
+Supplying mints vTokens to your wallet. The number of vTokens you hold stays the same; what each one is worth in the underlying asset (the exchange rate, e.g. "SOL per vSOL") rises as interest accrues. See [vTokens](/solana/learn/vtokens).
+
+## Next steps
+
+<CardGroup cols={2}>
+  <Card title="Supply" icon="arrow-down-to-bracket" href="/solana/guides/earn/supply">
+    Lend SOL, USDC or USDT and receive vTokens.
+  </Card>
+  <Card title="Withdraw" icon="arrow-up-from-bracket" href="/solana/guides/earn/withdraw">
+    Redeem vTokens for the asset plus interest.
+  </Card>
+</CardGroup>

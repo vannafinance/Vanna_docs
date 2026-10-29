@@ -1,0 +1,57 @@
+---
+title: "Repay"
+description: "Repay a loan from your margin account or wallet, or unwind everything with Flash repay."
+mode: "wide"
+---
+
+## Repay a loan
+
+Repays come from the **borrowed asset held in your margin account** (the tab shows **Repay From: Margin Account**). If the account doesn't hold enough of that token, move more in first with [Transfer Collateral](/solana/guides/margin/transfer-collateral), or let [Flash repay](#flash-repay) swap other holdings for you.
+
+<Steps>
+  <Step title="Open Repay Loan">
+    On **Margin**, open the **Repay Loan** tab, or click **Repay** next to a loan in the positions map on Margin or Portfolio (it opens this tab with that asset selected).
+  </Step>
+  <Step title="Choose the asset">
+    The tab shows your exact on-chain debt for that asset, interest included, next to what your margin account holds of it.
+  </Step>
+  <Step title="Enter the amount">
+    Type an amount or use the % chips. **100%** repays as much as the margin account can: the whole loan when it holds enough, otherwise everything it holds of that token (a partial repay).
+  </Step>
+  <Step title="Pay">
+    Check the before → after preview (Outstanding Debt, Margin Collateral, Health Factor) and click **Pay Now**.
+  </Step>
+</Steps>
+
+<Note>
+**A full repay needs a small buffer.** Interest keeps accruing while the transaction lands, so closing a loan entirely needs the debt plus a small (0.2%) buffer in the margin account. If the account is short, the button reads **Insufficient Balance** and the tab offers **Flash repay** instead.
+</Note>
+
+## Flash repay
+
+**Flash repay** (on the Margin positions map, in the Repay tab and on Portfolio → Trader) unwinds the whole account for you, in steps:
+
+| Step | What it does |
+|---|---|
+| 1. Perps | Closes every Phoenix position (reduce-only market orders) and brings the USDC back to the margin account |
+| 2. Farm | Redeems every Kamino receipt back to its underlying token |
+| 3. Swap | For each loan the account can't cover in that same token, swaps other holdings into it (stables first, then the largest holding) through the best route |
+| 4. Repay | Repays every loan in full and closes its debt position |
+| 5. Transfer (optional) | **Flash transfer all to wallet** (on the Transfer tab) also withdraws everything left to your wallet |
+
+Each step is its own transaction and wallet approval, with progress shown as it goes. You don't have to watch it: close the window (×, Escape or a click outside) and it keeps running as a small card at the bottom right with the current step and a progress bar. **View** opens the full window again; once it finishes, the card shows Done or the error and can be closed. It is **not** one atomic transaction. Every step re-reads the chain first, so if a run stops half-way you simply run it again and it continues with whatever is left. It never repays more than you owe; if the account can't cover its debt, the swap step stops and shows the shortfall.
+
+## After repaying
+
+When all debt is repaid the health factor reads **No debt**. Your collateral stays in the margin account; withdraw it with [Transfer Collateral](/solana/guides/margin/transfer-collateral) (Margin account → Portfolio account).
+
+## Next steps
+
+<CardGroup cols={2}>
+  <Card title="Transfer collateral" icon="arrow-right-arrow-left" href="/solana/guides/margin/transfer-collateral">
+    Move tokens back to your wallet.
+  </Card>
+  <Card title="Health factor" icon="heart-pulse" href="/solana/guides/margin/health-factor">
+    How repaying improves your account.
+  </Card>
+</CardGroup>

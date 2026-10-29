@@ -1,0 +1,47 @@
+---
+title: "Liquidation"
+description: "What happens when a margin account's health factor reaches 1.10, and how to avoid it."
+mode: "wide"
+---
+
+import RiskNotice from "/snippets/solana/risk-notice.mdx";
+
+When a margin account's health factor is **1.10 or below**, anyone can liquidate it. Liquidation exists to make sure lenders are repaid while the account still has more collateral than debt.
+
+## How it works
+
+1. A liquidator calls the program's public liquidation instruction on your account.
+2. They **repay some of your debt** with their own tokens.
+3. In return they **seize collateral** worth the repaid debt **plus a liquidation bonus** (set per asset, capped at 5%; each Earn pool page shows its bonus).
+4. If needed, the liquidation can first unwind positions the account holds on other venues (for example a Kamino supply or a Phoenix position) so there's collateral to seize.
+
+The program checks the account was liquidatable before, and that the liquidator received at least the minimum they asked for.
+
+## What it costs you
+
+You lose the seized collateral, including the bonus paid to the liquidator. The debt that was repaid is gone too, so your equity drops by roughly the bonus on each liquidation. The rest of the account stays yours.
+
+## How to avoid it
+
+- Watch the health factor and the **Collateral Left Before Liquidation** figure on Margin.
+- Keep well above the 1.15 safety floor when markets are volatile.
+- Repay debt or add collateral when the health factor drifts down.
+- Remember what moves it: collateral prices, borrow interest, perp P&L and funding, and vault share prices.
+- Use [Flash repay](/solana/guides/margin/repay#flash-repay) to unwind quickly.
+
+## Watching the whole protocol
+
+[Analytics](/solana/guides/analytics) lists every account's health, the accounts that can be liquidated right now and the debt at risk.
+
+<RiskNotice />
+
+## Next steps
+
+<CardGroup cols={2}>
+  <Card title="Repay" icon="rotate-left" href="/solana/guides/margin/repay">
+    Pay down debt or use Flash repay.
+  </Card>
+  <Card title="Analytics" icon="chart-pie" href="/solana/guides/analytics">
+    Accounts at risk across the protocol.
+  </Card>
+</CardGroup>

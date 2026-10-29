@@ -1,0 +1,39 @@
+---
+title: "Liquidation Bots"
+description: "Eligibility, allowances, full-debt funding, external collateral, and reconciliation."
+mode: "wide"
+---
+
+## Candidate discovery
+
+Discover SmartAccounts from Registry/account events and indexed or RPC account readers. Read `RiskEngine.liquidation_snapshot` for current valuation and the unpriceable-plain-collateral flag. HF at or below 1.1 is a candidate condition, not guaranteed execution or profit.
+
+## Prepare funding and authorization
+
+For each recognized debt leg, resolve the underlying address and current lending-pool debt. Fund the liquidator with the exact test-token variant and enough allowance headroom for interest. Approve **AccountManager as spender**, using native token units and a suitable expiration ledger. The liquidation method calls token `transfer_from` from the liquidator directly to the pool. Approving SmartAccount or sending tokens to it is not the required liquidator funding path.
+
+## Execute
+
+Call `AccountManager.liquidate(liquidator, smart_account)` with liquidator authorization. There is no partial debt parameter or borrower-signature requirement. Manager pause, missing configuration, external liquidity, oracle failure, insufficient allowance, and transaction resource limits can all prevent success.
+
+The current implementation:
+
+1. Takes one eligibility snapshot and rejects healthy accounts or unpriceable plain collateral.
+2. Accrues each recognized pool, transfers debt payment from the liquidator, and clears corresponding debt shares.
+3. Batch-withdraws Blend collateral to the liquidator and hands AMM LP tokens to the liquidator without forcing a router exit.
+4. Sweeps all remaining direct collateral and emits `Trader_Liquidate_Event`.
+
+Unrecognized debt symbols are reported and prevent the blanket debt-cleared flag. Inspect remaining shares/debt after execution. The SmartAccount is not deactivated by this function.
+
+## Proceeds and limits
+
+The liquidation configuration getter reports a 10% bonus value, but current execution does not compute a capped debt-plus-bonus payout or return surplus through `sweep_to_split`. Estimate proceeds using actual external exit value and LP liquidity. An LP token handed to the liquidator is not already converted underlying.
+
+Simulate the complete account shape and approval state. An indexed liquidation candidate, a quoted bonus, or a successful simple-account test does not establish that a multi-position transaction fits the network budget.
+
+
+## Source reference
+
+- `Protocol_V1_Soroban_testnet/contracts/AccountManagerContract/src/account_manager.rs`
+- `Protocol_V1_Soroban_testnet/contracts/RiskEngineContract/src/risk_engine.rs`
+- `Vanna_Finance_Backend/apps/stellar/lib/margin-utils.ts`

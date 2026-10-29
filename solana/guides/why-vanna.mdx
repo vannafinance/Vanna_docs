@@ -1,0 +1,51 @@
+---
+title: "Why Vanna"
+description: "One margin account, many collaterals, and a loan you can use anywhere on Solana."
+mode: "wide"
+---
+
+On most of Solana a loan stays inside the protocol that issued it: borrow on a money market and you can only hold the borrowed tokens there. Vanna is a **credit layer**: the loan lives in your own margin account, and that account can act across Solana while the protocol keeps checking that it stays solvent.
+
+## What Vanna adds
+
+### 1. One account, many collaterals
+
+Deposit SOL, USDC, liquid-staked SOL (JitoSOL, JupSOL), JupUSD and tokenized stocks (NVDAx, GOOGLx, AAPLx, TSLAx) into a single margin account. Every asset counts toward one health factor, so you don't manage a separate loan per collateral.
+
+### 2. Borrow up to 10× and keep using the loan
+
+Borrow SOL, USDC or USDT from Vanna's pools (one asset, or two at once with **Dual Borrow**) and the borrowed tokens stay in your margin account. From there you can:
+
+- **Swap** on Jupiter or Titan ([Spot](/solana/guides/trade/spot-swap))
+- **Long or short** SOL, ETH, BTC, TSLA, META on Phoenix ([Perps](/solana/guides/perps/overview))
+- **Earn** on Kamino, Perena or delta-neutral basis vaults ([Farm](/solana/guides/farm/overview))
+
+Receipts and positions you open stay in the margin account and keep counting as collateral.
+
+### 3. Lenders earn real borrow interest
+
+Lenders supply SOL, USDC or USDT on [Earn](/solana/guides/earn/overview) and receive vTokens that grow as borrowers pay interest.
+
+### 4. Prediction shares that earn while you wait
+
+On [Predict](/solana/guides/predict/overview) you buy Yes / No on World.xyz events. Matching Yes and No shares are paired and lent into Vanna's USDC pool, so your position earns interest until the event resolves.
+
+## Safety built into every action
+
+Every action that could reduce your account's health (withdraw, borrow, swap, open a perp, move into a vault) runs a health check **on-chain** in the same transaction. If the account would end at or below a health factor of 1.10 the transaction fails, so it can't leave you liquidatable. See [Health Factor](/solana/guides/margin/health-factor).
+
+## What this is not
+
+- **Not real money.** Vanna's current app runs on a Solana mainnet fork for testing. Test funds and balances exist only on the fork.
+- **Not risk-free.** Leverage, perp funding and vault share prices can move against you. Read [Liquidation](/solana/guides/margin/liquidation) before borrowing.
+
+## Next steps
+
+<CardGroup cols={2}>
+  <Card title="How Vanna works" icon="diagram-project" href="/solana/guides/how-vanna-works">
+    Follow the money from lender to trader.
+  </Card>
+  <Card title="Getting Started" icon="rocket" href="/solana/guides/getting-started">
+    Sign in and mint test funds.
+  </Card>
+</CardGroup>

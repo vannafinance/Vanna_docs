@@ -1,0 +1,58 @@
+---
+title: "Health Factor"
+description: "The one number that decides whether your margin account is safe."
+mode: "wide"
+---
+
+```text
+Health factor = total collateral value (USD) ÷ total debt value (USD)
+```
+
+- **Collateral** is everything in your margin account at its oracle price: tokens, borrowed tokens still in the account, Kamino receipts, vault shares and your Phoenix perps collateral (with open P&L).
+- **Debt** is every loan, with interest accrued to now.
+- Every asset counts at **full value**: there are no per-asset collateral weights.
+
+With no debt the health factor is shown as **No debt**. Very large values show as **>100**.
+
+## Zones
+
+| Health factor | Label | What it means |
+|---|---|---|
+| 1.50 or more | **Safe** | Comfortable buffer |
+| 1.25 – 1.50 | **Healthy** | Fine, but a sharp move would bring you closer |
+| Above 1.10, below 1.25 | **At risk** | Orders that would take you between 1.15 and 1.25 show a warning; below 1.15 they're blocked |
+| **1.10 or below** | **Liquidation** | Anyone can liquidate the account |
+
+The app keeps a **1.15 safety floor**: it won't build a borrow, withdrawal or trade that would leave you below it. The program's hard rule is 1.10: it rejects any action that would leave the account at or below that.
+
+## Example
+
+You deposit $10,000 of SOL and borrow $5,000 USDC, which stays in the account.
+
+- Collateral = $10,000 SOL + $5,000 USDC = $15,000; debt = $5,000 → **HF 3.00**
+- You swap the $5,000 USDC into SOL: collateral is still $15,000 (now all SOL) → **HF 3.00**
+- SOL falls 60%: collateral = $6,000 → **HF 1.20**, close to the line
+- SOL falls 64%: collateral ≈ $5,400 → **HF 1.08**, liquidatable
+
+Moving value between assets inside the account (a swap, a Kamino supply, a vault deposit) barely changes the health factor, because what goes out comes back at about the same value. What moves it is **prices** and **debt**.
+
+## Where you see it
+
+Portfolio, Margin (stats, Account Info and the Liquidation bar), Spot, Perps and Farm all show your health factor, and every action shows it **before → after** before you sign.
+
+## Raising it
+
+- Deposit more collateral
+- Repay some debt
+- Close or reduce risky positions
+
+## Next steps
+
+<CardGroup cols={2}>
+  <Card title="Liquidation" icon="triangle-exclamation" href="/solana/guides/margin/liquidation">
+    What happens at 1.10 and how to avoid it.
+  </Card>
+  <Card title="Health factor (concept)" icon="book" href="/solana/learn/health-factor">
+    The math in more depth.
+  </Card>
+</CardGroup>

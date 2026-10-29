@@ -1,0 +1,37 @@
+---
+title: "Margin Swaps"
+description: "Jupiter v6 and Titan swaps from the margin account through margin_execute, reviewed by the validator and health-checked after."
+mode: "wide"
+---
+
+There is no dedicated swap instruction. A margin swap is a [`margin_execute`](/solana/developers/contracts/margin-execute) call whose target is Jupiter or Titan. The validator reads the route, and the core enforces the permit and checks health on the post-swap balances.
+
+## Jupiter v6
+
+Validator file: `programs/vanna_validator/src/jupiter.rs`. Program `JUP6LkbZbjS1jKKwapdHNy74zcZ3tLUZoi5QNyVTaV4`.
+
+- Only `route` and `shared_accounts_route`, exact-input, in owner mode.
+- No platform fee.
+- The margin is the user / transfer authority. Source and destination must be the margin's own vaults.
+- The spend cap is the route's `in_amount`. Jupiter's own minimum out is the slippage bound.
+
+## Titan
+
+Validator file: `programs/vanna_validator/src/titan.rs`. Program `T1TANpTeScyeqVzzgNViGDNrkQ6qHz9KrSBS4aNXvGT`.
+
+- Only `swap_route_v3`, with the margin as both payer and user.
+- Only config 3: keep the input token account open, keep wSOL output as wSOL.
+- No provider fee, token ledger or positive-slippage receiver.
+- The spend is capped at the routed amount. Titan's own minimum out is the slippage bound.
+
+Titan quotes come from Titan's API, which needs a server-side key. The margin account can't pay rent, so the client first creates, from the wallet, any of Titan's token accounts the route needs.
+
+## Best-of routing in the app
+
+`lib/solana/aggregator.ts` can quote Jupiter and Titan side by side and pick the larger output, or quote only the provider the caller names. The Spot page passes the aggregator the user picked in the swap card (Jupiter by default, or Titan), so only that one is quoted, and it swaps from the margin account. If Titan has no server key or no route, the card shows that error instead of falling back silently.
+
+## Notes
+
+- Token-2022 transfer fees are measured, not assumed. The spend cap and the health check use real balance deltas.
+- A swap that leaves the account at or below HF 1.10 (with debt) fails the whole transaction.
+- On the fork, cloned concentrated-liquidity pools can go stale. The app re-clones them from mainnet (`surfnet_resetAccount`) and retries the simulation. This is fork-only.

@@ -1,0 +1,43 @@
+---
+title: "Developer Overview"
+description: "Integrate with the Vanna credit layer on Solana: one core program, an oracle agent, a validator agent, and the Next.js app."
+mode: "wide"
+---
+
+This reference describes `vanna-credit-layer` (three Anchor programs) and `vanna-credit-backend` (the Next.js app) as they run on the hosted Surfpool **mainnet fork**.
+
+| Program | ID | Role |
+|---|---|---|
+| `vanna_credit_layer` (core) | `H37YVBG3eGtz89ofd7iDLc2PJgn12778392XeU2QJcGC` | Lending pools, margin accounts, health, liquidation, `margin_execute` |
+| `vanna_oracle` | `FXY5DRfekMUTbUp4uyCFpCZmCccrp6kPq3hTM4GRihnc` | Values every holding: tokens from its price book, the Phoenix venue from its market book |
+| `vanna_validator` | `6fND3vhtstp486iE6rsSNVUox3kcjNNRsSLAN7ZPs7th` | Decides which external calls a margin account may make |
+
+The core knows no price source and no external protocol. Adding a protocol or a price source means a new file in the oracle or the validator, then an admin registration. The core is not redeployed.
+
+Start with [Architecture](/solana/developers/architecture), [Configured Accounts](/solana/developers/deployed-contracts), and [Math Reference](/solana/developers/math-reference).
+
+## Repository map
+
+| Path | Responsibility |
+|---|---|
+| `vanna-credit-layer/programs/vanna_credit_layer` | Core program: `instructions/`, `state/`, `math/`, `risk_engine.rs`, `interface.rs` |
+| `vanna-credit-layer/programs/vanna_oracle` | Oracle agent: `price_book.rs`, `market_book.rs`, `sources.rs` (Scope, Pyth, Kamino), `phoenix.rs`, `perena.rs`, `basis.rs` |
+| `vanna-credit-layer/programs/vanna_validator` | Validator agent: `kamino.rs`, `jupiter.rs`, `titan.rs`, `phoenix.rs` (Phoenix + Ember), `perena.rs`, `basis.rs` |
+| `vanna-credit-layer/programs/vanna_credit_layer/src/tests` | LiteSVM unit and integration tests, many against real mainnet program binaries |
+| `vanna-credit-layer/scripts` | `devnet.ts` (one command per core instruction), `integrations-fork.ts` (fork setup and integrations), `bootstrap-fork.sh` |
+| `vanna-credit-backend/app` | Next.js routes: Earn, Margin, Trade (Spot, Perps), Farm, Predict, Portfolio, Analytics |
+| `vanna-credit-backend/lib/solana` | Client model: PDAs, oracle mirror, margin, `margin_execute`, Phoenix, Kamino, Jupiter, Titan, vaults |
+| `vanna-credit-backend/lib/account-model.ts` | Health factor, leverage and liquidation-price math used by every page |
+| `vanna-credit-backend/idl/vanna_credit_layer.json` | Core IDL consumed by the app |
+
+## Current scope
+
+- **Lending pools** for USDC, USDT and SOL. Lenders receive vTokens.
+- **One cross-margin account per wallet.** Every allowed token in it counts toward one health factor.
+- **Collateral** includes SOL, USDC, USDT, JitoSOL, JupSOL, JupUSD, the xStocks (NVDAx, GOOGLx, AAPLx, TSLAx), and receipt tokens from Kamino, Perena and the basis vaults.
+- **External calls through `margin_execute`**: Jupiter and Titan swaps, Kamino Lend supply / redeem, Phoenix perps (via Ember USDC ⇄ phUSD), Perena USD* vaults, and Vanna's delta-neutral basis vaults.
+- **Liquidation** that is permissionless and partial, plus an admin write-off for dust bad debt.
+
+<Note>
+There is no published SDK package. Copy the PDA helpers and instruction builders from `vanna-credit-backend/lib/solana` or `vanna-credit-layer/scripts/src`.
+</Note>

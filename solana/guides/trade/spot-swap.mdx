@@ -1,0 +1,64 @@
+---
+title: "Spot Swap"
+description: "Swap tokens inside your margin account through Jupiter or Titan."
+mode: "wide"
+---
+
+**Trade → Spot** swaps tokens **inside your margin account**. It's how you turn borrowed USDC into SOL (a leveraged long), SOL into USDC (de-risking), or move between any supported tokens without the funds ever leaving the account.
+
+<Frame caption="Spot: the swap card (via Jupiter) with its route, and the Margin account block beside it.">
+  <img src="/images/solana/trade/spot-swap.png" alt="Spot swap card via Jupiter paying 100 SOL to receive 33.83 GOOGLx, health factor 12.63 to 13.61, a one-hop Meteora DLMM route, and a Margin account panel with health factor, account leverage, borrowed and swappable SOL before and after" loading="lazy" decoding="async" />
+</Frame>
+
+<Steps>
+  <Step title="Pick the aggregator">
+    The card header reads **Swap via Jupiter**. Open the dropdown to switch to **Titan**. Jupiter is the default.
+  </Step>
+  <Step title="Choose what you pay">
+    Under **You Pay**, pick the token and amount, or use **25% / 50% / 75% / Max**. **Swappable** is what your margin account holds of that token.
+  </Step>
+  <Step title="Choose what you receive">
+    Under **You Receive**, pick the token. The quote fills in the amount you get.
+  </Step>
+  <Step title="Check the details">
+    The rate line shows the price and your health factor before → after. Expand it for **Price Impact**, **Slippage Tolerance** and **Min. Received**. Slippage is **Auto (0.5%)** by default; change it with the gear icon.
+  </Step>
+  <Step title="Check the route">
+    The **Route** card shows the hops and pools (for example *1 hop · Meteora DLMM*) and a badge for the aggregator that built it.
+  </Step>
+  <Step title="Swap">
+    Click **Swap** and approve. The swap runs on-chain from your margin account and is health-checked in the same transaction.
+  </Step>
+</Steps>
+
+## Jupiter or Titan
+
+You choose the aggregator; only that one is quoted, and the swap runs through it.
+
+| Aggregator | What it does |
+|---|---|
+| **Jupiter** (default) | Jupiter's best route across Solana AMMs |
+| **Titan** | Titan's meta-aggregated route. If Titan isn't available on the server or finds no route, the card says so; switch back to Jupiter |
+
+Either way the swap executes from your margin account through Vanna's program, which only allows the routes and settings its validator approves and checks the account's health afterwards.
+
+## The Margin account block
+
+Beside the swap card: your health factor before → after with its bar, **Account leverage** before → after, **Borrowed**, and the **Swappable** balance of the token you're paying before → after. **Position History** below lists your past swaps.
+
+## Things to know
+
+- Swapping doesn't change your debt. It changes what your collateral is made of, so your health factor barely moves unless prices move afterwards.
+- A swap that would leave the account below the safety floor is blocked before you sign.
+- Without a wallet connected, only the swap card is shown.
+
+## Next steps
+
+<CardGroup cols={2}>
+  <Card title="Trade perps" icon="chart-line" href="/solana/guides/perps/overview">
+    Long or short with leverage on Phoenix.
+  </Card>
+  <Card title="Farm" icon="seedling" href="/solana/guides/farm/overview">
+    Put swapped tokens to work in a vault.
+  </Card>
+</CardGroup>

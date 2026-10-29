@@ -1,0 +1,112 @@
+---
+title: "Configured Accounts"
+description: "Program IDs, mints, and external protocol addresses used by the hosted mainnet fork."
+mode: "wide"
+---
+
+Values come from `vanna-credit-layer` (`Anchor.toml`, `deployments/hosted-fork.json`, the agents' constants) and `vanna-credit-backend/lib/solana`. They describe the hosted **Surfpool mainnet fork**, which clones mainnet accounts on first use.
+
+## Endpoints
+
+| Setting | Value |
+|---|---|
+| App | `https://test.vanna.finance` (Solana in the chain switcher), behind an access code |
+| Fork RPC | `https://rpc-devnet.solana.vanna.finance` |
+| Fork WebSocket | `wss://rpc-devnet.solana.vanna.finance` |
+| Local RPC | `http://127.0.0.1:8899` |
+
+## Vanna programs
+
+| Program | ID |
+|---|---|
+| `vanna_credit_layer` | `H37YVBG3eGtz89ofd7iDLc2PJgn12778392XeU2QJcGC` |
+| `vanna_oracle` | `FXY5DRfekMUTbUp4uyCFpCZmCccrp6kPq3hTM4GRihnc` |
+| `vanna_validator` | `6fND3vhtstp486iE6rsSNVUox3kcjNNRsSLAN7ZPs7th` |
+
+Margin limits on the hosted fork (`deployments/hosted-fork.json`): at most 3 debts and 2 venues per margin account.
+
+## Mints
+
+| Symbol | Mint | Token program | Role |
+|---|---|---|---|
+| SOL (wSOL) | `So11111111111111111111111111111111111111112` | SPL Token | Pool + collateral |
+| USDC | `EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v` | SPL Token | Pool + collateral |
+| USDT | `Es9vMFrzaCERmJfrF4H2FYD4KCoNkY11McCe8BenwNYB` | SPL Token | Pool + collateral |
+| JitoSOL | `J1toso1uCk3RLmjorhTtrVwY9HJ7X8V9yYac6Y7kGCPn` | SPL Token | Collateral only |
+| JupSOL | `jupSoLaHXQiZZTSfEWMTRRgpnyFm8f6sZdosWBjx93v` | SPL Token | Collateral only |
+| JupUSD | `JuprjznTrTSp2UFa3ZBUFgwdAmtZCq4MQCwysN55USD` | SPL Token | Collateral only |
+| NVDAx | `Xsc9qvGR1efVDFGLrVsmkzv3qi45LTBjeUKSPmx9qEh` | Token-2022 | Collateral only |
+| GOOGLx | `XsCPL9dNWBMvFtTmwcCA5v3xWPSMEBCszbQdiLLq6aN` | Token-2022 | Collateral only |
+| AAPLx | `XsbEhLAtcf6HdfpFZ5xEMdqW8nfAvcsP5bdudRLJzJp` | Token-2022 | Collateral only |
+| TSLAx | `XsDoVfqeBukxuZHWhdvWHBhgEHjGNst4MLodqsJHzoB` | Token-2022 | Collateral only |
+
+PDAs for the protocol, assets, reserves, share mints, margin accounts, debts, integrations and the oracle's books are derived. See [PDAs](/solana/developers/sdk/pdas).
+
+## Oracle sources
+
+| Role | Address |
+|---|---|
+| Kamino Scope program | `HFn8GnPADiny6XqUoWE8uRPPxb29ikn4yTuPa9MF2fWJ` |
+| Kamino Scope `OraclePrices` | `3t4JZcueEzTbVP6kLxXrL3VpWx45jDer4eqysweBchNH` |
+| Pyth Receiver | `rec5EKMGg6MxZYaMdyBfgwp4d5rB9T1VQH5pJv5LtFJ` |
+| Pyth push oracle | `pythWSnswVUd12oZpeFP8e9CVaEqJg25g1Vtc2biRsT` |
+
+## Integrations (`margin_execute` targets)
+
+| Program | Address | Used for |
+|---|---|---|
+| Kamino Lend (klend) | `KLend2g3cP87fffoy8q1mQqGKjrxjC8boSyAYavgmjD` | Supply / redeem in the main market |
+| Jupiter v6 | `JUP6LkbZbjS1jKKwapdHNy74zcZ3tLUZoi5QNyVTaV4` | Swaps |
+| Titan router | `T1TANpTeScyeqVzzgNViGDNrkQ6qHz9KrSBS4aNXvGT` | Swaps (`swap_route_v3`) |
+| Phoenix Eternal | `EtrnLzgbS7nMMy5fbD42kXiUzGg8XQzJ972Xtk1cjWih` | Perps |
+| Ember | `EMBERpYNE6ehWmXymZZS2skiFmCa9V5dp14e1iduM5qy` | USDC ⇄ phUSD |
+| Perena | `save8RQVPMWNTzU18t3GBvBkN9hT7jsGjiCQ28FpD9H` | USD* and USD* Junior vaults |
+| Basis vaults (`vanna_phoenix_vault`) | `GtuQoYxzytGKtLqQGkYrVbsaPHTZN5jboP25DrSmKvGr` | Delta-neutral basis vaults |
+
+## Kamino main market
+
+| Role | Address |
+|---|---|
+| Market | `7u3HeHxYDLhnCoErrtycNokbQYbWGzLs6JSDqGAv5PfF` |
+| SOL reserve | `d4A2prbA2whesmvHaL88BH6Ewn5N4bTSU2Ze8P6Bc4Q` |
+| USDC reserve | `D6q6wuQSrifJKZYpR1M8R4YawnLDtDsMmWM1NbBmgJ59` |
+| USDT reserve | `H3t6qZ1JkguCNTi9uzVKqQ7dvt2cum4XiXWom6Gn5e5S` |
+
+The cToken each reserve mints is registered as a collateral-only asset. Its address is in `lib/solana/kamino.ts`.
+
+## Phoenix
+
+| Role | Address |
+|---|---|
+| Exchange (global config, the venue key) | `2zskx2iyCvb6Stg7RBZkt1f6MrF4dpYtMG3yMvKwqtUZ` |
+| phUSD mint | `PhUsd11YkbjSaWjFncfAAmatntsjx3MgDR9B6g1ks3A` |
+
+Markets listed in the fork's market book: SOL, ETH and BTC at 5x; TSLA and META at 3x.
+
+## Yield vaults
+
+| Vault | Vault account | Share mint |
+|---|---|---|
+| SOL basis | `BLeEcGjJnbGQyDBeTgckreKnKD87xFDDBFTfQYEyZ1j7` | `zMv5AVEURXUVBNmTqvV7ecgXun4uRAq8m3JM13iW71B` |
+| ETH basis | `7PwzomohGgy1WQeDRaJQs31UQqhapJk67gCg4zoL7znv` | `6Xin8G4Lq9RPxEDc1NnZ4JAkqwLstnosbnu3AeQavVuZ` |
+| BTC basis | `6qFcw8qCq2oxh1iqpYAKLw3Z7tUMj6APP4tNuHyosveZ` | `7LgRZNY3XTLx95LL1YYz4q7cFLAwupwtEjYepBPvSJ1R` |
+| TSLA basis | `J23xTNSTgiWdVMgcDbQgJMRc5MWhQ4Q2TrcnbDwG8ejw` | `AzYyMurfA6r5hhBT2R294Zx6pMdeZfCYJ48AkcEnc43T` |
+| META basis | `3P5p9a4pr6NqRtZpbpPMhC2Kgg5AFjCHishuxP6FW1pJ` | `3EfoqbFDf7FSgtifJsyFiG1QFFStf72tm2n8iqyBh5pa` |
+| Perena USD* | `ECJGrTZ6QYMEwiEAnL4oReWF126uc22e9Lojy9qyCjHT` | `star9agSpjiFe3M49B3RniVU4CMBBEK3Qnaqn3RGiFM` |
+| Perena USD* Junior | `FbsiAonbNrC3EKWMrZxx9iSc5Q7e7zSAkro4tD8dQQJS` | `3AJYCjrhKitmBd8tRUurPA5dGHCAQh6A8L9DkuSC37Rm` |
+
+<Note>
+The basis-vault program is deployed on the fork only. It is not on public mainnet yet.
+</Note>
+
+## Predict
+
+| Role | Address |
+|---|---|
+| World.xyz market program | `prediCtPZCttYMvm2W3PtxmMxLmT1dtN7riU6Cxh6tM` |
+| CASH mint | `CASHx9KJUStyftLFWGvEVf59SGeG9sh5FfcnZMVPCASH` |
+| `outcome_yield_pool` | `4kFzca1u9TUAVK7BjJZ5vVtfJ2QRATs38vN8Bq6qZwG3` |
+
+## Verify
+
+Read `ProtocolConfig`, each `AssetConfig` and `Reserve`, the oracle's `PriceBook`, and a known margin PDA. Compare the deployed program data against the SHA-256 hashes in `deployments/hosted-fork.json`. A reset fork is a new world: user margin addresses derive from the wallet, not from a constant table.

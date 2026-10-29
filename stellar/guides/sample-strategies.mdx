@@ -1,0 +1,34 @@
+---
+title: "Sample Strategies"
+description: "Worked testnet examples that combine Vanna borrowing, Earn and Farm. Illustrations, not yield promises."
+mode: "wide"
+---
+
+import RiskNotice from "/snippets/stellar/risk-notice.mdx";
+
+These are testnet workflows that combine Vanna borrowing, Earn and Farm. They show how the pieces fit; they are not promises of positive carry, fixed yield or price neutrality.
+
+<CardGroup cols={2}>
+  <Card title="Cross-Pool Rate Carry" icon="arrows-rotate" href="/stellar/guides/strategies/cross-pool-rate-carry">
+    Borrow a token on Vanna and supply the same token to Blend.
+  </Card>
+  <Card title="Parallel Rate Carry" icon="layer-group" href="/stellar/guides/strategies/parallel-rate-carry">
+    Run XLM and BLUSDC carry legs side by side with Dual Borrow.
+  </Card>
+  <Card title="Earn, Borrow, and Hedge" icon="scale-balanced" href="/stellar/guides/strategies/earn-borrow-hedge">
+    Keep an Earn position while running a separate margin position.
+  </Card>
+  <Card title="Dual Yield Stack" icon="coins" href="/stellar/guides/strategies/dual-yield-stack">
+    Earn on Vanna's pools and on Blend at the same time.
+  </Card>
+</CardGroup>
+
+## Rules for every strategy
+
+- **Use the exact token.** BLUSDC for Blend, SoUSDC for Soroswap, AqUSDC for Aquarius.
+- **Check today's rates** on Earn (Borrow APY) and Farm (supply APY) before you start.
+- **One account, one health factor.** Every leg in a margin account shares its debt and liquidation risk.
+- **Earn vTokens don't back margin.** vTokens in your wallet are not collateral for your margin account.
+- **Spot only.** Stellar has no perps or options, so a hedge has to be built from spot positions.
+
+<RiskNotice />

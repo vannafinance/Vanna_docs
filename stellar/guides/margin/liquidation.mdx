@@ -1,0 +1,53 @@
+---
+title: "Liquidation"
+description: "What happens when a margin account's health factor reaches 1.10, and how to avoid it."
+mode: "wide"
+---
+
+import HealthFactorWarning from "/snippets/stellar/health-factor-warning.mdx";
+import RiskNotice from "/snippets/stellar/risk-notice.mdx";
+
+A margin account with debt can be liquidated when its health factor is **1.10 or below**. There is no grace period, and anyone can liquidate it; your signature isn't needed.
+
+<HealthFactorWarning />
+
+## What happens
+
+<Steps>
+  <Step title="A liquidator repays all your debt">
+    The liquidator pays every loan in full, from their own tokens, back to the Vanna pools.
+  </Step>
+  <Step title="Your Farm positions go to the liquidator">
+    Blend supply is withdrawn straight to the liquidator, and Soroswap / Aquarius LP tokens are transferred to them.
+  </Step>
+  <Step title="Your remaining tokens go to the liquidator">
+    Every token left in the margin account is swept to the liquidator.
+  </Step>
+</Steps>
+
+<Warning>
+**Liquidation takes all remaining collateral**, not just the debt plus a bonus. Nothing above the debt comes back to you. The account itself stays open (empty, with no debt) and can be used again.
+</Warning>
+
+## How to avoid it
+
+<CardGroup cols={2}>
+  <Card title="Watch the buffer" icon="gauge" href="/stellar/guides/margin/health-factor">
+    The Liquidation card shows how many dollars you can lose before 1.10. Keep it large.
+  </Card>
+  <Card title="Repay or add collateral" icon="hand-holding-dollar" href="/stellar/guides/margin/repay">
+    Repaying debt or depositing more both raise the health factor straight away.
+  </Card>
+</CardGroup>
+
+- Remember that **interest** keeps adding to your debt, and a stablecoin loan against XLM loses health when XLM falls.
+- **Farm positions can't repay a loan directly.** Exit them first, which takes extra transactions; don't leave it to the last minute.
+- **Analytics → Liquidations** shows accounts that can be liquidated now and how close others are.
+
+## Settling an account yourself
+
+Separately from liquidation, the contract offers owner-authorized **settlement**: it unwinds Farm positions into the margin account and repays debt from its balances. What's left stays in the account until you withdraw it.
+
+<RiskNotice />
+
+See [Health Factor](/stellar/guides/margin/health-factor) and the [technical liquidation page](/stellar/learn/liquidation).

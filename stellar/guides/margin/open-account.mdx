@@ -1,0 +1,33 @@
+---
+title: "Open a Margin Account"
+description: "Create your personal Stellar smart account in one signature before depositing collateral or borrowing."
+mode: "wide"
+---
+
+You need a margin account to borrow, swap on Spot or farm. You don't need one to lend on Earn.
+
+<Steps>
+  <Step title="Connect the owner wallet">
+    Connect the wallet that will own the account. Only this wallet can use it. See [Connect Your Wallet](/stellar/guides/connect-wallet).
+  </Step>
+  <Step title="Start on the Margin page">
+    Open **Margin**. If you don't have an account yet, the action button reads **Create your Margin Account**. Click it.
+  </Step>
+  <Step title="Create Margin Account">
+    The first dialog explains the steps. Click **Create Your Account**.
+  </Step>
+  <Step title="Review and Sign Agreement">
+    Read the terms (collateral requirement, borrowing limits, variable interest, liquidation risk). Tick **I have read and agree to the VANNA Borrow Agreement** and click **Sign Agreement**.
+  </Step>
+  <Step title="Approve in your wallet">
+    Sign the `create_account` transaction. When it confirms, the Margin page loads your new account.
+  </Step>
+</Steps>
+
+## Good to know
+
+- **Two addresses.** Your wallet starts with **G**. Your margin account is a contract and starts with **C**. They hold separate balances.
+- **Found automatically.** On reconnect, Vanna finds your account on-chain. You never need a second one.
+- **Closing.** Closing is a contract operation, not a button on the Margin page. An account can't be closed in the ledger it was created in, and closing requires zero debt; it unwinds remaining positions and sends the tokens back to you. Repaying or being liquidated does not close an account by itself.
+
+Next: [Deposit Collateral](/stellar/guides/margin/deposit-collateral).

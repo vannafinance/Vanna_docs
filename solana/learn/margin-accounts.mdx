@@ -1,0 +1,42 @@
+---
+title: "Margin Accounts"
+description: "One PDA per wallet. Live vault balances of allowed tokens are the collateral. Debt is shares."
+mode: "wide"
+---
+
+`MarginAccount` is seeded `["margin", authority]`. It records only its active **debts** and **venues** (for example Phoenix). It has no collateral ledger.
+
+## Collateral
+
+Each margin vault is the associated token account of the margin PDA for one mint. Its live balance is the collateral. Every token on the protocol's **allowed-token list** counts, however it reached the vault: deposit, borrow, swap, a Kamino or vault receipt, or a plain transfer.
+
+- Tokens off the list count for nothing.
+- Each token can be capped per margin (`max_collateral_per_margin`). Anything above the cap doesn't count.
+- A frozen vault counts for nothing.
+- A token with `collateral_enabled` off stops backing new debt, but liquidation still values and seizes it.
+
+A donation into one margin's vault can't change anyone else's position. Shared reserve vaults are the opposite: they keep `accounted_liquidity_assets` and ignore surprise transfers.
+
+## Debt
+
+`DebtPosition` stores **shares**, not a token amount. Interest grows `Reserve.total_borrow_assets`, so one reserve update reprices every borrower.
+
+```text
+user_debt_tokens = ceil(user_shares × total_borrow_assets / total_borrow_shares)
+```
+
+## Venues
+
+A venue is a protocol where the margin holds positions that aren't tokens. Phoenix is the venue today: the margin account is its own Phoenix trader, and the whole trader account counts as one collateral line, valued by the oracle. See [Perps on Phoenix](/solana/learn/perps-on-phoenix).
+
+## Limits
+
+Each margin holds at most a fixed number of debts and venues (3 and 2 on the hosted fork). The allowed-token list is bounded too, so every health scan has a fixed cost and a liquidation always fits in one transaction.
+
+## Lifecycle
+
+```text
+create → deposit → borrow → margin_execute (swap / farm / perps / vaults)
+                         ↘ repay → withdraw → reclaim rent → close
+                         ↘ liquidate (HF ≤ 1.10)
+```

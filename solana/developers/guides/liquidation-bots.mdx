@@ -1,0 +1,27 @@
+---
+title: "Liquidation Bots"
+description: "Watch health factors, unwind venues, repay one debt, seize one token. Permissionless."
+mode: "wide"
+---
+
+Loop:
+
+1. **Enumerate margin accounts.** Index `MarginCreated` events, or scan program accounts on a cluster that supports it.
+2. **Value each account** the way the oracle does: every allowed token in its vaults (up to each cap), its Phoenix trader equity, and every debt at accrued value. `lib/account-model.ts` and `lib/solana/oracle.ts` mirror the program.
+3. **Pick candidates** with HF ≤ 1.10.
+4. **Choose a pair**: one debt to repay and one allowed token to seize. Prefer the largest debt and the most liquid collateral.
+5. **Unwind venues if needed.** If the account has open Phoenix positions, pass reduce-only closes (and a collateral withdrawal) as `calls` in the same `public_liquidate`.
+6. **Liquidate** with `public_liquidate(calls, repay, min_seized)` and a conservative `min_seized`.
+
+## Economics
+
+You receive up to the repaid value × (1 + the token's liquidation bonus, at most 5%). Near HF 1 the multiplier shrinks to the health factor, so a solvent margin is never pushed into bad debt. Repay is capped at 50% of the debt unless HF ≤ 1 + bonus or the debt is worth $100 or less.
+
+Seized receipt tokens (Kamino cTokens, Perena shares, basis-vault shares) are yours to redeem from the issuing protocol.
+
+## Sanity checks
+
+- Debts need fresh prices. Collateral is counted at its reported value, so stale dust can't block you.
+- The two settled prices must be fresh and within confidence.
+- A healthy account must fail with `PositionHealthy`. If your bot thinks it can liquidate HF 2.0, the account set is wrong.
+- Liquidation events are emitted through self-CPI. Read them from inner instructions.

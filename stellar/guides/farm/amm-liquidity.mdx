@@ -1,0 +1,49 @@
+---
+title: "AMM LP Pools"
+description: "Add two-sided XLM / USDC liquidity on Soroswap or Aquarius from your margin account and earn trading fees."
+mode: "wide"
+---
+
+Adding liquidity puts two tokens from your margin account into a Soroswap or Aquarius pool. You get **LP shares** back in the margin account; they earn the pool's trading fees and count as collateral.
+
+| Pool | Tokens |
+|---|---|
+| Soroswap XLM / SoUSDC | XLM + **SoUSDC** |
+| Aquarius XLM / AqUSDC | XLM + **AqUSDC** |
+
+<Frame caption="The Soroswap XLM / SoUSDC pool page: reserves, fee and total LP shares on top, your LP position on the left, Add Liquidity on the right. Click the image to zoom.">
+  <img src="/images/stellar/farm/farm-soroswap-lp.png" alt="Farm XLM / SoUSDC LP Soroswap pool page with XLM Reserve 219.40K, SoUSDC Reserve 37.24K, Fee Rate 0.30% and Total LP Shares 87.44K, a My LP Position chart with 599.38 LP shares worth $510.80 and 0.69% share of pool, and an Add Liquidity form with 10 XLM and 1.70 SoUSDC, showing You will receive about 3.99 LP shares backed by 10 XLM plus 1.70 SoUSDC" loading="lazy" decoding="async" />
+</Frame>
+
+## Add liquidity
+
+<Steps>
+  <Step title="Open the pool">
+    On **Farm → LP/Multiple Assets**, click the pair.
+  </Step>
+  <Step title="Enter one side">
+    On **Add Liquidity**, type an amount for either token. The other side fills in automatically from the pool's live price (shown as "1 XLM ≈ … SoUSDC"). **Margin** under each field is what your account holds.
+  </Step>
+  <Step title="Check the summary">
+    **You will receive** (estimated LP shares), **Backed by** (both amounts) and **Share of pool**.
+  </Step>
+  <Step title="Sign">
+    Approve the transaction.
+  </Step>
+</Steps>
+
+<Tip>
+You need **both** tokens in the margin account. Get SoUSDC or AqUSDC by [borrowing](/stellar/guides/margin/borrow) it, [swapping](/stellar/guides/trade/spot-swap) for it, or [transferring](/stellar/guides/margin/transfer-collateral) it in.
+</Tip>
+
+## Remove liquidity
+
+On **Remove Liquidity**, choose how many LP shares to burn (100% uses your exact balance) and sign. Both tokens return to your **margin account**. Removing liquidity doesn't repay debt or send anything to your wallet.
+
+## Good to know
+
+- **Collateral value is conservative.** The Risk Engine values an LP position at twice the smaller side of its share of the reserves, which can be a little less than a DEX shows.
+- **Impermanent loss.** If XLM moves against USDC, your LP holds more of the falling token. With borrowed funds, that loss hits your health factor.
+- **Liquidation.** If the account is liquidated, LP shares are transferred to the liquidator as they are.
+
+See [Health Factor](/stellar/guides/margin/health-factor).

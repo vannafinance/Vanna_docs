@@ -1,0 +1,63 @@
+---
+title: "How Vanna Works"
+description: "Lenders, margin accounts, venues and the health check that ties them together."
+mode: "wide"
+---
+
+Vanna has two sides: **lenders** who supply assets to pools, and **margin accounts** that borrow from those pools and put the loan to work on other Solana protocols.
+
+## The pieces
+
+| Piece | What it is |
+|---|---|
+| **Lending pools** | One pool per lendable asset (SOL, USDC, USDT). Lenders deposit and receive vTokens (vSOL, vUSDC, vUSDT) that grow as interest accrues. |
+| **Margin account** | A program-owned account per wallet. It holds your collateral, the tokens you borrowed and every receipt or position you open. |
+| **Venues** | The protocols a margin account can act on: Jupiter and Titan (swaps), Phoenix (perps), Kamino (lending), Perena and Vanna's basis vaults (yield). |
+| **Oracle** | Prices for every asset, from Kamino Scope first and Pyth as fallback. The app shows each source and its freshness on the Margin page. |
+| **Health check** | Run on-chain after any action that could reduce health. The account must stay above a health factor of 1.10. |
+
+## Follow the money
+
+<Steps>
+  <Step title="Lenders supply">
+    A lender supplies USDC on Earn and receives vUSDC. The USDC sits in the pool, ready to be borrowed.
+  </Step>
+  <Step title="A trader deposits collateral">
+    A trader opens a margin account and deposits collateral, for example SOL, USDC or TSLAx.
+  </Step>
+  <Step title="The trader borrows">
+    The trader borrows USDC from the pool. The USDC moves into the trader's margin account, not their wallet, and the account records the debt.
+  </Step>
+  <Step title="The loan goes to work">
+    From the margin account the trader swaps, opens a perp, or moves into a Farm vault. Each result (tokens, kSOL, vbSOL, a Phoenix position) stays in the account and counts as collateral.
+  </Step>
+  <Step title="Interest flows back">
+    Borrowers pay interest that accrues to the pool. Lenders' vTokens are worth more underlying over time.
+  </Step>
+  <Step title="Unwind">
+    The trader closes positions and repays (or uses Flash repay to do it all in one flow), then withdraws what's left.
+  </Step>
+</Steps>
+
+## Account health
+
+```text
+Health factor = total collateral value (USD) ÷ total debt value (USD)
+```
+
+Every asset counts at its full oracle value, with no per-asset weighting. At **1.10 or below** the account can be liquidated. The app blocks withdrawals and new borrows that would take you under a **1.15** safety floor, so you always keep a buffer. More in [Health Factor](/solana/guides/margin/health-factor).
+
+## Predict
+
+Predict is a separate flow on World.xyz markets. When you hold matching **Yes and No** shares of the same market, Vanna pairs them, merges them back into USDC and lends that USDC in its pool, so the pair earns interest until the event resolves. See [Earn While You Wait](/solana/guides/predict/earn-while-you-wait).
+
+## Next steps
+
+<CardGroup cols={2}>
+  <Card title="Getting Started" icon="rocket" href="/solana/guides/getting-started">
+    Sign in and mint test funds.
+  </Card>
+  <Card title="Architecture" icon="sitemap" href="/solana/developers/architecture">
+    The programs behind it, for developers.
+  </Card>
+</CardGroup>

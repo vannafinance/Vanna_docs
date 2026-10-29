@@ -1,0 +1,83 @@
+---
+title: "Frontend and Server APIs"
+description: "Current routes, wallet flows, state, and feature availability."
+mode: "wide"
+---
+
+The Stellar app lives in the `Vanna_Finance_Backend` monorepo at `apps/stellar` (package `@vanna/stellar-app`). It is a Next.js application with both the frontend screens and their server API routes. Header, sign-in dialog, funds modal and mascot come from the shared workspace package `packages/shared`, which the Solana app also uses. The live testnet build is at [test.vanna.finance](https://test.vanna.finance).
+
+## Screens
+
+| Route | Implemented behavior |
+|---|---|
+| `/` | Margin (the header's **Margin** link): Leverage your Assets, Repay Loan, Transfer Collateral, account info, liquidation meter, positions |
+| `/margin` | Same Margin screen |
+| `/portfolio` | Net worth, net earnings, health factor; Lender / Trader / Balances tabs |
+| `/earn`, `/earn/[id]` | Four lending markets (XLM, BLUSDC, AqUSDC, SoUSDC), supply and receipt redemption |
+| `/trade/spot` | Margin-account swaps through Soroswap or Aquarius, with health-factor preview and route |
+| `/trade/perps`, `/trade/options` | Redirect to `/trade/spot` |
+| `/farm`, `/farm/[id]` | Blend single-asset supply (XLM, BLUSDC) and Soroswap / Aquarius LP pools |
+| `/analytics` | Protocol risk Overview (`/analytics/overview2` maps to the same item) |
+| `/analytics/positions`, `/analytics/positions/[address]` | Address lookup and distribution by health, leverage and holdings |
+| `/analytics/accounts/[address]` | One margin account: health, what-if slider, holdings, recent events |
+| `/analytics/liquidations`, `/analytics/top-accounts`, `/analytics/alerts` | Liquidation candidates and history, largest borrowers and activity feed, derived alerts |
+| `/analytics/pools`, `/analytics/collateral`, `/analytics/prices` | Lending pools and the on-chain rate curve, collateral assets, Reflector prices |
+| `/analytics/what-if` | Read-only repricing of the account snapshot (also reached from `/analytics/stress-test`) |
+| `/analytics/risk-explorer`, `/analytics/risk-explorer/*` | Scenario hub and 12 stress scenarios run on the live account snapshot |
+| `/analytics/positions-advanced` | Collateral-type, correlated-group and borrow-rate views |
+| `/copilot` | Conversation, plan approval and execution, with a health / auto-approve / positions / recents sidebar |
+| `/rewards` | "Coming soon" placeholder |
+| `/stats` | Separately gated Hubble (mainnet) stats; 404 unless `STATS_ENABLED="true"` |
+
+There is no Pro/Lite mode in the current app. A visible pool row is not proof of an enabled controller route: the Aquarius config also has an XLM/USDT pool, which Farm hides (`HIDDEN_POOL_IDS`); the lending markets remain the four documented assets.
+
+## Wallets and state
+
+The **Sign in to Vanna** dialog (`packages/shared/v4/connect-modal.tsx`) offers:
+
+| Option | Status on Stellar testnet |
+|---|---|
+| Freighter | Live |
+| OneKey | Live |
+| LOBSTR | Shown as "Soon" (its extension signs for mainnet only) |
+| Email code, Google, X, GitHub (Dynamic) | Shown only when the build sets a Dynamic environment ID (`dynamicEnabled` in `packages/shared/dynamic/dynamic-session.tsx`) |
+
+`lib/wallet-adapter.ts` gives every call site the same `getAddress` / `requestAccess` / `signTransaction` shape for Freighter, OneKey and Dynamic. It still contains a Privy raw-hash signing path, but the current sign-in dialog does not offer Privy.
+
+Zustand stores hold wallet, selections, the margin account and transaction progress. TanStack Query and ledger-tick hooks refresh data. App-side safety constants live in `lib/account-model.ts`: `LIQ_HF = 1.1` (the contract line), `SAFE_HF = 1.15` (Spot blocks a swap that lowers health below it) and `WARN_HF = 1.25`. The Margin leverage slider is capped at 10x and by the RiskEngine borrow limit.
+
+## APIs
+
+All server routes are under `/api/stellar/`.
+
+| Route family | Purpose |
+|---|---|
+| `pools` | Cached shared lending-pool reads |
+| `account/[addr]` | Cached margin-account snapshot |
+| `mercury`, `mercury/events` | Server-side indexed-history proxies (Mercury credentials stay server-side) |
+| `faucet/blend` | Blend testnet faucet integration |
+| `copilot`, `copilot/guardian`, `copilot/log`, `copilot/status`, `copilot/investigate` | Copilot chat turn, guard, logging, status and read-only investigations |
+| `copilot/session*`, `copilot/wallet-bind`, `copilot/wallet-session`, `copilot/standing-orders` | Copilot sessions, wallet binding and standing orders |
+| `copilot/workflow/propose`, `copilot/workflow/[id]/*` | Plan proposal, approval, prepare-sign, submit, confirm, recheck, advance, reply |
+| `auth/*` | Login, callback, session and logout |
+| `analytics/accounts`, `analytics/events`, `analytics/oracle`, `analytics/pool-stats` | Live testnet reads (Registry account scan, event feed, Reflector, pool stats) |
+| `analytics/liquidations`, `analytics/top-borrowers`, `analytics/tvl`, `analytics/volume` | Hubble queries, gated by `STATS_ENABLED` |
+
+## Data limitations
+
+The Analytics account scan reads up to the 200 most recent margin accounts from the Registry. Risk Explorer scenarios run on that live snapshot; only their stress presets come from `lib/analytics/data/mock.ts`. Scenario outputs are conditional calculations, not forecasts. Derived equity is not realized profit, and history can be missing when Mercury or RPC retention has gaps.
+
+## Copilot integration
+
+`lib/copilot` includes intent routing, planning, asset readiness, plan sanitization, approval checks, wallet binding, conditional guards, write deduplication, auto-approve budgets and execution receipts. The agent runs inside the Next.js server and calls a configured MCP service. With Freighter, every transaction still opens the wallet for a signature. Presence of these code paths does not prove the external services are configured or available.
+
+
+## Source reference
+
+- `Vanna_Finance_Backend/apps/stellar/app`
+- `Vanna_Finance_Backend/apps/stellar/lib/constants.ts`
+- `Vanna_Finance_Backend/apps/stellar/lib/account-model.ts`
+- `Vanna_Finance_Backend/apps/stellar/lib/wallet-adapter.ts`
+- `Vanna_Finance_Backend/apps/stellar/lib/copilot/config.ts`
+- `Vanna_Finance_Backend/packages/shared/v4/connect-modal.tsx`
+- `Vanna_Finance_Backend/packages/shared/dynamic/dynamic-session.tsx`

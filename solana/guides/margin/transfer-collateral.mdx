@@ -1,0 +1,52 @@
+---
+title: "Transfer Collateral"
+description: "Move tokens between your wallet and your margin account."
+mode: "wide"
+---
+
+The **Transfer Collateral** tab moves a token between your wallet (**Portfolio account**) and your **Margin account**. The same form is on the **Transfer** tab of the header's [Deposit window](/solana/guides/faucet#the-rest-of-the-deposit-window).
+
+| Direction | What happens |
+|---|---|
+| **Portfolio account → Margin account** | Deposits into the margin account (creating it in the same transaction if needed) |
+| **Margin account → Portfolio account** | Withdraws to your wallet. Health-checked on-chain |
+
+<Steps>
+  <Step title="Open Transfer Collateral">
+    On **Margin**, open the third tab (or **Deposit → Transfer** in the header).
+  </Step>
+  <Step title="Set the direction">
+    The form shows **From** and **To**. Click the swap button between them to flip the direction.
+  </Step>
+  <Step title="Pick the token and amount">
+    Choose the token and type an amount or use the % chips. **Available** (into margin) or **Max** (out of margin) shows the most you can move.
+  </Step>
+  <Step title="Confirm">
+    Check the preview (collateral, health factor and liquidation buffer before → after), click **Transfer** and approve in your wallet.
+  </Step>
+</Steps>
+
+## The safe limit
+
+With debt, you can withdraw only what keeps the account's health factor at **1.15 or above** (the app's safety floor). The program itself rejects anything that would leave the account at 1.10 or below.
+
+With no debt, **100%** withdraws everything, down to the last unit.
+
+## Limits on the wallet side
+
+When you deposit SOL from the wallet, 0.05 SOL stays behind for transaction fees. Only collateral tokens can go into the margin account (USDT can come out but isn't offered as a deposit).
+
+## Move everything out
+
+**Flash transfer all to wallet** at the bottom of the form repays every loan (closing positions as needed) and then withdraws everything left to your wallet, in guided steps. See [Flash repay](/solana/guides/margin/repay#flash-repay).
+
+## Next steps
+
+<CardGroup cols={2}>
+  <Card title="Deposit collateral" icon="arrow-down-to-bracket" href="/solana/guides/margin/deposit-collateral">
+    Deposit and borrow in one transaction.
+  </Card>
+  <Card title="Repay" icon="rotate-left" href="/solana/guides/margin/repay">
+    Clear debt before withdrawing everything.
+  </Card>
+</CardGroup>

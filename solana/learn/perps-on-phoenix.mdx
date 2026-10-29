@@ -1,0 +1,50 @@
+---
+title: "Perps on Phoenix"
+description: "Long or short SOL, ETH, BTC, TSLA and META perpetuals on Phoenix from the margin account, valued in the same health factor."
+mode: "wide"
+---
+
+Vanna's perps run on **Phoenix**, Ellipsis Labs' perpetuals exchange. Vanna doesn't run its own perps engine. Instead, each margin account is its own Phoenix trader, and USDC from the margin, borrowed or not, funds its positions.
+
+## How a trade works
+
+<Steps>
+  <Step title="Wrap USDC">
+    Ember converts the margin's USDC to phUSD, Phoenix's collateral token, 1:1.
+  </Step>
+  <Step title="Deposit to Phoenix">
+    The phUSD moves into the margin's Phoenix trader account (cross-margined across all its Phoenix positions).
+  </Step>
+  <Step title="Place a market order">
+    An immediate-or-cancel order fills against Phoenix's book in the same transaction. There is no keeper and no pending order.
+  </Step>
+  <Step title="Close">
+    A reduce-only market order closes the position. Then Phoenix collateral is withdrawn and Ember converts phUSD back to USDC in the margin account.
+  </Step>
+</Steps>
+
+Opening is one transaction. Closing and withdrawing are two.
+
+## Markets and leverage
+
+Vanna only allows markets listed in its oracle's market book. Each market has a leverage cap: the order's exposure, plus every other open position, must stay within the cap × the trader's Phoenix collateral. On the hosted fork:
+
+| Market | Max leverage |
+|---|---|
+| SOL | 5x |
+| ETH | 5x |
+| BTC | 5x |
+| TSLA | 3x |
+| META | 3x |
+
+A margin can hold at most 4 open Phoenix positions.
+
+## Risk
+
+The whole Phoenix account counts as one collateral line in the margin's health factor: collateral plus each position's equity at the oracle's index price, net of funding and the fee to close, floored at zero. Borrowing power counts losses but not unrealized gains.
+
+If the margin becomes liquidatable, a liquidator closes the Phoenix positions with reduce-only orders priced close to the index, withdraws the collateral back to the margin as phUSD, then repays part of a debt and takes phUSD (or another allowed token) in return, all in one transaction.
+
+<Note>
+Stock perps (TSLA, META) use an index that goes stale while the stock market is closed. Those markets carry lower leverage caps for that reason.
+</Note>

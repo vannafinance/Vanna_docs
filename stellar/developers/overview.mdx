@@ -1,0 +1,28 @@
+---
+title: "Developer Overview"
+description: "Integrate with the reviewed Stellar testnet contracts and application."
+mode: "wide"
+---
+
+This reference describes the local `Protocol_V1_Soroban_testnet` contracts and the Stellar app in `Vanna_Finance_Backend/apps/stellar`, reviewed on **2026-10-29**. Configured contract addresses were verified on-chain on 2026-10-24. It does not describe the Solana, Solidity, or older Soroban directories.
+
+Start with [Architecture](/stellar/developers/architecture), [Configured Contracts](/stellar/developers/deployed-contracts), and [Math Reference](/stellar/developers/math-reference). The [contract reference](/stellar/developers/contracts/account-manager) includes the current Rust signatures, including privileged callbacks. Env is implicit at the transaction boundary.
+
+## Repository map
+
+| Directory or file | Responsibility |
+|---|---|
+| `Protocol_V1_Soroban_testnet/contracts` | Core contracts, controllers, deployers, shared library |
+| `Protocol_V1_Soroban_testnet/integrated_test` | Lifecycle, controller, risk, registry, and regression tests |
+| `Protocol_V1_Soroban_testnet/deploy` | Deployment and verification scripts |
+| `Vanna_Finance_Backend/apps/stellar/app` | Next.js pages and server API routes (`/api/stellar/*`) |
+| `Vanna_Finance_Backend/apps/stellar/lib/*-utils.ts` | Stellar transaction and read services |
+| `Vanna_Finance_Backend/apps/stellar/hooks` | Query, mutation, wallet, and snapshot hooks |
+| `Vanna_Finance_Backend/apps/stellar/lib/copilot` | Copilot planning, authentication, approval, execution |
+| `Vanna_Finance_Backend/packages/shared` | Header, sign-in dialog, funds modal and mascot shared with the Solana app |
+
+## Current scope
+
+Four lending markets, per-trader SmartAccounts, Blend supply, and Soroswap/Aquarius controller integrations are implemented. External availability remains pool/configuration dependent. Perpetuals and options are not enabled in this Stellar application. Read the [frontend reference](/stellar/developers/frontend) for routes and data limitations.
+
+The TypeScript integration is application-local service code, not a published `@vanna/sdk` package. Use [Getting Started](/stellar/developers/sdk/getting-started) and [Transaction Flow](/stellar/developers/sdk/transaction-flow).

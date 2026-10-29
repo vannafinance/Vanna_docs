@@ -1,0 +1,52 @@
+---
+title: "Farm Overview"
+description: "Put margin-account funds to work on Blend, Soroswap and Aquarius. Farm positions keep counting as collateral."
+mode: "wide"
+---
+
+**Farm** deploys tokens held in your **margin account**, including borrowed ones, into Stellar DeFi protocols. The position stays inside the margin account, so it keeps counting as collateral under the same health factor.
+
+<Frame caption="Farm: the stats strip, then Vaults with the Lending/Single Assets list (Blend). Click the image to zoom.">
+  <img src="/images/stellar/farm/farm-pools.png" alt="Farm page with the banner Provide liquidity to Blend, Aquarius and Soroswap straight from your margin account, a stats strip with Net Health Factor 1.82, Your Deposit TVL $579.18, Your Earnings, Net Farm APY 16.42% and Pending Rewards, and the Vaults tab with Lending/Single Assets selected listing Blend XLM and BLUSDC supply pools with total deposits, total borrow, supply APY, borrow APY, utilization and holding" loading="lazy" decoding="async" />
+</Frame>
+
+## What you can farm
+
+| Type | Protocol | Pools |
+|---|---|---|
+| **Lending / Single Assets** | Blend | XLM, BLUSDC |
+| **LP / Multiple Assets** | Soroswap | XLM / SoUSDC |
+| **LP / Multiple Assets** | Aquarius | XLM / AqUSDC |
+
+<CardGroup cols={2}>
+  <Card title="Blend supply" icon="building-columns" href="/stellar/guides/farm/blend-pools">
+    Supply XLM or BLUSDC from your margin account to Blend's lending pool.
+  </Card>
+  <Card title="Soroswap / Aquarius LP" icon="water" href="/stellar/guides/farm/amm-liquidity">
+    Add two-sided XLM / USDC liquidity and earn trading fees.
+  </Card>
+</CardGroup>
+
+## The page
+
+- **Stats strip** (connected): **Net Health Factor**, **Your Deposit TVL**, **Your Earnings**, **Net Farm APY** and **Pending Rewards**. Your Earnings and Pending Rewards read $0.00 for now: farm positions have no on-chain cost basis on Stellar yet, and BLND / AQUA reward emissions aren't read by the app.
+- **Vaults | Positions**: all pools, or only the ones you're in.
+- **LP/Multiple Assets | Lending/Single Assets**: switch between the LP and the Blend lists. Filter by pool, search, or set a threshold.
+
+Click a row to open its pool page: stats on top, **All Transactions | Analytics** on the left (your position chart, position value and history), and the action form on the right.
+
+## Farm vs Earn
+
+| | Earn | Farm |
+|---|---|---|
+| Funds come from | Your wallet | Your margin account |
+| Goes to | Vanna's lending pools | Blend, Soroswap, Aquarius |
+| You receive | vTokens in your wallet | A Blend receipt or LP shares in your margin account |
+| Counts as margin collateral | No | Yes |
+
+## Before you start
+
+- Your margin account must hold the right tokens. Blend uses **BLUSDC**, Soroswap **SoUSDC** and Aquarius **AqUSDC**; they are not interchangeable. Borrow or swap for the one you need.
+- Farmed tokens count as collateral, but they're not free balance. Withdraw from Blend or remove liquidity before you repay or transfer them.
+
+For the full borrow-then-farm loop, see [Leveraged Yield](/stellar/guides/farm/leveraged-yield).

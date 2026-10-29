@@ -1,0 +1,88 @@
+---
+title: "Getting Started"
+description: "Open Vanna, sign in, mint test funds and pick what you want to do."
+mode: "wide"
+---
+
+import ForkNotice from "/snippets/solana/fork-notice.mdx";
+
+Vanna is a credit layer on Solana. You lend into Vanna's pools, or open one **margin account** that holds many collaterals, borrow against it, and use that loan across Solana: spot swaps (Jupiter or Titan), perps (Phoenix), Kamino lending, Perena and delta-neutral vaults, and World.xyz prediction markets.
+
+**Live app:** [test.vanna.finance](https://test.vanna.finance) (choose **Solana** in the chain switcher at the top right).
+
+<ForkNotice />
+
+## Four steps to start
+
+<Steps>
+  <Step title="Enter the access code">
+    The test app is private. On your first visit it asks for an **access code**; enter the one the Vanna team gave you. Your browser remembers it for about 30 days.
+  </Step>
+  <Step title="Sign in">
+    Click **Connect wallet** at the top right. Sign in with **email** (a one-time code), **Google**, **X** or **GitHub**, or connect **Backpack**. See [Connect Your Wallet](/solana/guides/connect-wallet).
+  </Step>
+  <Step title="Backpack only: add the fork RPC">
+    If you use Backpack, add the custom RPC `https://rpc-devnet.solana.vanna.finance` so it shows fork balances and previews transactions correctly. The purple strip at the top of the app has a **Copy** button and a **Setup guide** link. Email and social logins don't need this.
+  </Step>
+  <Step title="Mint test funds">
+    Click **Deposit** in the header, then **Mint all** under **Test funds**: 1,000 of each token (10 of each xStock) plus 1,000 CASH for Predict, with no wallet approval. See [Faucet](/solana/guides/faucet).
+  </Step>
+</Steps>
+
+<Frame caption="Portfolio after signing in and minting test funds: net worth, net earnings and health factor at the top.">
+  <img src="/images/solana/portfolio/overview.png" alt="Vanna Portfolio page showing net worth split into wallet, lending and margin equity, net earnings, and a health factor card with the chameleon mascot" loading="lazy" decoding="async" />
+</Frame>
+
+## The app at a glance
+
+The header groups the pages the way money flows. On Solana, the app opens on **Margin**.
+
+| Group | Page | What you do there |
+|---|---|---|
+| | [Portfolio](/solana/guides/portfolio) | Everything you hold, earn and owe in one place |
+| **Lend** | [Earn](/solana/guides/earn/overview) | Supply SOL, USDC or USDT to Vanna's pools and earn borrow interest |
+| **Lend** | [Predict](/solana/guides/predict/overview) | Buy Yes / No on real World.xyz events; your shares earn in Vanna's USDC pool while you wait |
+| **Borrow & Trade** | [Margin](/solana/guides/margin/overview) | Deposit collateral, borrow up to 10×, repay, move collateral |
+| **Borrow & Trade** | [Trade → Spot](/solana/guides/trade/spot-swap) | Swap inside your margin account through Jupiter or Titan |
+| **Borrow & Trade** | [Trade → Perps](/solana/guides/perps/overview) | Long or short SOL, ETH, BTC, TSLA, META on Phoenix |
+| **Borrow & Trade** | [Farm](/solana/guides/farm/overview) | Put margin balances into Kamino, Perena or delta-neutral basis vaults |
+| | [Analytics](/solana/guides/analytics) | Protocol-wide risk, pools, collateral and prices |
+| | [Copilot](/solana/guides/copilot) | Ask about your account or describe a change in plain English |
+| | Rewards (**Soon**) | Points, referrals and a leaderboard are coming. See the [FAQ](/solana/resources/faq) |
+
+On the right of the header: the **chain switcher** (Solana / Stellar), the **Deposit** button (test funds, receive address and wallet ↔ margin transfers) and your account menu. Outside the app, [Vanna MCP](/solana/guides/mcp) lets Claude, Cursor or any MCP-compatible assistant use Vanna for you.
+
+## Supported assets
+
+| Asset | What it is | Lend (Earn) | Borrow | Margin collateral |
+|---|---|:---:|:---:|:---:|
+| SOL | Native SOL (wrapped to wSOL in vaults) | ✓ | ✓ | ✓ |
+| USDC | Circle USDC | ✓ | ✓ | ✓ |
+| USDT | Tether USD | ✓ | ✓ | Held, not offered as a deposit |
+| JitoSOL, JupSOL | Liquid-staked SOL | | | ✓ |
+| JupUSD | Jupiter USD | | | ✓ |
+| NVDAx, GOOGLx, AAPLx, TSLAx | Backed Finance xStocks (tokenized equities, Token-2022) | | | ✓ |
+| CASH | World.xyz's settlement token, used on Predict | | | |
+
+Vault receipts you receive from Farm (kSOL, kUSDC, USD\*, vbSOL…) stay in your margin account and count as collateral too.
+
+<Tip>
+A wallet signature is not the final result. Wait for the confirmation toast and refreshed balances before the next step that depends on it.
+</Tip>
+
+## Next steps
+
+<CardGroup cols={2}>
+  <Card title="Connect your wallet" icon="wallet" href="/solana/guides/connect-wallet">
+    Sign-in options and the Backpack RPC setup.
+  </Card>
+  <Card title="Get test funds" icon="faucet" href="/solana/guides/faucet">
+    Mint every supported token on the fork.
+  </Card>
+  <Card title="Supply on Earn" icon="piggy-bank" href="/solana/guides/earn/supply">
+    Lend SOL, USDC or USDT and earn interest.
+  </Card>
+  <Card title="Open a margin account" icon="scale-balanced" href="/solana/guides/margin/open-account">
+    Deposit collateral and borrow against it.
+  </Card>
+</CardGroup>

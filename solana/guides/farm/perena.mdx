@@ -1,0 +1,64 @@
+---
+title: "Perena Vaults"
+description: "Deposit margin-account USDC into Perena's USD* and USD* Junior vaults."
+mode: "wide"
+---
+
+[Perena](https://perena.org) runs USD\*, a yield-bearing stablecoin vault. Vanna lets you deposit USDC from your margin account and hold the vault shares as collateral.
+
+<Frame caption="USD* vault page, Analytics tab: APY (7D), share price on Perena and on Vanna, exit fee, recorded APY, and the Deposit panel.">
+  <img src="/images/solana/farm/perena-usd-star.png" alt="Perena USD* vault page with APY 7D, Share Price, Holders and Total Value Locked, an Analytics tab with Share price (Perena), Share price (Vanna), Exit fee, Recorded APY 30D, ROI and Max drawdown, and a Deposit panel for 10 USDC" loading="lazy" decoding="async" />
+</Frame>
+
+## The two vaults
+
+| Vault | Share | What it is |
+|---|---|---|
+| **USD\*** | USD\* | Perena's main (senior) vault |
+| **USD\* Junior** | USD\* Junior | Higher-yield junior tranche: it takes losses before the senior vault does, in return for more yield. **Instant withdrawals pay a 1% exit fee** |
+
+## Deposit
+
+<Steps>
+  <Step title="Open the vault">
+    On **Farm → Lending / Single Assets**, click **USD\*** or **USD\* Junior** (Perena badge).
+  </Step>
+  <Step title="Enter USDC">
+    Deposits are in **USDC** from your margin account (**Margin** shows the balance).
+  </Step>
+  <Step title="Read the details">
+    Network, deposit amount, **Est. receipt received** (USDC ÷ share price), **Share price**, **APY** and projected monthly earnings.
+  </Step>
+  <Step title="Deposit">
+    Click **Deposit** and approve. The shares arrive in your margin account.
+  </Step>
+</Steps>
+
+## Withdraw
+
+Switch to **Withdraw** and enter how many shares to redeem. The details show the **Est. USDC received**; for USD\* Junior that already includes the 1% instant-exit fee.
+
+## The numbers
+
+| Field | Meaning |
+|---|---|
+| **APY (7D)** | Perena's published APY |
+| **Share price** | USDC value of one share. It rises as the vault earns |
+| **Holders / Total Value Locked** | Perena's vault-wide figures |
+| **Share price (Perena) / Share price (Vanna)** | Perena's published mainnet price, and the price Vanna values your receipt at |
+| **Exit fee** | 0% on USD\*; 1% on USD\* Junior's instant withdrawals |
+| **Recorded APY 30D / ROI / Max drawdown** | Vanna's own record of the share price since it began recording |
+| **Earned yield** | Your share-price gain since your first deposit |
+
+Shares are valued at their share price in your health factor.
+
+## Next steps
+
+<CardGroup cols={2}>
+  <Card title="Farm positions" icon="list" href="/solana/guides/farm/positions">
+    Track earnings and exit.
+  </Card>
+  <Card title="Yield vaults" icon="book" href="/solana/learn/yield-vaults">
+    How Perena and basis vaults work.
+  </Card>
+</CardGroup>

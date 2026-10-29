@@ -1,0 +1,32 @@
+---
+title: "Core Concepts"
+description: "The accounting model behind Vanna on Stellar: margin accounts, pools, vTokens, health factor and liquidation."
+mode: "wide"
+---
+
+Vanna connects liquidity providers with margin accounts that can use borrowed funds in approved Stellar protocols. These pages explain the accounting behind the app.
+
+<CardGroup cols={2}>
+  <Card title="Margin accounts" icon="user-shield" href="/stellar/learn/smart-accounts">
+    Token custody and account-level debt.
+  </Card>
+  <Card title="Lending pools and vTokens" icon="building-columns" href="/stellar/learn/lending-pools">
+    Supply, borrowing and how vToken receipts grow.
+  </Card>
+  <Card title="Health factor and liquidation" icon="heart-pulse" href="/stellar/learn/health-factor">
+    Collateral valuation and how liquidation resolves debt.
+  </Card>
+  <Card title="Rates and prices" icon="chart-line" href="/stellar/learn/interest-rate-model">
+    The interest-rate curve and the Reflector-backed oracle.
+  </Card>
+  <Card title="Registry" icon="book" href="/stellar/learn/registry">
+    Permitted assets, contracts and controllers.
+  </Card>
+  <Card title="Composable leverage" icon="plug" href="/stellar/learn/composable-leverage">
+    Deploying borrowed capital into Blend, Soroswap and Aquarius.
+  </Card>
+</CardGroup>
+
+These pages describe the Stellar testnet contracts, with XLM and three distinct USDC test tokens (BLUSDC, AqUSDC, SoUSDC). Contract addresses are listed in [Deployed Contracts](/stellar/developers/deployed-contracts).
+
+Also see [vTokens](/stellar/learn/vtokens), [Liquidation](/stellar/learn/liquidation), [Oracle System](/stellar/learn/oracle-system), [Pool Mechanics](/stellar/learn/lending-pool-mechanics) and [Protocol Architecture](/stellar/learn/protocol-architecture).

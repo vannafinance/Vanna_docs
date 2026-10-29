@@ -1,0 +1,77 @@
+---
+title: "Copilot"
+description: "Ask about your Stellar account or describe a change in plain English. Copilot plans it with live numbers; your wallet signs each step."
+mode: "wide"
+---
+
+**Copilot** is an AI assistant that knows your Vanna account. Ask a question ("What's my health factor?", "Price of XLM") or describe a change ("Deposit 100 XLM and borrow 3x leverage AqUSDC"), and it answers with live figures or prepares the transactions for your wallet to sign.
+
+It does what the rest of the app does, with the same rules and numbers. You just say what you want instead of filling in each page.
+
+<Frame caption="A two-step plan: deposit 100 XLM, then borrow AqUSDC at 3x. Step 1 is waiting for your signature. Click the image to zoom.">
+  <img src="/images/stellar/copilot/copilot-plan.png" alt="Copilot page with the request Deposit 100 XLM and Borrow 3x leverage AQUSDC, the plan Deposit 100 XLM as collateral then Borrow 33.9112961 AQUSDC, a Your signature needed card on step 1 of 2 with an Approve button, and a sidebar showing New chat, Health factor 1.82 Healthy, Auto-approve Off, Margin Positions 6, Earn Positions 1 and Recents" loading="lazy" decoding="async" />
+</Frame>
+
+## Get started
+
+<Steps>
+  <Step title="Open Copilot">
+    Click **Copilot** in the header with your wallet connected.
+  </Step>
+  <Step title="Prove your wallet">
+    With Freighter, sign a one-time message when asked. It is not a transaction and costs no fee. It lets Copilot read and act only for your own address.
+  </Step>
+  <Step title="Ask">
+    Type in the box at the bottom and press Enter.
+  </Step>
+</Steps>
+
+## The sidebar
+
+| Part | What it shows |
+|---|---|
+| **New chat** | Starts a fresh conversation |
+| **Health factor** | Your margin account's current health factor and its zone |
+| **Auto-approve** | Off by default. See [below](#auto-approve) |
+| **Margin Positions** | Each asset your margin account holds or owes |
+| **Earn Positions** | What you supplied to Vanna's lending pools |
+| **Recents** | Earlier chats. Rename or delete one from its menu |
+
+## What it can do
+
+| You want to | Try |
+|---|---|
+| **Read your account** | "What's my health factor?", "Show my positions", "Price of XLM" |
+| **Lend** | "Supply 500 XLM to Earn", "Withdraw my SoUSDC from Earn" |
+| **Use margin** | "Open a margin account", "Deposit 1,000 XLM into my margin account", "Repay all my XLM debt" |
+| **Lever up** | "Deposit 100 XLM and borrow AqUSDC at 3x", "Deposit 3,000 XLM, dual-borrow BLUSDC and AqUSDC" |
+| **Swap** | "Swap 100 XLM to SoUSDC" (inside your margin account) |
+| **Farm** | "Supply 100 XLM to Blend", "Add XLM / SoUSDC liquidity on Soroswap", "Withdraw from Blend" |
+| **Withdraw** | "Move 50 XLM from my margin account to my wallet" |
+
+## Approving a plan
+
+<Steps>
+  <Step title="Review">
+    Copilot restates your request ("Read as: ...") and lists each step with its exact amount.
+  </Step>
+  <Step title="Approve in time">
+    A plan is valid for **5 minutes** (the countdown starts at 4:59). After that it expires and you ask again, so it uses fresh prices.
+  </Step>
+  <Step title="Sign each step">
+    Click **Approve** on a step; your wallet opens for that one transaction. **Cancel remaining steps** stops the plan; steps already confirmed stay done.
+  </Step>
+  <Step title="Check the result">
+    A step shows as done only after the chain confirms it.
+  </Step>
+</Steps>
+
+Every plan is checked against your health factor. Copilot pauses actions that would push the account toward liquidation.
+
+## Auto-approve
+
+Auto-approve lets small, pre-approved steps go through without a confirmation click, within a **per-transaction limit** and a **daily budget** that you set and apply. It is **off** by default. With Freighter, every transaction still opens your wallet to sign; the plan card then says "Auto-approve could not sign this step, so it needs your own signature".
+
+## Assist on every page
+
+The **Assist** tab on the right edge of every page opens a lighter guide. It explains what you're looking at ("What is a health factor?", "How is Earn different from Farm?") and hands you to Copilot when you want to act.

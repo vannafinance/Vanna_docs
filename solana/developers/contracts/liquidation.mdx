@@ -1,0 +1,54 @@
+---
+title: "Liquidation Instructions"
+description: "public_liquidate (permissionless, partial, with optional venue calls) and admin_write_off."
+mode: "wide"
+---
+
+Source: `instructions/account_manager/liquidate.rs`.
+
+## `public_liquidate(calls, repay, min_seized)`
+
+```text
+calls:      Vec<VenueCall { data, account_count }>   // optional Phoenix unwind calls
+repay:      u64                                       // debt to repay, in the debt token
+min_seized: u64                                       // liquidator's slippage bound
+```
+
+Anyone can call it on a margin with debt and HF ≤ 1.10. It does not need the owner.
+
+1. Run the venue calls (if any) through the validator in liquidation mode. For Phoenix, that means reduce-only closes inside a price band and a withdrawal of the trader's collateral.
+2. Revalue every holding. Require HF ≤ 1.10.
+3. If `repay > 0`, settle one pair: repay part of one debt from the liquidator's wallet, and take one allowed token from the margin.
+
+**Settling one pair.** The repay is capped at 50% of that debt, or the full debt when HF ≤ 1 + the token's bonus or the debt is worth $100 or less. The token taken is worth at most the repaid value × (1 + `liquidation_bonus_bps`, at most 5%). While the margin is solvent but below that line, the multiplier is the health factor instead, so a liquidation never takes more than the margin's equity. When the margin holds less of the token, the repay shrinks to match. A token past its cap, or capped to zero, can still be seized.
+
+The debt and collateral prices used for settlement must be fresh and within confidence, but not within the TWAP band, so a crash never blocks liquidation.
+
+### Accounts
+
+| Account | Notes |
+|---|---|
+| `liquidator` | Signer, pays the debt token |
+| `protocol_config`, `margin_account` | |
+| `venue_asset`, `integration`, `target_program`, `validator` | Optional; only with venue calls |
+
+`remaining_accounts`, in order:
+
+1. The venue calls' accounts.
+2. The groups (allowed tokens, venues, debts). The repaid debt's reserve and debt position, and the seized token's vault, are writable.
+3. When `repay > 0`: `[debt_mint, reserve_vault, source, debt_token_program, collateral_mint, destination, collateral_token_program]`.
+4. The agent segments.
+
+## `admin_write_off`
+
+Admin only, refused while `Halted`. Clears every debt of a margin whose collateral is $1 or less and below its debt, with no venue position open.
+
+- Collateral is every allowed token at its raw balance (frozen or past its cap included).
+- Every price must pass every check.
+- Each reserve's `accrued_protocol_fees` absorb the written-off amount first, then lenders' assets fall by the rest.
+
+<Warning>
+Write-off sees only allowed tokens. Don't remove a token from the allowed list while a margin about to be written off still holds it.
+</Warning>
+
+See [Math](/solana/developers/math-reference#liquidation) and [Liquidation Bots](/solana/developers/guides/liquidation-bots).

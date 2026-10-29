@@ -1,0 +1,37 @@
+---
+title: "Oracle System"
+description: "The oracle program: Kamino Scope first, Pyth as fallback, receipt tokens through their issuer, with freshness, TWAP and confidence checks."
+mode: "wide"
+---
+
+Vanna's core program never reads a price feed. A separate program, `vanna_oracle`, values every holding and reports which checks each price passed.
+
+## Sources
+
+| Order | Source | Used for |
+|---|---|---|
+| 1 | **Kamino Scope** — Chainlink and Pyth Lazer, cross-checked by Scope's keepers | Every token except JupUSD. A price can be the product of up to four entries (for example JitoSOL = stake rate × SOL) |
+| 2 | **Pyth** push-oracle feeds | Fallback when the Scope price is stale and Pyth is newer; the only source for JupUSD |
+| — | **Issuer accounts** | Kamino cTokens (reserve exchange rate × underlying price), Perena shares (Perena's share price), basis-vault shares (NAV computed by the oracle) |
+
+Each token's sources live in the oracle's **price book**, one `OracleConfig` per mint. Every account it reads is pinned in that config.
+
+## Checks
+
+| Check | Rule |
+|---|---|
+| Fresh | No older than `max_age_secs`, and not dated in the future |
+| TWAP | Within `max_twap_divergence_bps` of Scope's TWAP, or Pyth's EMA |
+| Confidence | Pyth confidence within `max_confidence_bps` |
+
+How a failed check is treated depends on the action. For the owner, a failed collateral price counts as zero and a failed debt price blocks. For liquidation, collateral counts at its reported value, and only fresh, confident prices are settled. A withdrawal with no debt reads no price at all.
+
+## Perps prices
+
+Phoenix positions are valued at an **index price** for each listed market, held in the oracle's **market book** alongside each market's leverage cap.
+
+## On the fork
+
+The fork has no live price pushers. The app's price keeper copies Scope prices from mainnet and rewrites Pyth accounts with live prices before risk-checked transactions. That is demo infrastructure, not a mainnet oracle design.
+
+Stale or wide-confidence prices are never "used anyway". The program does not fall back to a last good price.

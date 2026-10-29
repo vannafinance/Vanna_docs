@@ -1,0 +1,32 @@
+---
+title: "Mercury and Data Sources"
+description: "Server-side history proxies, RPC fallbacks, and separate Hubble stats."
+mode: "wide"
+---
+
+## Mercury proxy
+
+The browser calls same-origin server routes. `POST /api/stellar/mercury` accepts `{ query, variables }` and proxies GraphQL using server-only `MERCURY_URL` and `MERCURY_KEY`. `GET /api/stellar/mercury/events` proxies event history; the client decodes base64 ScVal topics and payloads with Stellar SDK.
+
+`isMercuryEnabled()` is a browser-context hint, not a credential/health check. Missing Mercury configuration can return an API error. History consumers have protocol-specific Mercury/RPC paths; check the relevant `mercury-*` and `*-history-rpc.ts` modules rather than treating Mercury as the authoritative source of current balances.
+
+## Current balances and freshness
+
+`/api/stellar/pools` returns shared pool statistics. `/api/stellar/account/[addr]` returns a derived account snapshot. Both can serve cached results. `lib/account-snapshot.ts` and `lib/margin-health.ts` centralize displayed margin metrics; the snapshot includes debt/collateral reconciliation and UI dust handling.
+
+RPC event history is retention-limited; cached or indexed history can be delayed or incomplete. Confirm transaction success by hash and current state, not by the immediate appearance of a history row.
+
+## Hubble is separate
+
+`/stats` and the Hubble routes (`/api/stellar/analytics/liquidations`, `top-borrowers`, `tvl`, `volume`) are gated by server-only `STATS_ENABLED="true"`; otherwise they return 404. Hubble uses a mainnet Stellar BigQuery dataset, not this testnet's authoritative account ledger. Credentials are supplied via `GOOGLE_CREDS_JSON` or Application Default Credentials with `GOOGLE_CLOUD_PROJECT`. Dataset queries run in the US location.
+
+The `/analytics/...` UI is a different surface. It reads the testnet directly: up to 200 margin accounts from the Registry, Reflector prices and pool stats (`/api/stellar/analytics/accounts`, `events`, `oracle`, `pool-stats`, which are not gated). Risk Explorer scenarios run on that live snapshot with preset stress assumptions. See [Frontend](/stellar/developers/frontend).
+
+
+## Source reference
+
+- `Vanna_Finance_Backend/apps/stellar/lib/mercury-client.ts`
+- `Vanna_Finance_Backend/apps/stellar/app/api/stellar/mercury/route.ts`
+- `Vanna_Finance_Backend/apps/stellar/app/api/stellar/mercury/events/route.ts`
+- `Vanna_Finance_Backend/apps/stellar/lib/hubble/gate.ts`
+- `Vanna_Finance_Backend/apps/stellar/lib/hubble/client.ts`

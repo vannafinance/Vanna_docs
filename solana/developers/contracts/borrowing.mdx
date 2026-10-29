@@ -1,0 +1,28 @@
+---
+title: "Borrow and Repay"
+description: "user_borrow opens the debt position itself; user_repay_from_margin is the only owner repay path."
+mode: "wide"
+---
+
+Source: `instructions/account_manager/borrow.rs`.
+
+## `user_borrow(assets, max_debt_shares)`
+
+1. Gate on operating mode, reserve status (`Active`) and `borrow_enabled`.
+2. `init_if_needed` the `DebtPosition ["debt", margin, reserve]` and the margin vault. The margin must have room under `max_debts_per_margin` for a new debt.
+3. Accrue. Require `total_borrow + assets ≤ borrow_cap` and `assets ≤ available_cash`.
+4. Mint debt shares (rounded up), at most `max_debt_shares`.
+5. Transfer the tokens from the reserve to the margin vault.
+6. Value every holding through the oracle. The full-set health factor must exceed 1.10.
+
+Borrowed tokens land in the margin vault, so a borrow raises both collateral and debt. A Token-2022 borrow is health-checked on what actually arrives, net of transfer fees.
+
+Only the pool assets (USDC, USDT, SOL) are `borrow_enabled`.
+
+## `user_repay_from_margin(max_assets, repay_all)`
+
+Repay from the margin vault's own balance. `repay_all` repays the exact accrued debt. The amount is capped at what the vault holds. When shares reach zero, the debt leaves the margin's active list. Close the `DebtPosition` with `user_reclaim_rent`.
+
+<Note>
+There is no wallet-side repay instruction for owners. To repay with wallet funds, deposit them into the margin first, then repay from margin. Liquidators repay from their own wallet inside `public_liquidate`.
+</Note>

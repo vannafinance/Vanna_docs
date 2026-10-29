@@ -1,0 +1,54 @@
+---
+title: "Deposit Collateral"
+description: "Move XLM, BLUSDC, AqUSDC or SoUSDC from your wallet into your margin account, with or without borrowing."
+mode: "wide"
+---
+
+Depositing moves tokens from your **wallet** into your **margin account**, where they back your loans. This is different from supplying on Earn.
+
+There are two ways to deposit:
+
+<Tabs>
+  <Tab title="Deposit and borrow">
+    Use **Leverage your Assets** when you want to borrow in the same flow.
+
+    <Steps>
+      <Step title="Add collateral">
+        Under **Deposit**, pick the token. Keep the source on **WB** (wallet balance) and enter an amount or use the % chips. Click **+ Add Collateral** to deposit more than one token.
+      </Step>
+      <Step title="Set the borrow">
+        Choose what to borrow and the leverage. Leave leverage at **1x** to deposit without borrowing.
+      </Step>
+      <Step title="Sign">
+        With one collateral, deposit and borrow go out as **one** transaction. With several collaterals, the app deposits first and borrows second.
+      </Step>
+    </Steps>
+
+    See [Borrow](/stellar/guides/margin/borrow).
+  </Tab>
+  <Tab title="Deposit only">
+    Use **Transfer Collateral** (or the header **Deposit → Transfer** tab) to add collateral without creating debt.
+
+    <Steps>
+      <Step title="Pick the direction">
+        Set **From** to your wallet and **To** to the margin account.
+      </Step>
+      <Step title="Choose token and amount">
+        Pick the exact token and enter the amount.
+      </Step>
+      <Step title="Review and sign">
+        Check the health factor before → after and sign. Adding collateral only raises your health factor.
+      </Step>
+    </Steps>
+
+    See [Transfer Collateral](/stellar/guides/margin/transfer-collateral).
+  </Tab>
+</Tabs>
+
+## Good to know
+
+- **Supported collateral:** XLM, BLUSDC, AqUSDC and SoUSDC. The three USDC tokens are different; deposit the one you hold.
+- **XLM reserve:** a 100% XLM deposit keeps back your wallet's minimum reserve plus a fee buffer.
+- **Check the margin balance**, not only your wallet balance, after the transaction confirms.
+
+Next: [Borrow](/stellar/guides/margin/borrow).

@@ -1,0 +1,56 @@
+---
+title: "Spot Swap"
+description: "Swap tokens inside your margin account on Soroswap or Aquarius, with a live health-factor preview and route."
+mode: "wide"
+---
+
+**Trade → Spot** swaps tokens that your **margin account** holds, through **Soroswap** or **Aquarius**. The tokens never leave the account, so whatever you receive keeps counting as collateral. Spot is the only trading surface on Stellar; there are no perps or options.
+
+<Frame caption="Swapping 10 XLM to SoUSDC via Soroswap: the venue picker, the quote line with the health factor before → after, the route, and the Margin account card. Click the image to zoom.">
+  <img src="/images/stellar/trade/spot-swap.png" alt="Spot swap card with the via Soroswap dropdown open showing Soroswap (XLM / SoUSDC pool, selected) and Aquarius (XLM / AqUSDC pool), 10 XLM in and 1.6920992 SoUSDC out, a quote line 1 XLM = 0.169556 SoUSDC with HF 1.82 to 1.82, a one-hop Soroswap route from XLM to SoUSDC, and a Margin account card showing health factor 1.82, account leverage 2.21x, borrowed $1,388.42 and swappable XLM" loading="lazy" decoding="async" />
+</Frame>
+
+## Venues
+
+| Venue | Pool | USDC token |
+|---|---|---|
+| **Soroswap** | XLM / SoUSDC | SoUSDC |
+| **Aquarius** | XLM / AqUSDC | AqUSDC |
+
+Pick the venue from the **via ▾** menu next to **Swap**. Each venue only lists its own pair, and the token list resets when you switch.
+
+## Swap
+
+<Steps>
+  <Step title="Pick the venue">
+    Open **Trade → Spot** and choose **Soroswap** or **Aquarius**.
+  </Step>
+  <Step title="Enter what you pay">
+    Choose the token and amount under **You Pay**, or use the % chips and **Max**. **Swappable** is what the margin account holds of that token.
+  </Step>
+  <Step title="Check the quote">
+    The quote line shows the rate and **HF before → after**. Expand it for the minimum received and slippage. The **Route** card shows the hops and venue.
+  </Step>
+  <Step title="Check the Margin account card">
+    It shows health factor, account leverage, borrowed, and swappable balance, each before → after this swap.
+  </Step>
+  <Step title="Swap">
+    Click **Swap** and approve in your wallet.
+  </Step>
+</Steps>
+
+## Safety checks
+
+- **Health-factor floor:** if a swap would lower your health factor below **1.15**, the button turns into "Health factor would fall below 1.15" and the swap is blocked. Between 1.15 and 1.25 it shows an amber warning.
+- **Slippage:** **Auto** is 0.5%. The settings gear lets you pick 0.1%, 0.5% or 1.0%, or a custom value; above 3% the app warns you.
+- **Quotes move.** Prices can change between quote and execution; the minimum received protects you.
+
+<Note>
+You need a margin account with tokens in it to swap. Fund it with [Deposit Collateral](/stellar/guides/margin/deposit-collateral) or [Borrow](/stellar/guides/margin/borrow).
+</Note>
+
+## History
+
+**Position History** under the swap card lists your margin account's swaps on both venues, newest first. Portfolio → Trader → Spot shows the same list.
+
+See [Health Factor](/stellar/guides/margin/health-factor).

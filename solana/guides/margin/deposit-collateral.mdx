@@ -1,0 +1,56 @@
+---
+title: "Deposit Collateral"
+description: "Add SOL, USDC, LSTs, JupUSD or xStocks to your margin account."
+mode: "wide"
+---
+
+There are two ways to deposit:
+
+| Where | Use it when |
+|---|---|
+| **Leverage your Assets** tab | You want to deposit and borrow in one transaction |
+| **Transfer Collateral** (Portfolio account → Margin account) | You only want to move tokens into the margin account |
+
+## Deposit (and borrow) in one go
+
+<Steps>
+  <Step title="Open Leverage your Assets">
+    On **Margin**, keep the first tab selected.
+  </Step>
+  <Step title="Pick the token and source">
+    Under **Deposit**, choose the token. **WB** deposits from your wallet balance; **MB** borrows against collateral already in your margin account (one token, borrow only).
+  </Step>
+  <Step title="Enter the amount">
+    Type it or use **10% / 25% / 50% / 100%**. The USD value and current price are shown under the field.
+  </Step>
+  <Step title="Add more collateral (optional)">
+    **+ Add Collateral** adds another token to the same transaction, so you can deposit several assets at once.
+  </Step>
+  <Step title="Borrow, or not">
+    Set the borrow amount or leverage (see [Borrow](/solana/guides/margin/borrow)). To deposit only, leave the borrow at zero.
+  </Step>
+  <Step title="Review and sign">
+    Check **Transaction Details** and the before → after account preview, then click **Deposit & Borrow** (or deposit) and approve.
+  </Step>
+</Steps>
+
+## Accepted collateral
+
+SOL, USDC, JitoSOL, JupSOL, JupUSD, NVDAx, GOOGLx, AAPLx and TSLAx can be deposited. USDT can be held, borrowed, repaid and withdrawn, but isn't offered as a deposit.
+
+Each asset counts at its full oracle value: health factor is total collateral ÷ total debt with no per-asset haircut.
+
+<Note>
+When you deposit SOL from your wallet, the app keeps a small SOL reserve (0.05 SOL) back so you can still pay transaction fees.
+</Note>
+
+## Next steps
+
+<CardGroup cols={2}>
+  <Card title="Borrow" icon="hand-holding-dollar" href="/solana/guides/margin/borrow">
+    Borrow SOL, USDC or USDT up to 10×.
+  </Card>
+  <Card title="Health factor" icon="heart-pulse" href="/solana/guides/margin/health-factor">
+    How your collateral keeps you safe.
+  </Card>
+</CardGroup>

@@ -1,0 +1,51 @@
+---
+title: "Earn Overview"
+description: "Lend XLM or one of three testnet USDC tokens to Vanna's lending pools and earn the interest margin borrowers pay."
+mode: "wide"
+---
+
+**Earn** (under **Lend** in the header) is where you supply wallet assets to Vanna's lending pools. Margin accounts borrow from these pools and pay interest; that interest flows to lenders through **vTokens**.
+
+<Frame caption="Earn: the Vaults list with all four lending pools. Click the image to zoom.">
+  <img src="/images/stellar/earn/earn-pools.png" alt="Earn page Vaults tab listing XLM, BLUSDC, AqUSDC and SoUSDC pools, each Active, with Assets Supplied, Supply APY, Assets Borrowed, Borrow APY, Utilization Rate and Your Supply columns, plus All Pools, search, Deposit and Supply APY filters" loading="lazy" decoding="async" />
+</Frame>
+
+## The pools
+
+| Pool | Underlying | Receipt |
+|---|---|---|
+| XLM | Native XLM | vXLM |
+| BLUSDC | Blend's testnet USDC | vBLUSDC |
+| AqUSDC | Aquarius's testnet USDC | vAqUSDC |
+| SoUSDC | Soroswap's testnet USDC | vSoUSDC |
+
+Each pool has its own liquidity, rates and receipt. The three USDC pools are separate markets for separate tokens.
+
+## The page
+
+- **Dashboard** (when connected): your Overall Deposit and Net Earnings charts.
+- **Vaults**: every pool with Assets Supplied, **Supply APY**, Assets Borrowed, **Borrow APY**, **Utilization Rate** and **Your Supply**. Filter by pool, search, or filter by Supply APY.
+- **Positions**: only the pools you've supplied to.
+
+Click a pool to open it. A pool page has the stats strip, the **Supply Liquidity / Withdraw Liquidity** form, and five tabs:
+
+| Tab | What's there |
+|---|---|
+| **Your Positions** | Your vTokens and what they're worth now |
+| **Details** | Total supplied and borrowed, available liquidity, Supply and Borrow APY, utilization, oracle price, vToken exchange rate and supply, contract addresses |
+| **Activity** | Your supply and withdraw history |
+| **Collateral and Limits** | The account-wide liquidation rule (HF 1.10) and each pool's borrow usage |
+| **Analytics** | Pool charts, including the borrow-rate curve read from the on-chain rate model |
+
+## How you earn
+
+Your vToken balance doesn't change, but each vToken is worth more underlying over time as interest accrues. There's nothing to claim. See [vTokens](/stellar/learn/vtokens).
+
+<CardGroup cols={2}>
+  <Card title="Supply" icon="download" href="/stellar/guides/earn/supply">
+    Lend from your wallet and receive vTokens.
+  </Card>
+  <Card title="Withdraw" icon="upload" href="/stellar/guides/earn/withdraw">
+    Redeem vTokens for the underlying plus interest.
+  </Card>
+</CardGroup>

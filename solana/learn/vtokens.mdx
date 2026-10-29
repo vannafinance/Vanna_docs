@@ -1,0 +1,20 @@
+---
+title: "vTokens"
+description: "Share receipts for a Vanna pool. The exchange rate rises with interest."
+mode: "wide"
+---
+
+A vToken is the pool's share mint (classic SPL Token). Supplying 100 USDC mints vUSDC. Redeeming burns vUSDC for USDC at the current rate.
+
+```text
+shares_out = floor(assets × total_supply_shares / lender_assets)   // supply
+assets_out = floor(shares × lender_assets / total_supply_shares)   // redeem
+```
+
+Empty pool: 1:1. The first deposit locks 1,000 shares that nobody can redeem, which protects the rate from being manipulated while the pool is tiny.
+
+Interest does not mint extra vTokens. The same shares become worth more underlying.
+
+vTokens live in the **wallet**. They are Earn receipts, not margin collateral. To use supplied funds as collateral, redeem first, then deposit the underlying.
+
+Redeems are paid from available cash. When utilization is very high, a large redeem may have to wait for repayments or new supply.

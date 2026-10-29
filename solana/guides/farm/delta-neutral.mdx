@@ -1,0 +1,77 @@
+---
+title: "Delta-Neutral Basis Vaults"
+description: "Earn Phoenix perp funding without price exposure: spot long plus an equal short."
+mode: "wide"
+---
+
+Vanna's **basis vaults** hold an asset and an **equal 1× short** of the same asset on Phoenix. The two legs cancel each other's price moves, so the vault is *delta-neutral*: what it earns is the **funding** that longs pay shorts on Phoenix.
+
+<Frame caption="SOL Basis vault page: Vault APY (7D), Funding Now, Open Interest, TVL, your position and the Deposit panel.">
+  <img src="/images/solana/farm/sol-basis-vault.png" alt="SOL Basis vault page with Jupiter and Phoenix badges, Vault APY 7D, Funding Now, Open Interest and Total Value Locked, a position with vbSOL receipt balance and earned yield, and a Deposit panel for 10 USDC showing estimated vbSOL, share price, APY and projected monthly earnings" loading="lazy" decoding="async" />
+</Frame>
+
+## The vaults
+
+| Vault | Share | Legs |
+|---|---|---|
+| **SOL Basis** | vbSOL | SOL held at Phoenix, with an equal SOL-PERP short |
+| **ETH Basis** | vbETH | Spot ETH via Jupiter, with an equal ETH-PERP short on Phoenix |
+| **BTC Basis** | vbBTC | Spot BTC via Jupiter, with an equal BTC-PERP short on Phoenix |
+| **TSLA Basis** | vbTSLA | Spot TSLA exposure via Jupiter, with an equal TSLA-PERP short on Phoenix |
+| **META Basis** | vbMETA | Spot META exposure via Jupiter, with an equal META-PERP short on Phoenix |
+
+Each vault has a **capacity** (the most it accepts in total) and a per-deposit maximum.
+
+## Deposit
+
+<Steps>
+  <Step title="Open the vault">
+    On **Farm → Delta-Neutral**, click a vault.
+  </Step>
+  <Step title="Enter USDC">
+    Deposits are **USDC** from your margin account. **Margin** shows the balance.
+  </Step>
+  <Step title="Read the details">
+    Network, deposit, **Est. receipt received** (vbSOL…), **Share price**, **APY** and projected monthly earnings.
+  </Step>
+  <Step title="Deposit">
+    Click **Deposit** and approve once. The shares go to your margin account and count toward its health factor.
+  </Step>
+</Steps>
+
+<Note>
+**SOL Basis** routes the USDC through your wallet: it leaves the margin account, is deposited into the vault and the vbSOL comes straight back to the margin account, all in **one approval**. The program checks the account's health at the moment the USDC is out, so a very large SOL Basis deposit against a lot of debt can be refused. The panel warns you if so. Any vbSOL left in your wallet can be moved into the margin account with the recovery button.
+</Note>
+
+## Withdraw
+
+Switch to **Withdraw** and enter the shares to redeem. The vault unwinds your share of both legs and returns USDC to your margin account.
+
+## The numbers
+
+| Field | Meaning |
+|---|---|
+| **Vault APY (7D)** | The vault's realized share-price return over the last 7 days, annualized. Until a vault has 7 days of history, it shows an estimate from Phoenix's last 7 days of funding on the vault's short |
+| **Funding Now** | Phoenix's current hourly funding on that market, annualized. Positive = shorts are paid |
+| **Open Interest** | Total open positions on that Phoenix market (one side), in USD and in the asset |
+| **Total Value Locked** | The vault's net asset value |
+| **Capacity** | The vault's cap and how much of it is used |
+
+## What can go wrong
+
+- **Negative funding.** When more traders are short than long, funding turns negative and the short **pays**. If that lasts, the vault's APY falls and can go below zero.
+- **Costs.** Entering and rebalancing pay Jupiter swap and Phoenix fees. On a small vault, one rebalance can move the share price more than days of funding.
+- **Venue risk.** The vault relies on Jupiter, Phoenix and its own program working as intended.
+
+Compare vaults on the Delta-Neutral list: Funding Now and Vault APY tell you which market currently pays best.
+
+## Next steps
+
+<CardGroup cols={2}>
+  <Card title="Farm positions" icon="list" href="/solana/guides/farm/positions">
+    Track earnings and exit.
+  </Card>
+  <Card title="Perps on Phoenix" icon="book" href="/solana/learn/perps-on-phoenix">
+    How funding works on Phoenix.
+  </Card>
+</CardGroup>

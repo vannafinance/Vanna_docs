@@ -1,0 +1,48 @@
+---
+title: "Transfer Collateral"
+description: "Move tokens between your wallet and your margin account. Withdrawals are health-checked."
+mode: "wide"
+---
+
+**Transfer Collateral** moves a token between your wallet and your margin account. The same form is on the header's **Deposit → Transfer** tab.
+
+<Tabs>
+  <Tab title="Wallet → Margin (MB)">
+    Adds collateral without creating debt, so your health factor goes up.
+
+    <Steps>
+      <Step title="Set the direction">
+        **From** your wallet, **To** the margin account. Use the swap button to flip it.
+      </Step>
+      <Step title="Choose token and amount">
+        Pick XLM, BLUSDC, AqUSDC or SoUSDC and an amount. 100% of XLM keeps back your wallet's minimum reserve.
+      </Step>
+      <Step title="Sign">
+        Review and approve (`deposit_collateral_tokens`).
+      </Step>
+    </Steps>
+  </Tab>
+  <Tab title="Margin → Wallet (WB)">
+    Withdraws tokens the margin account holds. With open debt, this lowers your health factor.
+
+    <Steps>
+      <Step title="Set the direction">
+        **From** the margin account, **To** your wallet.
+      </Step>
+      <Step title="Choose token and amount">
+        **Max** and the % chips stop at the most you can withdraw while staying safely above **1.10**.
+      </Step>
+      <Step title="Check the health factor and sign">
+        The app blocks a withdrawal that would bring the health factor to 1.10 or below, and warns below 1.25. The Risk Engine checks again on-chain (`withdraw_collateral_balance`).
+      </Step>
+    </Steps>
+  </Tab>
+</Tabs>
+
+## Good to know
+
+- **Farm positions aren't withdrawable tokens.** Blend supply and LP shares count as collateral, but you must exit them on [Farm](/stellar/guides/farm/overview) before you can transfer the underlying.
+- **Net Available Collateral is not a withdrawal limit.** It is holdings minus debt. Use **Max** in the form instead.
+- If a transaction fails, the amount you typed stays in the form so you can retry.
+
+See [Deposit Collateral](/stellar/guides/margin/deposit-collateral) and [Health Factor](/stellar/guides/margin/health-factor).

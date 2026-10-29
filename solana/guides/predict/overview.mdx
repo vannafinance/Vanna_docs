@@ -1,0 +1,43 @@
+---
+title: "Predict Overview"
+description: "Trade Yes / No on real World.xyz events, and earn in Vanna's USDC pool while you wait."
+mode: "wide"
+---
+
+**Predict** brings World.xyz prediction markets into Vanna. Every market is a question with a **Yes** and a **No** share. A winning share pays **$1** when the event resolves; a losing share pays nothing. The price of a share (in cents) is roughly the market's probability for that outcome.
+
+What Vanna adds: your shares don't just sit. Matched Yes and No shares are lent into Vanna's USDC pool, so your position **earns while you wait** for the result.
+
+<Frame caption="Predict: summary strip, linked wallets, category filters and Trending events.">
+  <img src="/images/solana/predict/markets.png" alt="Predict page with a Trade the world's outcomes banner, Predictions value, Earning in USDC pool, Passive yield APY, Earned and Pays if right cards, a Linked wallets row with Add wallet coming soon, Trending, Crypto, Sports, Politics, Economics and All filters, search, My positions, and Trending event cards" loading="lazy" decoding="async" />
+</Frame>
+
+## The page
+
+| Section | What it shows |
+|---|---|
+| **Summary strip** | Predictions value, how much is Earning in the USDC pool, your Passive yield APY, what you've Earned, and what your positions **Pay if right** |
+| **Linked wallets** | The wallets whose World positions Vanna tracks (your connected wallet; **Add wallet** is coming soon), and whether any World positions are waiting to earn |
+| **Filters** | Trending, Crypto, Sports, Politics, Economics, All, plus search and **My positions** |
+| **Event cards** | Each event's outcomes with live probabilities, the last trade, volume and the **Earn up to** rate for that event |
+
+Trending follows World.xyz's own trending list.
+
+## Prices
+
+Prices come live from World's maker quotes, with recent trades as a fallback. Each outcome shows a Yes price and a No price; together they add up to a little over $1 (the maker's spread). An outcome with no quote and no recent trade isn't tradable until one appears.
+
+## What you pay with
+
+Predict trades settle in **CASH**, World's USD token. Mint test CASH from **Deposit → Test funds** ([Faucet](/solana/guides/faucet)).
+
+## Next steps
+
+<CardGroup cols={2}>
+  <Card title="Trade on Predict" icon="ticket" href="/solana/guides/predict/trade">
+    Buying, selling and the bet slip.
+  </Card>
+  <Card title="Earn while you wait" icon="hourglass-half" href="/solana/guides/predict/earn-while-you-wait">
+    How pairing and pool yield work.
+  </Card>
+</CardGroup>

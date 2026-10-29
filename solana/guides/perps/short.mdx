@@ -1,0 +1,44 @@
+---
+title: "Open a Short"
+description: "Bet on a price going down with a Phoenix perp from your margin account."
+mode: "wide"
+---
+
+A **short** profits when the price falls and loses when it rises. Losses on a short have no fixed ceiling, because a price can keep rising: watch your health factor.
+
+<Steps>
+  <Step title="Pick the market">
+    On **Trade → Perps**, choose SOL, ETH, BTC, TSLA or META and check the market is Open.
+  </Step>
+  <Step title="Select Short">
+    In the order panel click **Short**, with **Market** selected.
+  </Step>
+  <Step title="Set collateral and leverage">
+    Enter the USDC **Collateral** (or use MAX / the slider) and choose **Order leverage**. **Position size** updates.
+  </Step>
+  <Step title="Check the order">
+    **Order on Phoenix** shows the estimated entry price and the **min entry price** your slippage allows, plus the account's health factor after the order.
+  </Step>
+  <Step title="Place it">
+    Click **Short** and approve. Collateral moves to Phoenix and the order fills in the same transaction.
+  </Step>
+</Steps>
+
+## Funding on shorts
+
+When funding is **positive** (most of the time in a rising market) shorts are paid every hour. When it turns **negative**, shorts pay. This is the same funding Vanna's [delta-neutral vaults](/solana/guides/farm/delta-neutral) earn by holding spot and an equal short.
+
+## Closing
+
+Click **Close** on the position (all or a percentage, as a reduce-only market order) or **Close All**. When nothing is left open, the USDC goes back to your margin account. [Flash repay](/solana/guides/margin/repay#flash-repay) also closes every perp position as its first step.
+
+## Next steps
+
+<CardGroup cols={2}>
+  <Card title="Open a long" icon="arrow-trend-up" href="/solana/guides/perps/long">
+    The other side of the trade.
+  </Card>
+  <Card title="Liquidation" icon="triangle-exclamation" href="/solana/guides/margin/liquidation">
+    What happens if your health factor hits 1.10.
+  </Card>
+</CardGroup>

@@ -1,0 +1,45 @@
+---
+title: "For Liquidity Providers"
+description: "Supply SOL, USDC or USDT and earn the interest margin accounts pay."
+mode: "wide"
+---
+
+## What you earn
+
+You supply an asset to its lending pool and receive **vTokens** (vSOL, vUSDC, vUSDT). Borrowers pay interest into the pool, so each vToken is redeemable for more of the underlying over time. Your **Supply APY** depends on how much of the pool is borrowed (its utilization): the busier the pool, the higher the rate. See [Interest Rate Model](/solana/learn/interest-rate-model).
+
+## What you risk
+
+- **Liquidity:** you can withdraw only what isn't currently lent out. In a very busy pool (high utilization) you may have to wait for repayments or liquidations to free cash.
+- **Bad debt:** if a borrower's collateral falls faster than it can be liquidated, the pool can take a loss. Vanna liquidates at a health factor of 1.10, while every borrower still has more collateral than debt, to keep this rare. The [Analytics](/solana/guides/analytics) page shows estimated bad debt and accounts at risk live.
+- **Test network:** today's app runs on a mainnet fork; balances are test balances.
+
+## Other ways to earn
+
+- **Predict:** hold matched Yes and No shares and they earn in Vanna's USDC pool until the event resolves ([Predict](/solana/guides/predict/earn-while-you-wait)).
+- **Farm:** through a margin account you can supply to Kamino or deposit into Perena and basis vaults ([Farm](/solana/guides/farm/overview)).
+
+## How to start
+
+<Steps>
+  <Step title="Sign in and get test funds">
+    [Connect your wallet](/solana/guides/connect-wallet) and mint test funds from **Deposit** ([Faucet](/solana/guides/faucet)).
+  </Step>
+  <Step title="Supply">
+    Open [Earn](/solana/guides/earn/overview), pick a pool and [supply](/solana/guides/earn/supply).
+  </Step>
+  <Step title="Track it">
+    Watch interest on [Portfolio → Lender](/solana/guides/portfolio).
+  </Step>
+</Steps>
+
+## Next steps
+
+<CardGroup cols={2}>
+  <Card title="Supply on Earn" icon="piggy-bank" href="/solana/guides/earn/supply">
+    Lend SOL, USDC or USDT.
+  </Card>
+  <Card title="Interest rate model" icon="percent" href="/solana/learn/interest-rate-model">
+    How utilization sets your APY.
+  </Card>
+</CardGroup>

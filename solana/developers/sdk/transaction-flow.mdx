@@ -1,0 +1,37 @@
+---
+title: "Transaction Flow"
+description: "Price refresh, remaining accounts, lookup tables, simulate, then send."
+mode: "wide"
+---
+
+Typical risk-checked transaction:
+
+1. **Refresh prices (fork only).** The fork has no live price pushers. The app calls `POST /api/prices/refresh`, which rewrites the oracle accounts with live prices before a borrow, withdraw or `margin_execute`.
+2. **Build named accounts** from PDAs.
+3. **Build `remaining_accounts`** with `buildHealthRemainingAccounts`: allowed-token groups, venue groups, debt groups, then the oracle segment (and the validator segment for Phoenix).
+4. **Compute budget and lookup tables.** `margin_execute` into Phoenix or a basis vault needs a v0 transaction with an address lookup table and a high compute-unit limit.
+5. **Simulate, then send.** If simulation fails, do not broadcast.
+
+Several core instructions can be batched in one transaction. `MarginIndexModel` in `lib/solana/margin.ts` replays each instruction's effect on the margin's active lists, so each one gets the right groups.
+
+## Example: perps open
+
+```ts
+// conceptual — lib/solana/perps.ts openPerp()
+const ixs = [
+  emberDepositViaMarginExecute,     // margin USDC → phUSD
+  phoenixDepositFundsViaExecute,    // phUSD → trader account
+  placeMarketOrderViaExecute,       // immediate-or-cancel, filled in the same tx
+];
+await sendInstructions(ixs, opts);   // lib/solana/tx.ts: lookup tables, simulate first, then send
+```
+
+## Multi-step flows
+
+The program has no atomic "close everything" instruction. The app's **flash repay** (`lib/solana/flash-repay.ts`) is a sequence of ordinary transactions: close Phoenix positions, redeem Kamino cTokens, swap holdings into each debt token, `repay_all` each loan, then optionally withdraw everything. Each step re-reads the chain, so a run that stopped half-way resumes cleanly.
+
+## Common errors
+
+- **Blockhash not found**: the wallet is not pointed at the fork RPC.
+- **Stale price**: refresh prices and retry.
+- **Stale pool on the fork**: Jupiter's route used a cloned pool that drifted. The app re-clones it from mainnet and retries.

@@ -1,0 +1,64 @@
+---
+title: "Leveraged Yield"
+description: "Borrow on Margin, then farm the borrowed funds on Blend, Soroswap or Aquarius, and unwind safely."
+mode: "wide"
+---
+
+import RiskNotice from "/snippets/stellar/risk-notice.mdx";
+
+Leveraged yield means borrowing from Vanna and deploying the loan into a Farm pool, so you earn on more than your own capital. On Stellar you do it in two steps, Margin then Farm, or ask [Copilot](/stellar/guides/copilot) to plan both.
+
+## Open a position
+
+<Steps>
+  <Step title="Deposit and borrow">
+    On **Margin → Leverage your Assets**, deposit collateral and borrow the token the pool needs, for example XLM or BLUSDC for Blend, or SoUSDC for the Soroswap XLM / SoUSDC pool. See [Borrow](/stellar/guides/margin/borrow).
+  </Step>
+  <Step title="Farm it">
+    Open the pool on **Farm** and supply or add liquidity from the margin account. On Blend, **Source** shows that borrowed funds are used first. See [Blend](/stellar/guides/farm/blend-pools) or [LP Pools](/stellar/guides/farm/amm-liquidity).
+  </Step>
+  <Step title="Check the account">
+    On Margin, **Borrowed money is in** now shows the amount in **Farm**. Watch the health factor and the Liquidation buffer.
+  </Step>
+</Steps>
+
+<Frame caption="After farming: the account map shows borrowed money split between Farm and Idle. Click the image to zoom.">
+  <img src="/images/stellar/margin/margin-positions.png" alt="Margin Current Positions account map with collateral, account value, four borrowed assets each with Repay, and a footer showing Borrowed money is in Farm $579.18 and Idle $747.47" loading="lazy" decoding="async" />
+</Frame>
+
+## Does it pay?
+
+Your net yield is roughly:
+
+```text
+farm APY × amount farmed − borrow APY × amount borrowed
+```
+
+Both rates are variable. Compare the pool's supply APY (Farm) with the asset's **Borrow APY** (Earn) and your **Net Borrow Rate** (Margin) before you start. On testnet, rates can swing a lot.
+
+<Warning>
+Borrowing XLM to supply XLM to Blend cancels out XLM price moves on that leg. Borrowing USDC to farm XLM does not: you are now long XLM with leverage, and an XLM drop lowers your health factor.
+</Warning>
+
+## Unwind
+
+<Steps>
+  <Step title="Exit the farm">
+    Withdraw from Blend or remove liquidity. Tokens return to the margin account.
+  </Step>
+  <Step title="Swap if needed">
+    If you got back a different token than you owe, [swap](/stellar/guides/trade/spot-swap) for the debt asset.
+  </Step>
+  <Step title="Repay">
+    [Repay](/stellar/guides/margin/repay) each loan in its own asset.
+  </Step>
+  <Step title="Withdraw">
+    [Transfer](/stellar/guides/margin/transfer-collateral) what's left to your wallet.
+  </Step>
+</Steps>
+
+Each step is its own transaction. If one fails, the earlier ones stay done; check your balances before retrying.
+
+<RiskNotice />
+
+See [Sample Strategies](/stellar/guides/sample-strategies) for worked examples.

@@ -1,0 +1,112 @@
+---
+title: "Analytics"
+description: "Protocol-wide risk, positions, liquidations, lending pools, prediction vaults, collateral and prices: live and read-only."
+mode: "wide"
+---
+
+**Analytics** is a live, public view of the whole protocol. It reads every margin account and pool directly from the chain. Nothing here sends a transaction.
+
+<Frame caption="Analytics overview: bad debt, liquidatable accounts, accounts at risk and the accounts table.">
+  <img src="/images/solana/analytics/overview.png" alt="Protocol Analytics overview with Bad Debt, Can Be Liquidated, Liquidatable Debt, Accounts at Risk, Average Health, Collateral at Risk, Average Leverage and Total Debt cards" loading="lazy" decoding="async" />
+</Frame>
+
+The status bar at the top shows that the data is live, how many accounts were found, since when activity is counted, the last update time and a **Refresh** button.
+
+## Sections
+
+| Group | Page | What it answers |
+|---|---|---|
+| **Risk** | **Overview** | Is anything wrong? Bad debt, liquidatable accounts and debt, accounts at risk, average health and leverage, total debt |
+| | **Positions** | Look up any wallet or margin account; how accounts spread across health, leverage and collateral |
+| | **Liquidations** | Past liquidations |
+| | **Top accounts** | The largest accounts |
+| | **Alerts** | Accounts and pools that need attention |
+| **Markets** | **Lending Pools** | Supplied, borrowed, available, utilization and rates per pool |
+| | **Collateral** | What collateral is made of |
+| | **Prices** | Oracle prices in use |
+| **Prediction** | **Prediction Vaults** | Every Predict pool: YES / NO it holds and how much went into Vanna's USDC pool |
+| **Tools** | **What-if Calculator** | How a price move would change accounts' health |
+
+## Overview
+
+The cards answer the key questions at a glance:
+
+| Card | Meaning |
+|---|---|
+| **Bad debt (estimated)** | Debt not covered by collateral. $0 means no account owes more than it holds |
+| **Can be liquidated** | Accounts at a health factor of 1.10 or below, and their debt |
+| **Liquidatable debt** | That debt, and the collateral backing it |
+| **Accounts at risk / active** | Accounts close to the line, out of all active accounts |
+| **Average health / leverage** | Across accounts with debt |
+| **Collateral at risk** | Collateral in accounts with health under 1.50 |
+| **Total debt** | Everything owed, against all collateral |
+
+Below, the **Accounts** table lists every account **By health** or **By leverage**, filterable by Liquidatable, At risk, Safe, No debt and Not valued, with search by wallet or margin address. If you're connected, your own account is shown first.
+
+Further down, **Accounts by health** charts debt at each health level (click a bar to filter the table), **What collateral is made of** splits all collateral into tokens held, Kamino deposits and Phoenix perps, and four cards sum up lending. **Test a price drop** opens the What-if Calculator.
+
+<Frame caption="Overview, further down: accounts by health, what collateral is made of, and the lending summary.">
+  <img src="/images/solana/analytics/overview-charts.png" alt="Accounts by health bar chart with the 1.10 liquidation line, a collateral donut split into tokens held, Kamino deposits and Phoenix perps, and Supplied by lenders, Borrowed, Available to withdraw and Borrowed share cards" loading="lazy" decoding="async" />
+</Frame>
+
+## Positions
+
+Paste any wallet or margin-account address into **Look up a wallet** and press **Look up** to open that account's own page (read-only). Below it:
+
+- **Accounts by health**: how many accounts sit at each health level.
+- **Debt by leverage**: how leveraged the borrowing accounts are.
+- **Collateral by asset** and **Debt by asset**: what accounts hold and what they owe, per token.
+
+<Frame caption="Positions: accounts by health, debt by leverage, and collateral and debt by asset.">
+  <img src="/images/solana/analytics/positions.png" alt="Accounts by health bars, a debt by leverage chart, Collateral by asset list (USDC, SOL, JitoSOL, USDT, TSLAx, AAPLx, GOOGLx) and Debt by asset (USDC, SOL, USDT)" loading="lazy" decoding="async" />
+</Frame>
+
+## Lending Pools
+
+The table lists each pool's supplied, borrowed and available amounts, utilization, borrow and supply APR and status. Select a pool to inspect it: a utilization gauge and **How the borrow rate changes**, the pool's rate curve with a marker at today's utilization.
+
+<Frame caption="Lending Pools: each pool's numbers, and the selected pool's utilization and borrow-rate curve.">
+  <img src="/images/solana/analytics/lending-pools.png" alt="Lending Pools table for SOL, USDC and USDT with supplied, borrowed, available, utilization, borrow APR and Active status, and a SOL pool panel with a 1.48% utilization gauge and a borrow-rate curve" loading="lazy" decoding="async" />
+</Frame>
+
+## Prediction Vaults
+
+<Frame caption="Prediction Vaults: how much Predict money is in Vanna's USDC pool, what is waiting, and one row per pool. ">
+  <img src="/images/solana/analytics-prediction-vaults.png" alt="Prediction Vaults page with In Vanna's USDC pool, Waiting to merge, YES and NO shares in pools and Pools cards, a Where prediction money sits bar and a pools table with Earning statuses" loading="lazy" decoding="async" />
+</Frame>
+
+Every Predict market has a pool that holds users' YES and NO shares. Matched pairs are merged and supplied to Vanna's USDC pool (see [Earn While You Wait](/solana/guides/predict/earn-while-you-wait)). This page shows where that money is:
+
+| Card | Meaning |
+|---|---|
+| **In Vanna's USDC pool** | USDC the Predict pools have supplied, and its share of the USDC pool |
+| **Waiting to merge** | Matched YES + NO pairs not merged yet ($1 each) |
+| **YES / NO shares in pools** | All shares held, and how many have nothing to pair with yet |
+| **Pools** | Pools created, and how many hold funds |
+
+The **Pools** table lists each market with YES and NO in its pool, matched pairs, USDC in Vanna's pool and a status:
+
+| Status | Meaning |
+|---|---|
+| **Earning** | Its pairs are in Vanna's USDC pool |
+| **Merge pending** | Pairs are waiting for the next merge |
+| **Waiting for other side** | Only YES or only NO so far: nothing to pair |
+| **Event ended** | World closed the event before its pairs were merged |
+| **Empty** | Nothing deposited yet |
+
+Use the filters (With funds, Earning, Merge pending, Event ended, All pools) to narrow the table, and click a market to open it on Predict.
+
+<Tip>
+Use Analytics to sanity-check the protocol before you supply: how much is borrowed, how healthy borrowers are, and whether any bad debt exists.
+</Tip>
+
+## Next steps
+
+<CardGroup cols={2}>
+  <Card title="Health factor" icon="heart-pulse" href="/solana/guides/margin/health-factor">
+    What the health numbers mean for your own account.
+  </Card>
+  <Card title="Earn while you wait" icon="hourglass-half" href="/solana/guides/predict/earn-while-you-wait">
+    How Predict pools feed Vanna's USDC pool.
+  </Card>
+</CardGroup>

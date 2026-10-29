@@ -1,0 +1,155 @@
+---
+title: "Vanna MCP"
+description: "Use Vanna from Claude, Cursor or any MCP-compatible AI assistant. Log in with your wallet; every transaction is still signed by you."
+mode: "wide"
+---
+
+The **Vanna MCP** is a server that gives any AI assistant (Claude, Cursor, Windsurf, or anything that speaks the [Model Context Protocol](https://modelcontextprotocol.io)) the same abilities as the [Copilot](/solana/guides/copilot): read your account, answer with live figures, and prepare Earn, Margin, Trade, Farm and Predict transactions for your wallet to sign.
+
+It is also the engine behind the Copilot itself. Every transaction the Copilot shows you is built and simulated by this server.
+
+<Info>
+The server **never holds a key and never signs**. Your AI assistant gets a link, you open it, review the plan and sign in your own wallet.
+</Info>
+
+## Connect
+
+The hosted server is live on the Vanna test network:
+
+```text
+https://vanna-mcp-solana-public-398807408840.us-central1.run.app/mcp
+```
+
+<Steps>
+  <Step title="Add the server to your assistant">
+    **Claude Code:**
+
+    ```bash
+    claude mcp add --transport http vanna-solana https://vanna-mcp-solana-public-398807408840.us-central1.run.app/mcp
+    ```
+
+    **Claude (desktop or web):** add a custom connector with the URL above.
+
+    **Cursor, Windsurf and others:** add a remote MCP server with the URL above in the app's MCP settings, for example:
+
+    ```json
+    {
+      "mcpServers": {
+        "vanna-solana": { "url": "https://vanna-mcp-solana-public-398807408840.us-central1.run.app/mcp" }
+      }
+    }
+    ```
+  </Step>
+  <Step title="Log in with your wallet">
+    The first time, your browser opens Vanna's **Connect your wallet** page. It shows which app is asking and where it will return, and what it will be able to do: **Read your balances, positions and market data**, and **Prepare transactions for you to review and sign**. Untick the second to give read-only access. Click **Connect wallet and approve**, and your wallet asks you to sign a login message. No transaction, no fee. There is no separate account: your wallet is the login.
+
+    <Frame caption="The Connect page, with the wallet asking to sign the login message.">
+      <img src="/images/solana/mcp/MCP_Authentication.png" alt="Connect your wallet page for Claude Code (vanna-solana-live) listing read and prepare-transactions permissions, with Connect wallet and approve and Decline buttons, and a Backpack window asking to approve the sign-in message" loading="lazy" decoding="async" />
+    </Frame>
+  </Step>
+  <Step title="Ask">
+    Your assistant now lists the Vanna server as connected, with its 20 tools. Talk to it as you would to the Copilot: "Show my Vanna portfolio", "Supply 100 USDC to Earn".
+
+    <Frame caption="Claude Code's MCP list with the Vanna server connected.">
+      <img src="/images/solana/mcp/MCP_Connected.png" alt="Claude Code Manage MCP servers list showing vanna-solana-live connected with 20 tools" loading="lazy" decoding="async" />
+    </Frame>
+  </Step>
+</Steps>
+
+After you log in, every call acts as your wallet. The server refuses any write for another wallet.
+
+## Signing a Transaction
+
+When you ask for a change, the assistant gets a **link** to a signing page served by Vanna. Nothing has been sent at this point.
+
+<Frame caption="Claude prepares an Earn supply and gives the signing link.">
+  <img src="/images/solana/mcp/MCP_Approve_transaction.png" alt="Claude Code answering supply 10 USDC to earn: the supply is prepared and simulated, nothing sent yet, with a link to approve it within 5 minutes" loading="lazy" decoding="async" />
+</Frame>
+
+1. **Review.** The page shows the plan the server drew: each step, amounts, warnings, and your worst-case health factor.
+2. **Approve.** Click **Approve plan with wallet** and sign the approval message, which names exactly that plan. A plan must be approved within 5 minutes. **Cancel plan** stops it without any signature.
+3. **Sign each step.** For each step the server checks live data again, builds and simulates the transaction, and your wallet shows it to you to sign. A Predict trade with several transactions is signed in one approval.
+4. **Confirmed.** The server checks that what you signed is exactly what it built, sends it and waits for the chain. Your assistant can then report the result.
+
+<Frame caption="The signing page awaiting approval, with the wallet showing the plan approval message.">
+  <img src="/images/solana/mcp/MCP_Plan_Approved.png" alt="Review and sign page with an awaiting approval plan to supply 10 USDC to the Vanna Earn pool, Approve plan with wallet and Cancel plan buttons, and a Backpack window showing the approval message with wallet, plan, digest and health factor floor" loading="lazy" decoding="async" />
+</Frame>
+
+A copied link only lets someone see the plan. It can't run it: running needs the approval made in your browser.
+
+<Tip>
+Use the same wallet in your browser extension as the one you logged in with. The signing page checks it.
+</Tip>
+
+## What You Can Ask
+
+| Area | Examples |
+|---|---|
+| **Account** | "What's my health factor?", "Show my portfolio", "What's my history?" |
+| **Risk** | "How much can I borrow safely?", "What if I withdraw 1 SOL?", "How far is liquidation?" |
+| **Earn** | "Supply 100 USDC to Earn", "What do the pools pay?" |
+| **Margin** | "Open a margin account and deposit 5 SOL", "Borrow 500 USDC", "Repay my USDT" |
+| **Leverage** | "Lever my SOL 2x", "Close everything" |
+| **Swap** | "Swap 5 SOL to USDC", "Swap SOL to get 100 USDC" |
+| **Farm** | "Put 50 USDC into Kamino", "Deposit 20 USDC into ETH Basis" |
+| **Perps** | "Open a 2x SOL long with 20 USDC", "Close my ETH short" |
+| **Predict** | "What prediction markets are there?", "Bet 5 CASH on Barcelona", "Get me test CASH" |
+| **Test funds** | "Fund my wallet": test tokens on the fork (a few times a day per wallet) |
+
+Some assistants also show ready-made commands from the server: **lever**, **unwind**, **health check**, **earn overview** and the full **Vanna assistant** rules.
+
+## Tools
+
+The server exposes 20 tools. Your assistant chooses them; you don't call them yourself.
+
+| Tool | What it does |
+|---|---|
+| `vanna_portfolio` | Everything you hold, earn and owe, like the Portfolio page |
+| `vanna_account` | Margin account: health, positions; open or close the account |
+| `vanna_margin_status` | Collateral, debt and health details |
+| `vanna_margin_trade` | Deposit, withdraw, borrow, repay |
+| `vanna_risk` | Safe borrow / withdraw capacity, what-if, leverage limits, liquidation distance, the live policy |
+| `vanna_plan` | Multi-step plans: lever, unwind, exact-output swap, custom chains; plan status |
+| `vanna_earn_market`, `vanna_earn_position`, `vanna_earn_write` | Earn pools, your deposits, supply and withdraw |
+| `vanna_swap` | Quotes and swaps (Jupiter or Titan route) |
+| `vanna_farm_overview`, `vanna_farm_kamino` | Kamino markets, your receipts, deposit and redeem |
+| `vanna_vaults` | Basis and Perena vaults: yields, your shares, deposit and withdraw |
+| `vanna_perps` | Phoenix perps: markets, positions, preview, open and close |
+| `vanna_predict` | Predict: events, positions, quotes, buy, sell, test CASH |
+| `vanna_oracle` | The prices the protocol uses |
+| `vanna_protocol_info` | Protocol settings, assets and programs |
+| `vanna_history` | Your past transactions |
+| `vanna_wallet` | Wallet balances and test tokens |
+| `vanna_sign` | Status of a transaction you signed |
+
+## Safety
+
+These are enforced by the server, so no wording can talk the AI past them:
+
+- **Health floor.** Anything that can lower your health (borrow, withdraw, margin swap) must keep it at **1.15 or above**. Liquidation is at 1.10. Adding collateral and repaying are never blocked.
+- **Limits per wallet.** $5,000 per action and $25,000 per day, 6 transaction builds a minute, 8 steps per plan.
+- **Exact amounts.** Zero, negative or unclear amounts, or more decimals than the token has, are refused, never rounded.
+- **What you approved is what runs.** The plan is frozen with exact amounts; your approval signs it; the transaction you sign must match the server's own build byte for byte.
+- **Exactly once.** Each step is sent one time. An unclear result is never retried automatically.
+- **Your wallet only.** No transfers to other addresses, no arbitrary programs, no admin actions, no liquidating others.
+
+The assistant is also told the Copilot's rules: stay on Vanna, never invent a number, refuse orders for later (stop-loss, limit, DCA), never say a Predict outcome will win, and never say something happened before the chain confirms it.
+
+<Note>
+An AI assistant can misread a request. Always check the signing page (asset, amount, direction and health factor after) before you approve.
+</Note>
+
+## Read-Only Access
+
+Untick **Prepare transactions for you to review and sign** on the Connect page if you only want your assistant to see your account. It can answer questions about positions, prices and risk, but can't prepare any transaction.
+
+## Next steps
+
+<CardGroup cols={2}>
+  <Card title="Copilot" icon="sparkles" href="/solana/guides/copilot">
+    The same engine, built into the app.
+  </Card>
+  <Card title="Getting Started" icon="rocket" href="/solana/guides/getting-started">
+    Sign in and mint test funds first.
+  </Card>
+</CardGroup>

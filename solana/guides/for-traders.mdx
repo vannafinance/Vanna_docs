@@ -1,0 +1,53 @@
+---
+title: "For Traders"
+description: "Borrow against many collaterals and use the loan for swaps, perps and yield."
+mode: "wide"
+---
+
+import RiskNotice from "/snippets/solana/risk-notice.mdx";
+
+## What you can do
+
+| Goal | How |
+|---|---|
+| Borrow without selling | Deposit SOL, LSTs, stables or xStocks and borrow SOL, USDC or USDT ([Borrow](/solana/guides/margin/borrow)) |
+| Leverage up to 10× | Use the leverage slider on Margin; borrow one asset or two at once with Dual Borrow |
+| Swap with leverage | Swap inside the margin account on Jupiter or Titan ([Spot](/solana/guides/trade/spot-swap)) |
+| Long or short | Phoenix perps on SOL, ETH, BTC, TSLA and META, up to 5× per order ([Perps](/solana/guides/perps/overview)) |
+| Leveraged yield | Supply to Kamino, or deposit into Perena or delta-neutral basis vaults ([Farm](/solana/guides/farm/overview)) |
+| Close everything | Flash repay closes positions and repays every loan in one guided flow ([Repay](/solana/guides/margin/repay)) |
+
+## Your numbers
+
+- **Health factor**: collateral ÷ debt. Liquidation at 1.10 or below. See [Health Factor](/solana/guides/margin/health-factor).
+- **Leverage**: everything the account holds (borrowed funds included, open perps at full size) ÷ your equity. 1.00x means no borrowing.
+- **Collateral left before liquidation**: how much value your collateral can lose before the account reaches 1.10.
+
+Every page that can change your account shows a before → after preview of these numbers before you sign.
+
+<RiskNotice />
+
+## How to start
+
+<Steps>
+  <Step title="Sign in and get test funds">
+    [Connect](/solana/guides/connect-wallet) and mint test funds from **Deposit** ([Faucet](/solana/guides/faucet)).
+  </Step>
+  <Step title="Open your account">
+    [Open a margin account](/solana/guides/margin/open-account) and [deposit collateral](/solana/guides/margin/deposit-collateral).
+  </Step>
+  <Step title="Borrow and use it">
+    [Borrow](/solana/guides/margin/borrow), then swap, trade perps or farm.
+  </Step>
+</Steps>
+
+## Next steps
+
+<CardGroup cols={2}>
+  <Card title="Margin overview" icon="scale-balanced" href="/solana/guides/margin/overview">
+    Collateral, loans and leverage in one place.
+  </Card>
+  <Card title="Perps" icon="chart-line" href="/solana/guides/perps/overview">
+    Long or short on Phoenix.
+  </Card>
+</CardGroup>

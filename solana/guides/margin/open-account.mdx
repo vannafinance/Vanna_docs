@@ -1,0 +1,42 @@
+---
+title: "Open a Margin Account"
+description: "Create your margin account: one signature, once per wallet."
+mode: "wide"
+---
+
+Your margin account is a program-owned account derived from your wallet address. You create it once; after that it's always the same account for that wallet.
+
+<Steps>
+  <Step title="Connect">
+    [Connect your wallet](/solana/guides/connect-wallet) and mint test funds from **Deposit** ([Faucet](/solana/guides/faucet)).
+  </Step>
+  <Step title="Open Margin">
+    Go to **Margin** (the page the app opens on). If you don't have an account yet, the page offers to create one.
+  </Step>
+  <Step title="Create and sign">
+    Click create and approve in your wallet. A small amount of SOL pays the account's rent.
+  </Step>
+</Steps>
+
+<Tip>
+You can also skip this step: your first deposit (in **Leverage your Assets** or **Transfer Collateral** into the margin account) creates the account in the same transaction if it doesn't exist yet.
+</Tip>
+
+## What the account holds
+
+- Collateral you deposit
+- Tokens you borrow (they stay in the account; they don't go to your wallet)
+- Swap results, Kamino receipts (kSOL, kUSDC, kUSDT), vault shares (USD\*, USD\* Junior, vbSOL, vbBTC…) and your Phoenix perps collateral
+
+All of it counts toward one health factor.
+
+## Next steps
+
+<CardGroup cols={2}>
+  <Card title="Deposit collateral" icon="arrow-down-to-bracket" href="/solana/guides/margin/deposit-collateral">
+    Add SOL, USDC, LSTs, JupUSD or xStocks.
+  </Card>
+  <Card title="Margin accounts (concept)" icon="book" href="/solana/learn/margin-accounts">
+    How the account works on-chain.
+  </Card>
+</CardGroup>

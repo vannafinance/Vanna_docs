@@ -1,0 +1,39 @@
+---
+title: "Yield Vaults"
+description: "Perena USD* and Vanna's delta-neutral basis vaults, held in the margin account as collateral."
+mode: "wide"
+---
+
+Besides Kamino, a margin account can put USDC into two kinds of yield vaults. The vault's share token stays in the margin account, counts toward the health factor, and can be borrowed against.
+
+## Perena USD* and USD* Junior
+
+Perena's USD* vault takes USDC and issues USD* shares. The Junior tranche takes more risk for more yield. Vanna's oracle reads Perena's own share price for each.
+
+- A stale Perena NAV counts as zero for the owner's actions, but at its last value for liquidation.
+- A Junior exit that would push the account below HF 1.10 is refused.
+- The senior tranche and queued withdrawals aren't supported.
+
+## Delta-neutral basis vaults
+
+Vanna's basis vaults take USDC, buy an asset through Jupiter, and hold it against a short of the same size on Phoenix. The vault's dollar value stays roughly flat while it collects funding.
+
+| Vault | Holds |
+|---|---|
+| SOL | Native SOL as Phoenix collateral |
+| ETH | Wormhole ETH (half the deposit; the rest is USDC margin) |
+| BTC | cbBTC (half) |
+| TSLA | TSLAx (half) |
+| META | METAx (half) |
+
+The oracle computes each vault's NAV itself, pricing both the spot asset and the short at the same Phoenix index. Because the two legs offset, a move in the asset's price barely changes the share's value, and the margin's health factor stays where it was. A share is never valued above the vault's own share price.
+
+<Note>
+The basis-vault program is deployed on the hosted fork only. A margin account can't deposit into the SOL vault directly (a Phoenix constraint), but it can hold, borrow against and redeem SOL-vault shares bought from a wallet.
+</Note>
+
+## Liquidation
+
+Vault shares are ordinary collateral tokens to a liquidator. A liquidator repays part of a debt, receives shares worth up to the repaid value plus the bonus, and redeems them from the vault.
+
+Exit costs beyond the fee to close (Phoenix spread, Jupiter price impact) are covered by the 1.10 threshold, not modelled separately.

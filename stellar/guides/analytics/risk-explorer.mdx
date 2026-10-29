@@ -1,0 +1,46 @@
+---
+title: "Risk Explorer"
+description: "Stress the live Stellar margin accounts with price, depeg, rate and protocol shocks. Read-only."
+mode: "wide"
+---
+
+**Analytics → Risk Explorer** runs stress tests against the **live** margin accounts: baseline bad debt, a stress heatmap, presets and manual shocks. Changing a scenario never trades, moves an oracle price or liquidates anyone. Nothing is sent to the chain.
+
+## Scenario library
+
+| Category | Scenario | What it tests |
+|---|---|---|
+| Market risk | **Single Asset Risk Explorer** | One asset's price drop across every position holding or owing it |
+| Market risk | **Multi-Asset Correlated Crash** | XLM deep bear, flash crash and USDC contagion presets |
+| Market risk | **Stablecoin Depeg** | BLUSDC / AQUSDC / SOUSDC depeg: collateral loses value while USDC debt shrinks |
+| Market risk | **Black Swan Multi-Shock** | Crash, depeg, a venue loss and a rate spike at once |
+| Leverage risk | **Leveraged LP Impermanent Loss** | Impermanent loss on live Aquarius / Soroswap LP positions vs each account's equity |
+| Leverage risk | **High-Leverage Concentration** | Accounts per leverage band and what a move does to the most leveraged |
+| Leverage risk | **Leveraged External-Pool Shock** | A price move flowing through Blend / Aquarius / Soroswap positions |
+| Systemic risk | **Cascading Liquidation** | The liquidation spiral, with your own market-impact assumption |
+| Systemic risk | **Whale Withdrawal** | Lenders pull from a pool: utilization and the on-chain rate rise |
+| Systemic risk | **Interest Rate Spike** | Pools pushed up the rate curve; interest erodes borrower health |
+| Protocol risk | **Reflector Oracle Failure** | A stale or wrong price: hidden, wrongful or missed liquidations |
+| Protocol risk | **Integrated Protocol Exploit** | An exploit in Blend, Aquarius or Soroswap impairs positions there |
+
+The scenarios use the current account snapshot. Only the stress **presets** (the preset shock sizes) are fixed values.
+
+## Use it
+
+<Steps>
+  <Step title="Pick a scenario">
+    Open **Risk Explorer** and choose a card from the library.
+  </Step>
+  <Step title="Set the shock">
+    Use a preset or adjust the controls.
+  </Step>
+  <Step title="Read the results">
+    Compare accounts pushed below 1.10, debt at risk and estimated bad debt against the baseline.
+  </Step>
+</Steps>
+
+<Note>
+Results are what-if calculations on today's accounts, not forecasts. Real outcomes also depend on liquidator behaviour, external liquidity and oracle updates.
+</Note>
+
+For your own price assumptions across all accounts, use **What-if Calculator**. See [Risk Monitoring](/stellar/guides/analytics/overview) and [Health Factor](/stellar/guides/margin/health-factor).

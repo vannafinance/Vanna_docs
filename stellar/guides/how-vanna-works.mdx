@@ -1,0 +1,54 @@
+---
+title: "How Vanna Works"
+description: "Where your tokens go when you lend, borrow, swap and farm on Vanna's Stellar testnet."
+mode: "wide"
+---
+
+Vanna has two sides that meet in its lending pools:
+
+- **Lenders** supply assets to a Vanna lending pool and receive **vTokens** (vXLM, vBLUSDC, vAqUSDC, vSoUSDC) that grow in value as borrowers pay interest.
+- **Traders** open a **margin account**, a personal Soroban smart contract. They deposit collateral, borrow from the pools and use the borrowed funds in Stellar DeFi.
+
+## Follow the tokens
+
+| You do | Tokens move | Where they count |
+|---|---|---|
+| Supply on **Earn** | Wallet → Vanna lending pool. You get vTokens in your wallet. | Your lending position, not margin collateral |
+| Deposit on **Margin** | Wallet → your margin account | Collateral |
+| Borrow on **Margin** | Lending pool → your margin account, plus debt | Collateral **and** debt |
+| Swap on **Spot** | One token → another, inside the margin account | Still collateral |
+| Supply / add LP on **Farm** | Margin account → Blend, Soroswap or Aquarius | Still collateral (as a Blend receipt or LP position) |
+| Repay | Margin account → lending pool | Lowers debt |
+| Transfer to wallet | Margin account → wallet (health-checked) | Leaves the account |
+
+Borrowed funds never go straight to your wallet. They stay in the margin account, where the protocol can see and value them.
+
+## One account, one health factor
+
+Every position in a margin account (tokens, Blend supply and LP shares) backs every loan in it. The **health factor** compares the account's total collateral value with its total debt:
+
+```text
+Health factor = total collateral (USD) / total debt (USD)
+```
+
+Above **1.10** the account is healthy. At **1.10 or below** anyone can liquidate it. See [Health Factor](/stellar/guides/margin/health-factor).
+
+## The pieces
+
+<CardGroup cols={3}>
+  <Card title="Account Manager" icon="user-gear">
+    The entry point for every margin action: create, deposit, borrow, repay, withdraw and route to external protocols.
+  </Card>
+  <Card title="Risk Engine + Oracle" icon="shield-halved">
+    Values every position with Reflector prices and blocks actions that would leave the account at 1.10 or below.
+  </Card>
+  <Card title="Controllers" icon="plug">
+    Approved adapters for Blend, Soroswap and Aquarius. Your margin account can only call what the Registry allows.
+  </Card>
+</CardGroup>
+
+## What's in the app
+
+Earn, Margin, Spot, Farm, Portfolio, Analytics and Copilot. Spot is the only trading surface on Stellar; there are no perps or options. Rewards is marked **Soon**.
+
+See [Core Concepts](/stellar/learn/overview) for the accounting model and [Developers](/stellar/developers/overview) for the contracts.

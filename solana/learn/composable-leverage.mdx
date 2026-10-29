@@ -1,0 +1,30 @@
+---
+title: "Composable Leverage"
+description: "Borrowed tokens stay in the margin account and move into whitelisted protocols through margin_execute."
+mode: "wide"
+---
+
+Vanna leverage is **borrowed tokens** that the margin account can spend in approved protocols. Every such call goes through one instruction, `margin_execute`. The validator checks the call, Vanna signs as the margin account, and the whole account is health-checked afterwards.
+
+## What borrowed funds can do
+
+| Use | Protocol | What the margin holds afterwards |
+|---|---|---|
+| Swap | Jupiter or Titan (you pick the aggregator) | The output token |
+| Lend | Kamino main market | Kamino cTokens |
+| Trade perps | Phoenix (via Ember USDC ⇄ phUSD) | A Phoenix trader account with positions |
+| Stable yield | Perena USD* or USD* Junior | Perena shares |
+| Delta-neutral yield | Vanna basis vaults (SOL, ETH, BTC, TSLA, META) | Basis-vault shares |
+
+All of these count toward **one health factor**. A profitable farm and a losing perp offset each other.
+
+## Atomic vs multi-step
+
+| Action | Atomic? |
+|---|---|
+| One `margin_execute` call | Yes |
+| Perps open (Ember deposit + Phoenix deposit + market order) | Yes — one transaction |
+| Perps close (reduce-only order), then withdraw | Two transactions |
+| Flash repay (close perps, redeem farms, swap, repay, withdraw) | No — a sequence of transactions; each step resumes cleanly |
+
+"One-click" is a UX promise. On-chain atomicity is per transaction.

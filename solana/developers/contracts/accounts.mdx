@@ -1,0 +1,49 @@
+---
+title: "Account Layout"
+description: "ProtocolConfig, AssetConfig, Reserve, MarginAccount, DebtPosition, Integration, and the oracle's books."
+mode: "wide"
+---
+
+Source: `programs/vanna_credit_layer/src/state/` and `programs/vanna_oracle/src/{price_book,market_book}.rs`.
+
+## ProtocolConfig `["protocol"]`
+
+`admin`, `pending_admin`, `treasury`, `operating_mode`, `max_assets_per_margin`, `next_asset_index`, `allowed_tokens[24]`, `max_debts_per_margin`, `max_venues_per_margin`.
+
+`allowed_tokens` is the protocol-wide list of asset indexes that count as collateral. Every margin's health scan walks this list.
+
+## AssetConfig `["asset", mint]` or `["asset", venue]`
+
+`mint`, `token_program`, `reserve` (default if there is no pool), `max_collateral_per_margin`, `ltv_bps`, `liquidation_threshold_bps`, `liquidation_bonus_bps`, `asset_index`, `decimals`, `collateral_enabled`, `borrow_enabled`, `kind` (`Token` or `Venue`), `oracle`, `issuer_controls_accepted`.
+
+`max_collateral_per_margin` caps how much of a token counts toward health. `u64::MAX` means uncapped, and `0` means it counts for nothing (a liquidator can still seize it).
+
+## Reserve `["reserve", mint]`
+
+`asset_config`, `underlying_mint`, `liquidity_vault`, `share_mint`, `supply_cap`, `borrow_cap`, `accounted_liquidity_assets`, `total_borrow_assets`, `total_borrow_shares`, `borrow_index_wad`, `accrued_protocol_fees`, `last_update_timestamp`, `rate_curve`, `reserve_factor_bps`, `status`, `total_supply_shares`, `interest_remainder_wad`, `fee_remainder`.
+
+The liquidity vault is the ATA of the reserve PDA. The share mint is `["share_mint", mint]` under classic SPL Token, even when the underlying is Token-2022.
+
+## MarginAccount `["margin", authority]`
+
+`authority`, `status`, `venue_count`, `debt_count`, `venue_asset_indexes[24]`, `debt_asset_indexes[24]`, `event_sequence`.
+
+There is no collateral ledger. A margin's collateral is the live balance of its vaults (`ATA(mint, margin)`) for every allowed token. The account itself tracks only its venues and debts.
+
+## DebtPosition `["debt", margin, reserve]`
+
+`margin_account`, `reserve`, `borrow_shares`. Token debt is derived from shares.
+
+## Integration `["integration", program_id]`
+
+`program_id`, `validator`, `enabled`.
+
+## Oracle: PriceBook `["price_book"]`
+
+Owned by `vanna_oracle`. Up to 32 `PriceSource { mint, decimals, config: OracleConfig }` entries.
+
+`OracleConfig`: `scope_prices`, `scope_chain[4]`, `scope_twap_chain[4]`, `pyth_price`, `pyth_factor`, `receipt_account`, `receipt_program`, `max_age_secs`, `max_twap_divergence_bps`, `max_confidence_bps`.
+
+## Oracle: MarketBook `["market_book", venue]`
+
+Owned by `vanna_oracle`. `venue`, `program`, `collateral_mint`, `collateral_decimals`, `collateral_price` (an `OracleConfig`), and up to 32 `MarketEntry { market, asset_id, max_leverage_bps, trading_enabled, index_price }`.

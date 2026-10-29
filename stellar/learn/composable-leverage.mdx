@@ -1,0 +1,27 @@
+---
+title: "Composable Leverage"
+description: "How a margin account deploys borrowed funds into Blend, Soroswap and Aquarius through controllers."
+mode: "wide"
+---
+
+A margin account can deploy deposited and borrowed assets into approved external protocols while the account keeps its debt to Vanna's lending pools.
+
+| Action | Venue | What the account holds afterwards |
+|---|---|---|
+| Supply | Blend | b-tokens (a receipt for the supplied asset) |
+| Add liquidity | Soroswap, Aquarius | LP shares |
+| Swap | Soroswap, Aquarius | A different token |
+
+Protocol **controllers** mediate each action: AccountManager routes the call to a Registry-approved controller, which checks the target and tokens, executes from the margin account, and reports the change so recognized collateral stays correct.
+
+## Shared account risk
+
+All positions in an account share its health factor and debt. One profitable Farm position does not isolate it from another position's losses. External positions must be exited before their underlying can repay a loan.
+
+## Execution boundaries
+
+Each external action is its own transaction. A deposit and a single borrow can go out together (`deposit_and_borrow`), but borrow-then-farm, LP entries and unwinds take several steps. Earlier confirmed steps survive a later failure, so check the account before retrying.
+
+A registered controller doesn't guarantee that an external pool has liquidity; the transaction simulation is the final check.
+
+See [Farm](/stellar/guides/farm/overview), [Leveraged Yield](/stellar/guides/farm/leveraged-yield) and [Controllers](/stellar/developers/contracts/controller-facade).

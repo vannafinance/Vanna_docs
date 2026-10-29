@@ -1,0 +1,29 @@
+---
+title: "Integrate Lending"
+description: "Supply to and redeem from a Vanna pool from another client."
+mode: "wide"
+---
+
+<Steps>
+  <Step title="Derive accounts">
+    `asset_config`, `reserve`, `share_mint`, the reserve's liquidity vault, the user's underlying ATA, and the user's share ATA (classic SPL Token).
+  </Step>
+  <Step title="Wrap SOL">
+    If the mint is wSOL, wrap native SOL first. The program only sees wSOL.
+  </Step>
+  <Step title="Refresh and quote">
+    Read the `Reserve`. If `last_update_timestamp` is old, include `public_refresh_reserve` or project accrual off-chain so the quote matches.
+  </Step>
+  <Step title="Supply">
+    Call `lender_supply(assets, min_shares_out)` with `min_shares_out` from the quoted rate minus slippage.
+  </Step>
+  <Step title="Redeem">
+    Call `lender_redeem(shares, min_assets_out)`. Payouts are limited to `accounted_liquidity_assets − accrued_protocol_fees`, so check available cash first.
+  </Step>
+</Steps>
+
+Pools exist for USDC, USDT and SOL. Supply is subject to `supply_cap`, the operating mode, and the reserve status.
+
+vTokens are **not** margin collateral. To use supplied funds as collateral, redeem first and deposit the underlying.
+
+App reference: `lib/solana/lend.ts` (`supply`, `redeem`, `previewSupplyShares`).

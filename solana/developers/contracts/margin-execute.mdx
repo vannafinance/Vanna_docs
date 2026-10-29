@@ -1,0 +1,79 @@
+---
+title: "External Calls (margin_execute)"
+description: "How a margin account calls Jupiter, Titan, Kamino, Phoenix, Perena and the basis vaults, reviewed by the validator and health-checked after."
+mode: "wide"
+---
+
+Source: `instructions/account_manager/exec.rs`, `interface.rs`.
+
+```text
+margin_execute(data: Vec<u8>, call_account_count: u16)
+```
+
+A margin account is a PDA, so it can't sign for itself from outside. Every interaction with an external protocol goes through this one instruction. The core program knows nothing about the target. The rules live in the validator.
+
+## Flow
+
+```text
+wallet ──signs──▶ margin_execute(data, call_account_count)
+                    │
+                    ├─▶ vanna_validator::review_call(context)  → CallPermit
+                    ├─▶ CPI into the target, signed by the margin PDA
+                    ├─▶ check the margin's vaults against the permit
+                    └─▶ vanna_oracle::get_price for every holding → health check
+```
+
+## Accounts
+
+| Account | Notes |
+|---|---|
+| `authority` | Signer; the margin's owner |
+| `protocol_config` | `["protocol"]` |
+| `margin_account` | `["margin", authority]` |
+| `integration` | `["integration", target_program]`; must be enabled |
+| `target_program` | The external program |
+| `validator` | Must equal `integration.validator` |
+| `venue_asset` | Optional: the venue's `AssetConfig` for a Phoenix call |
+
+`remaining_accounts`, in order:
+
+1. The external instruction's accounts (`call_account_count` of them). None is a signer: Vanna signs as the margin.
+2. The allowed-token groups, venue groups and debt groups (see [Architecture](/solana/developers/architecture#remaining-accounts)).
+3. The oracle segment, including the price accounts of every holding and every token the call will receive.
+4. The validator segment, only when the validator needs accounts. For Phoenix it is `[vanna_validator, market_book, exchange]`.
+
+## The permit
+
+`review_call` receives a `CallContext { mode, target_program, data, call_account_count, margin, authority, venue }` and returns:
+
+| Field | Meaning |
+|---|---|
+| `margin_indexes` | Which call accounts must be the margin (it signs there) |
+| `tokens_in` | Call accounts that are margin vaults the call may pay into |
+| `tokens_out` | Call accounts that are margin vaults the call may spend from |
+| `max_spent` | Spend cap for each `tokens_out` vault |
+| `opens_venue` | The call opens exposure at a venue (for example a Phoenix order) |
+
+The core then enforces the permit:
+
+- Every token in `tokens_in` and `tokens_out` must be an allowed token.
+- Each spent vault may drop by at most its cap. A receiving vault must not shrink.
+- The margin may appear only where the permit says. The core program, the authority's wallet and the margin's other token accounts may not appear anywhere in the call.
+- A vault left with a delegate or close authority is refused.
+- If the call opens a venue, the venue's `collateral_enabled` must be on, and the margin must have room under `max_venues_per_margin`.
+
+## Health
+
+After the call, every holding is revalued. The account must be debt-free or above HF 1.10. A collateral whose price fails a check counts as zero. A debt that is fresh and within confidence but off its TWAP counts at the higher of price and TWAP rather than blocking.
+
+There is no minimum output check in the core. Slippage protection is the external program's own bound (for example Jupiter's or Titan's minimum out).
+
+## Client notes
+
+- The receiving margin vault must exist before the call. The margin account can't pay rent, so the client creates the ATA idempotently from the wallet in the same transaction.
+- Large calls (Phoenix, the basis vaults) need a v0 transaction with an address lookup table and a raised compute-unit limit.
+- The app's builder is `marginExecuteIx` in `lib/solana/exec.ts`.
+
+## Validator rules by venue
+
+See [Validator Program](/solana/developers/contracts/validator), and [Swaps](/solana/developers/contracts/swap), [Phoenix Perps](/solana/developers/contracts/perps) and [Yield Vaults](/solana/developers/contracts/vaults) for each integration.

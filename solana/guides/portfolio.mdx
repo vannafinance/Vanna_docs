@@ -1,0 +1,63 @@
+---
+title: "Portfolio"
+description: "Everything you hold, earn and owe across Vanna, in one page."
+mode: "wide"
+---
+
+**Portfolio** combines your wallet, your Earn supply, your Predict positions and your margin account. **Deposit** and **Transfer** at the top right open the [Deposit window](/solana/guides/faucet) for test funds and wallet ↔ margin transfers.
+
+<Frame caption="Portfolio: Net worth, Net earnings and Health factor, then the Lender, Trader and Balances tabs.">
+  <img src="/images/solana/portfolio/overview.png" alt="Portfolio page with Net worth split into Wallet, Lending and Margin equity, Net earnings with Lending and Trading chips, a Health factor card with borrowed, leverage and interest accrued, and the Lender tab showing Lender Stats and a Lending P&L chart" loading="lazy" decoding="async" />
+</Frame>
+
+## Top cards
+
+| Card | What it shows |
+|---|---|
+| **Net worth** | Wallet + Lending + Margin equity (collateral minus debt), with a bar showing the split |
+| **Net earnings** | Lending interest earned plus trading P&L, each shown as its own chip |
+| **Health factor** | Your margin account's health factor with its zone (for example **Safe**) and the chameleon mascot, what you've borrowed, your leverage and the interest accrued so far. Shows **No debt** when you owe nothing. The share button makes a shareable card |
+
+## The tabs
+
+<Tabs>
+  <Tab title="Lender">
+    Two sub-tabs:
+
+    - **Lending pools**: Lender Stats (total holdings, supplied assets, average supply APY, interest earned), a 30-day Lending P&L chart and a positions table of every pool you supply, with **Supply more** and **Withdraw** on each row. **Position History** lists past supplies and withdrawals.
+    - **Predict**: your prediction-market positions and what they earn while you wait.
+
+    <Frame caption="Lender → Lending pools: your supplied positions with Supply more and Withdraw.">
+      <img src="/images/solana/portfolio/lender-positions.png" alt="Positions table listing SOL, USDC and USDT supplied, with Amount Supplied, Supply APY, Earned and Value columns and Supply more and Withdraw buttons" loading="lazy" decoding="async" />
+    </Frame>
+  </Tab>
+  <Tab title="Trader">
+    Four sub-tabs: **Margin**, **Spot**, **Perps** and **Farm**.
+
+    **Margin** shows Total Margin Balance, Total Collateral Deposited, Total Loan Taken, Cross Account Leverage, Health Factor, Cross Margin Ratio (debt ÷ holdings), Collateral Left Before Liquidation and Net Borrowed Interest Accrued, a health-factor bar with the 1.10 liquidation mark, and the same account map as the [Margin page](/solana/guides/margin/overview#positions). **Spot**, **Perps** and **Farm** list your positions on each venue.
+
+    **Flash repay** beside the sub-tabs closes positions and repays every loan (it shows how many positions it closes and how much it repays). See [Flash repay](/solana/guides/margin/repay#flash-repay).
+
+    <Frame caption="Trader → Margin: account totals, health-factor bar and Flash repay.">
+      <img src="/images/solana/portfolio/trader-margin.png" alt="Trader tab with Margin, Spot, Perps and Farm sub-tabs, Flash repay button, margin totals including Cross Margin Ratio and Net Borrowed Interest Accrued, and a health factor bar at 12.63 with liquidation at 1.10" loading="lazy" decoding="async" />
+    </Frame>
+  </Tab>
+  <Tab title="Balances">
+    Every token you hold, split between your **wallet** and your **margin account**, with amounts and USD values. Margin holdings include Farm receipts (kSOL, USD\*, vbSOL…) and, when it holds anything, your Phoenix perps account as one line.
+  </Tab>
+</Tabs>
+
+## Where the numbers come from
+
+All figures are read live from the fork: on-chain accounts priced with the same oracle prices the program uses (Kamino Scope first, Pyth as fallback). Nothing is cached in your browser, so clearing site data never changes what you see.
+
+## Next steps
+
+<CardGroup cols={2}>
+  <Card title="Earn" icon="piggy-bank" href="/solana/guides/earn/overview">
+    Supply to Vanna's lending pools.
+  </Card>
+  <Card title="Margin" icon="scale-balanced" href="/solana/guides/margin/overview">
+    Manage collateral, loans and leverage.
+  </Card>
+</CardGroup>

@@ -1,0 +1,104 @@
+---
+title: "Math Reference"
+description: "WAD, shares, the polynomial rate model, health, and liquidation formulas from the core program."
+mode: "wide"
+---
+
+Source: `programs/vanna_credit_layer/src/math/` and `constants.rs`.
+
+## Scales
+
+```text
+WAD                         = 10^18
+USD_VALUE_DECIMALS          = 9            // USD values are nano-USD
+BASIS_POINTS                = 10_000
+SECONDS_PER_YEAR            = 31_556_952
+BALANCE_TO_BORROW_THRESHOLD = 1.1 × WAD
+MIN_INITIAL_SHARES          = 1_000
+CLOSE_FACTOR_BPS            = 5_000
+MAX_LIQUIDATION_BONUS_BPS   = 500
+FULL_LIQUIDATION_DEBT_VALUE = $100         // in nano-USD
+WRITE_OFF_COLLATERAL_VALUE  = $1           // in nano-USD
+```
+
+## Utilization and borrow rate
+
+Each reserve stores a `RateCurve { linear_coeff_wad, jump_coeff_wad, rate_multiplier_wad }`. Every coefficient must be greater than zero and at most `10 × WAD`.
+
+```text
+u = total_borrow / (accounted_liquidity + total_borrow)          // WAD, 0 if empty
+
+polynomial    = linear·u + linear·u^32 + jump·u^64
+rate_per_sec  = rate_multiplier × polynomial / SECONDS_PER_YEAR
+```
+
+The rate is gentle at low utilization, then steepens sharply as `u` approaches 1 (the `u^32` and `u^64` terms).
+
+## Accrual
+
+```text
+growth       = rate_per_sec × elapsed
+interest     = floor((total_borrow × growth + interest_remainder) / WAD)
+fee          = floor((interest × reserve_factor_bps + fee_remainder) / 10_000)
+
+total_borrow' = total_borrow + interest
+fees'         = fees + fee
+index'        = index × total_borrow' / total_borrow
+```
+
+The remainders (`interest_remainder_wad`, `fee_remainder`) carry forward, so frequent accruals neither overcharge borrowers nor shortchange the treasury. `now < last_update` is rejected (`TimestampRegression`).
+
+## Lender shares
+
+```text
+lender_assets  = accounted_liquidity + total_borrow − protocol_fees
+available_cash = accounted_liquidity − protocol_fees
+
+supply_shares  = floor(assets × total_supply_shares / lender_assets)    // 1:1 if empty
+redeem_assets  = floor(shares × lender_assets / total_supply_shares)
+```
+
+The reserve counts its own shares (`total_supply_shares`), so share tokens burned outside Vanna don't change anyone's claim. The first deposit locks `MIN_INITIAL_SHARES` that nobody can redeem.
+
+## Debt shares
+
+```text
+new_shares  = ceil(assets × total_borrow_shares / total_borrow)         // 1:1 if empty
+user_debt   = ceil(user_shares × total_borrow / total_borrow_shares)
+repay_share = floor(paid × total_borrow_shares / total_borrow)          // all shares if paid ≥ debt
+```
+
+Borrow shares and debt round **up**. Lender shares and redeem assets round **down**.
+
+## USD value and health
+
+```text
+value = amount × price, rescaled by the price exponent and mint decimals to 9 decimals
+HF    = Σ collateral_usd / Σ debt_usd                    // unweighted
+borrow / withdraw / margin_execute allowed ⇔ debt = 0 or HF > 1.10
+liquidatable                               ⇔ debt > 0 and HF ≤ 1.10
+```
+
+The oracle rounds collateral down and liabilities up. LTV and liquidation threshold are stored and validated on each asset, but the health factor itself is unweighted.
+
+## Liquidation
+
+```text
+max_bonus = 1 + liquidation_bonus_bps / 10_000            // bonus ≤ 5%
+bonus     = max_bonus           if HF < 1
+          = min(HF, max_bonus)  otherwise
+
+full      = HF ≤ max_bonus  or  debt_usd ≤ $100
+max_repay = debt            if full
+          = 50% of debt     otherwise
+
+repaid      = min(repay, max_repay)
+seize_value = repaid_value × bonus
+seized      = seize_value × held / held_value             // capped at held, repaid shrinks to match
+```
+
+Require `seized ≥ min_seized`. While the margin is solvent, the bonus never exceeds its equity, so a liquidation never turns a solvent margin into bad debt.
+
+## Write-off
+
+`admin_write_off` clears every debt of a margin whose collateral is at most $1 and below its debt, with no venue position open. Each reserve's `accrued_protocol_fees` absorb the loss first. Lender assets fall by the rest.

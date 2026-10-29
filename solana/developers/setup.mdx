@@ -1,0 +1,112 @@
+---
+title: "Developer Setup"
+description: "Toolchain, build, tests, the local fork, the app, and hosted fork notes."
+mode: "wide"
+---
+
+## Toolchain
+
+| Tool | Version | Needed for |
+|---|---|---|
+| Rust | `1.89.0` (from `rust-toolchain.toml`) | Build, tests |
+| Solana CLI | 3.x | `cargo build-sbf`, refreshing fixtures |
+| Anchor CLI | `1.1.2` | Build |
+| Node.js | 20+ for `scripts/`, 22 for the app image | Scripts, app |
+| Surfpool | latest | Local mainnet fork |
+| Python | 3.9+ | Refreshing mainnet fixtures only |
+
+## Programs
+
+```bash
+cd vanna-credit-layer
+anchor build                       # three programs -> target/deploy/*.so, IDLs in target/idl/
+```
+
+If a local `target/deploy/<name>-keypair.json` belongs to a different address, build with `anchor build --ignore-keys`. Don't run `anchor keys sync` unless you mean to change the program IDs.
+
+## Tests
+
+The tests run in LiteSVM (no validator) and load all three programs from `target/deploy/`, so build first and rebuild after any program change.
+
+```bash
+M=programs/vanna_credit_layer/Cargo.toml
+cargo test --manifest-path $M                    # everything
+cargo test --manifest-path $M --test phoenix     # one binary
+```
+
+| Binary | Covers |
+|---|---|
+| `test_full_flow` | Lend → deposit → borrow → repay → withdraw |
+| `test_liquidation` | Partial liquidation, close factor, bonus, write-off, price checks |
+| `test_hardening` | Share accounting, issuer controls, transfer fees, frozen accounts |
+| `test_allowed_tokens` | The allowed-token list, caps, per-margin limits |
+| `test_security`, `test_admin_and_lifecycle` | Access control, admin instructions, open / close |
+| `test_interest_rate`, `test_math`, `test_state` | Rate model, fixed-point and health math, registries |
+| `test_oracle` | Scope chains, Pyth fallback, TWAP / staleness / confidence, price-book rules |
+| `test_oracle_live` | Ignored by default; reads live mainnet oracle accounts |
+| `kamino`, `jupiter`, `titan`, `perena`, `phoenix` | Each integration against the real mainnet program binaries |
+
+The basis-vault tests live in their own crate (`tests/basis`) because Phoenix's Hawkeye program needs a newer LiteSVM:
+
+```bash
+anchor build
+cd tests/basis && cargo test -- --nocapture
+```
+
+## Local mainnet fork
+
+```bash
+anchor build
+mkdir -p /tmp/vanna-fork && cd /tmp/vanna-fork
+surfpool start --network mainnet --no-tui --no-deploy
+
+# second terminal
+cd vanna-credit-layer/scripts && npm install
+bash bootstrap-fork.sh             # deploys the three programs and registers assets, reserves, integrations
+```
+
+The wallet that runs `bootstrap-fork.sh` becomes the protocol admin. `npm run devnet -- <command>` has one command per core instruction. `npm run integrations-fork -- <command>` covers funding, Kamino, Jupiter, Titan, Phoenix, Perena and the basis vaults. Run either with no command to print its list.
+
+## App
+
+```bash
+cd vanna-credit-backend
+npm ci
+cp .env.example .env.local
+npm test
+npm run dev
+```
+
+Key settings in `.env.example`: `NEXT_PUBLIC_SOLANA_RPC_URL`, `NEXT_PUBLIC_SOLANA_WS_URL`, `FORK_RPC_URL`, `NEXT_PUBLIC_VANNA_PROGRAM_ID`, `ACCESS_CODE` (the code the site asks for once; required, the site stays locked without it), and server-only API keys for Jupiter and Titan. Titan quotes are skipped when the server has no Titan key. Point your wallet's custom RPC at `http://127.0.0.1:8899` and open `http://localhost:3000`.
+
+<Warning>
+Hosted builds bake `NEXT_PUBLIC_*` values in at image build time. Changing runtime environment does not rewrite client RPC URLs. Never put API keys in `NEXT_PUBLIC_*` variables.
+</Warning>
+
+## Hosted layout
+
+```text
+https://test.vanna.finance               → Vanna app (Solana and Stellar, chain switcher)
+https://rpc-devnet.solana.vanna.finance  → Surfpool RPC (mainnet fork)
+```
+
+Check the hosted node:
+
+```bash
+curl -sS https://rpc-devnet.solana.vanna.finance \
+  -H 'Content-Type: application/json' \
+  --data '{"jsonrpc":"2.0","id":1,"method":"getVersion"}'
+```
+
+A healthy node returns its `surfnet-version` and `solana-core` version.
+
+## Common problems
+
+| Symptom | Fix |
+|---|---|
+| Wallet shows real balances, previews fail | The wallet isn't on the fork RPC |
+| "Blockhash not found" | The wallet and the app use different RPCs |
+| Empty balances | Mint from **Deposit → Test funds** on **this** fork |
+| Every page asks for an access code | Set `ACCESS_CODE` in `.env.local` and enter it once |
+
+The app's end-to-end scripts (`npm run e2e`, `scripts/e2e-*.ts`) run against the fork through the app's own services. Avoid scripts that overwrite shared fixtures on the hosted node.

@@ -1,0 +1,45 @@
+---
+title: "Lending Pools"
+description: "Per-mint reserves for USDC, USDT and SOL: cash ledger, borrow totals, rate curve, caps."
+mode: "wide"
+---
+
+Each pool has one `Reserve` at `["reserve", mint]` and one share mint (vTokens) at `["share_mint", mint]`. Pools exist for **USDC, USDT and SOL**. Every other asset is collateral only.
+
+## Balances that matter
+
+| Field | Meaning |
+|---|---|
+| `accounted_liquidity_assets` | Cash credited by measured transfers |
+| `total_borrow_assets` | Outstanding principal plus accrued interest |
+| `total_borrow_shares` | Sum of borrower shares |
+| `total_supply_shares` | Sum of lender shares, counted by the reserve itself |
+| `accrued_protocol_fees` | Reserve-factor slice, not lender equity |
+| `borrow_index_wad` | Cumulative borrow growth |
+
+```text
+lender_total_assets = accounted_liquidity + total_borrow − protocol_fees
+available_cash      = accounted_liquidity − protocol_fees
+utilization         = borrows / (cash + borrows)
+```
+
+Unsolicited transfers into the liquidity vault do **not** increase `accounted_liquidity_assets`, so they can't inflate the vToken rate. Because the reserve counts its own shares, vTokens burned outside Vanna don't change anyone's claim either.
+
+## Caps
+
+`supply_cap` limits total lender assets. `borrow_cap` limits total borrows.
+
+## Status and modes
+
+Each reserve has a status:
+
+| Status | Supply | Redeem | Borrow | Repay |
+|---|---|---|---|---|
+| Active | Yes | Yes | Yes | Yes |
+| SupplyOnly | Yes | Yes | No | Yes |
+| RepayOnly | No | Yes | No | Yes |
+| Frozen | No | No | No | Yes |
+
+The protocol also has an operating mode (`Normal`, `BorrowPaused`, `WithdrawOnly`, `Halted`). An action must pass both. Repay is always available.
+
+See [Interest Rate Model](/solana/learn/interest-rate-model).

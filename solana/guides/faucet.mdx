@@ -1,0 +1,60 @@
+---
+title: "Faucet"
+description: "Mint free test tokens on the Vanna mainnet fork from the Deposit window."
+mode: "wide"
+---
+
+Test funds live in the **Deposit** window. Click **Deposit** in the header (next to your account) to open **Portfolio account**, then use **Test funds** on the **Deposit** tab. You can also open it from the **Deposit** button on [Portfolio](/solana/guides/portfolio).
+
+<Frame caption="Deposit → Test funds: Mint one token or Mint all. The Receive panel shows your address and a QR code.">
+  <img src="/images/solana/faucet/test-funds.png" alt="Portfolio account window with Deposit and Transfer tabs, a Test funds grid with Mint buttons for SOL, USDC, USDT, JitoSOL, JupSOL, JupUSD, NVDAx, GOOGLx, AAPLx, TSLAx and CASH, a Mint all button, and a Receive panel with a QR code and Copy address" loading="lazy" decoding="async" />
+</Frame>
+
+<Steps>
+  <Step title="Sign in">
+    [Connect](/solana/guides/connect-wallet) with email, a social login or Backpack.
+  </Step>
+  <Step title="Open Deposit">
+    Click **Deposit** in the header. The window shows your wallet and the **Testnet** tag.
+  </Step>
+  <Step title="Mint">
+    Click **Mint** on a token, or **Mint all** for every token at once. Each tile shows what was added and your new balance.
+  </Step>
+</Steps>
+
+| Token | Per mint |
+|---|---|
+| SOL, USDC, USDT | +1,000 |
+| JitoSOL, JupSOL, JupUSD | +1,000 |
+| NVDAx, GOOGLx, AAPLx, TSLAx | +10 |
+| CASH (Predict) | +1,000 |
+
+Minting is **unlimited on the fork**: mint again whenever you run low.
+
+## How it works
+
+Test funds use Surfpool **fork cheatcodes**: the server writes the new balance straight into fork state. There is no transaction to sign and no wallet approval. Nothing real moves; these tokens exist only on the fork.
+
+## The rest of the Deposit window
+
+| Part | What it's for |
+|---|---|
+| **Receive** | Your wallet address with a QR code and **Copy address**, to receive fork tokens from another Vanna tester. Only Vanna testnet tokens show up here; devnet or mainnet tokens won't |
+| **Transfer** tab | Move tokens between your wallet (**Portfolio account**) and your **Margin account**, the same form as [Transfer Collateral](/solana/guides/margin/transfer-collateral) |
+
+<Tip>
+- Keep some SOL in your wallet for transaction fees.
+- CASH is the token World.xyz markets settle in. You only need it for [Predict](/solana/guides/predict/overview).
+- Using Backpack and a balance doesn't appear there? Check Backpack is pointed at the [fork RPC](/solana/guides/connect-wallet#add-the-vanna-rpc-to-your-wallet). The app itself always reads the fork.
+</Tip>
+
+## Next steps
+
+<CardGroup cols={2}>
+  <Card title="Supply on Earn" icon="piggy-bank" href="/solana/guides/earn/overview">
+    Lend your test tokens and earn interest.
+  </Card>
+  <Card title="Open a margin account" icon="scale-balanced" href="/solana/guides/margin/open-account">
+    Deposit collateral and borrow.
+  </Card>
+</CardGroup>

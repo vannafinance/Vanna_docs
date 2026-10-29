@@ -1,0 +1,51 @@
+---
+title: "Open a Long"
+description: "Bet on a price going up with a Phoenix perp from your margin account."
+mode: "wide"
+---
+
+A **long** profits when the price rises and loses when it falls.
+
+<Steps>
+  <Step title="Pick the market">
+    On **Trade → Perps**, choose the market from the selector at the top left (SOL, ETH, BTC, TSLA or META). Check **Market status** is Open.
+  </Step>
+  <Step title="Select Long">
+    In the order panel, keep **Long** selected and **Market**.
+  </Step>
+  <Step title="Set collateral">
+    Enter the USDC **Collateral** for this order, use **MAX** or the 0–100% slider. **Available** is the USDC in your margin account.
+  </Step>
+  <Step title="Set leverage">
+    Choose **Order leverage** (1× up to the market's maximum). **Position size** shows the size in the asset or in USD.
+  </Step>
+  <Step title="Check the order">
+    **Order on Phoenix** shows the estimated entry price, the **max entry price** your slippage allows, and the account's health factor after the order.
+  </Step>
+  <Step title="Place it">
+    Click **Long** and approve. The USDC moves to Phoenix and the order fills in the same transaction.
+  </Step>
+</Steps>
+
+## Managing the position
+
+Your position appears in the positions table below the chart with market, side, size, collateral, leverage, entry and mark price, liquidation price and PnL. Click **Close** to close all or a percentage of it (a reduce-only market order); **Close All** closes every position. A **History** tab lists past orders. When nothing is left open in that account, the USDC returns to your margin account in a follow-up transaction.
+
+## What moves your P&L
+
+- The perp's price relative to your entry price
+- Hourly funding: when it's positive, longs pay shorts
+- Fees and slippage on open and close
+
+All of it shows up in your margin account's health factor.
+
+## Next steps
+
+<CardGroup cols={2}>
+  <Card title="Open a short" icon="arrow-trend-down" href="/solana/guides/perps/short">
+    The other side of the trade.
+  </Card>
+  <Card title="Delta-neutral vaults" icon="scale-balanced" href="/solana/guides/farm/delta-neutral">
+    Earn funding without price exposure.
+  </Card>
+</CardGroup>

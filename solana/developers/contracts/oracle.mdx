@@ -1,0 +1,66 @@
+---
+title: "Oracle Program"
+description: "vanna_oracle: the price book, the market book, source selection, and the checks every price carries."
+mode: "wide"
+---
+
+`vanna_oracle` — `FXY5DRfekMUTbUp4uyCFpCZmCccrp6kPq3hTM4GRihnc`
+
+The core never reads a price account itself. It sends the oracle a list of queries and accepts the answer only as return data from the program it called.
+
+## Instructions
+
+| Instruction | Who | Purpose |
+|---|---|---|
+| `get_price(queries) -> Vec<PriceResult>` | Core (CPI, read-only) | Value token amounts and venue holdings |
+| `open_price_book` | Protocol admin | Create `PriceBook ["price_book"]` |
+| `set_price_source(config)` | Protocol admin | Insert or update a mint's `OracleConfig`. Checks every pinned account and prices the token once |
+| `open_market_book(venue, program, collateral_price)` | Protocol admin | Create `MarketBook ["market_book", venue]` for a venue (Phoenix) |
+| `list_market(index_price, max_leverage_bps, trading_enabled)` | Protocol admin | Add or update one market. The leverage cap is between 1x and 100x |
+
+Admin checks read the core's `ProtocolConfig`, so the oracle has no admin of its own.
+
+## Queries and results
+
+```text
+PriceQuery  { asset, amount, liability, margin }     // margin set ⇒ a venue holding
+PriceResult { value, borrow_value, checks, open }
+```
+
+`value` is in nano-USD. Liabilities round up, collateral rounds down. `borrow_value` is the value used for borrowing decisions (for a debt off its TWAP, the higher of price and TWAP). `checks` is a bitmask of `FRESH`, `TWAP_OK`, `CONFIDENCE_OK`, `TWAP_FRESH`. `open` says whether a venue still holds exposure.
+
+## Source selection
+
+For each token, `get_price` reads its `OracleConfig` from the price book:
+
+1. **Kamino Scope** (`scope_prices` + `scope_chain`): a price is the product of up to four `OraclePrices` entries (for example JitoSOL = stake rate × SOL/USD), stamped with its oldest entry. Used while fresh. A zero entry counts as unavailable.
+2. **Pyth** (`pyth_price`, × `pyth_factor` when set): the fallback when Scope is stale, used if it is newer. It is the only source when no Scope chain is set (JupUSD).
+3. **Receipts** (`receipt_account` owned by `receipt_program`): a Kamino reserve gives an exchange rate into the underlying; a Perena vault or tranche gives a USD share price; a basis vault gives a NAV per share the oracle computes itself.
+
+The xStock Scope entries already apply the mint's scaled-UI multiplier, so they price one raw token.
+
+## Checks
+
+| Check | Rule |
+|---|---|
+| Fresh | Age ≤ `max_age_secs`. A timestamp too far in the future is not fresh either |
+| TWAP | Within `max_twap_divergence_bps` of Scope's TWAP chain, or Pyth's EMA |
+| Confidence | Pyth confidence within `max_confidence_bps` |
+
+What each instruction requires:
+
+| Instruction | Debts | Collateral |
+|---|---|---|
+| Borrow, withdraw with debt | Every check | A failed check counts the token as zero |
+| `margin_execute` | Fresh and confident. Off-TWAP counts at max(price, TWAP) | A failed check counts the token as zero |
+| `public_liquidate` | Fresh. The two settled prices must be fresh and confident | Counted at reported value, so stale dust can't block |
+| `admin_write_off` | Every check | Every check |
+| Debt-free withdraw | No prices read | No prices read |
+
+## Market book (Phoenix)
+
+The market book lists the Phoenix markets Vanna accepts. Each entry holds the market (orderbook account), its Phoenix asset id, the leverage cap, a trading switch, and the index-price `OracleConfig`. The book's `collateral_price` prices Phoenix collateral (phUSD at the USDC price). The validator reads the same book to enforce leverage caps and liquidation bands. See [Phoenix Perps](/solana/developers/contracts/perps).
+
+## Accounts
+
+The oracle segment in `remaining_accounts` is `[vanna_oracle, price_book, …]` followed by the price accounts of every token with a balance (a cToken's klend reserve included), and for a held venue its market book, exchange, trader and the price accounts of each open market. Accounts are found by key, in any order.

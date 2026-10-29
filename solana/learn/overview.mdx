@@ -1,0 +1,20 @@
+---
+title: "Core Concepts"
+description: "Lending pools, cross-margin accounts, vTokens, health, oracles, and the integrations on Solana."
+mode: "wide"
+---
+
+Vanna on Solana is a lending and margin protocol. Lenders supply USDC, USDT or SOL to pools. Traders borrow from those pools through one cross-margin account per wallet, and put the borrowed funds to work in whitelisted protocols: Jupiter and Titan swaps, Kamino lending, Phoenix perps, Perena's USD* vaults, and Vanna's delta-neutral basis vaults. Every position counts toward one health factor.
+
+The protocol is three programs: a **core** that only does accounting, an **oracle** that values every holding, and a **validator** that decides which external calls a margin account may make.
+
+- [Protocol Architecture](/solana/learn/protocol-architecture): the core and its two agents
+- [Tokenized Stocks](/solana/learn/tokenized-stocks): xStocks as collateral
+- [Margin Accounts](/solana/learn/margin-accounts): PDA custody and debt shares
+- [Lending Pools](/solana/learn/lending-pools) and [vTokens](/solana/learn/vtokens): supply, borrowing, receipt value
+- [Health Factor](/solana/learn/health-factor) and [Liquidation](/solana/learn/liquidation)
+- [Interest Rate Model](/solana/learn/interest-rate-model) and [Oracle System](/solana/learn/oracle-system)
+- [Composable Leverage](/solana/learn/composable-leverage): what borrowed funds can do
+- [Kamino Integration](/solana/learn/kamino-integration), [Perps on Phoenix](/solana/learn/perps-on-phoenix), [Yield Vaults](/solana/learn/yield-vaults), [Predict](/solana/learn/predict)
+
+These pages describe `vanna-credit-layer` and `vanna-credit-backend` as deployed on the hosted Surfpool **mainnet fork** behind [test.vanna.finance](https://test.vanna.finance) (Solana in the chain switcher). They do not certify a public-mainnet launch.

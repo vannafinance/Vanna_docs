@@ -1,0 +1,42 @@
+---
+title: "Blend Single-Asset Pools"
+description: "Supply XLM or BLUSDC from your margin account to Blend and earn Blend's supply APY."
+mode: "wide"
+---
+
+Blend supply moves **XLM** or **BLUSDC** from your margin account into Blend's testnet lending pool. Blend gives back **b-tokens** (for example bXLM), which stay in your margin account and count as collateral.
+
+<Frame caption="The Blend XLM pool page: your supply position on the left, the Supply form on the right with the source and projected earnings. Click the image to zoom.">
+  <img src="/images/stellar/farm/farm-blend-supply.png" alt="Farm XLM Supply Blend pool page with Supply APY, Borrow APY, Utilization Rate and Total Pool Supply, a My Supply Position chart showing 102.6614 XLM supplied at 1 bXLM = 2.5160 XLM with position value $17.42 and receipt balance 40.8028 bXLM, and a Supply form for 10 XLM showing Network Stellar Testnet, Source 10.0000 borrow, Deposit 102.6614 to 112.6614, APY and projected monthly and yearly earnings, with a Supply XLM to Blend button" loading="lazy" decoding="async" />
+</Frame>
+
+## Supply
+
+<Steps>
+  <Step title="Open the pool">
+    On **Farm → Lending/Single Assets**, click **XLM** or **BLUSDC**.
+  </Step>
+  <Step title="Enter an amount">
+    On the **Supply** tab, type an amount or use the % chips. **Margin** shows what your margin account holds.
+  </Step>
+  <Step title="Check the summary">
+    **Source** shows how much comes from borrowed funds and how much from your own collateral (borrowed funds are used first). You also see your deposit before → after, the APY and projected earnings.
+  </Step>
+  <Step title="Sign">
+    Click **Supply XLM to Blend** (or BLUSDC) and approve.
+  </Step>
+</Steps>
+
+## Withdraw
+
+On the **Withdraw** tab, enter the amount in **b-tokens** (what Blend burns). The app converts it to the underlying at the live b-rate and shows what you'll get. A 100% withdrawal re-reads your balance right before sending so nothing is left behind. Click **Withdraw ... to Margin Account**.
+
+Withdrawn tokens go back to your **margin account**, not your wallet. Repaying a loan or transferring to your wallet is a separate step.
+
+## Good to know
+
+- **b-tokens grow in value.** 1 bXLM is worth more than 1 XLM and keeps rising as Blend borrowers pay interest, so your receipt count is smaller than the amount supplied.
+- **Blend's rates are Blend's.** On testnet they can be extreme. A high supply APY doesn't guarantee a positive spread after your Vanna borrow rate.
+- **Exits can be limited** by Blend's own liquidity.
+
+See [Repay](/stellar/guides/margin/repay) and the [Blend Controller](/stellar/developers/contracts/blend-controller).

@@ -1,0 +1,34 @@
+---
+title: "Documentation Review Scope"
+description: "Source versions, coverage, and limits of this documentation refresh."
+mode: "wide"
+---
+
+Last reviewed on **2026-10-29** against the local source trees (contract reference first written 2026-09-12):
+
+| Source | Git HEAD at review |
+|---|---|
+| `Protocol_V1_Soroban_testnet` | `1d333fb816454ea9d0c3614508b53d9bd0bae577` (unchanged since 2026-09-12) |
+| `Vanna_Finance_Backend` (`apps/stellar`, replaces `mercury-stellar-backend`) | `dcec4589bf776d213d36198e2422393a9816b86f` |
+
+The configured contract addresses were verified on-chain on 2026-10-24. The contract working tree also has an uncommitted `Trader_Exec` event in AccountManager; it is not deployed and is not documented here.
+
+The checked-out file contents are the basis for behavior descriptions. Commit IDs identify the baseline; local changes, if any, also form part of the reviewed working tree.
+
+## Contract coverage
+
+The reference covers AccountManager, SmartAccount, Registry, RiskEngine, Oracle, RateModel, lending-pool, v-token, TrackingToken, ControllerFacade, BlendController, SoroswapController, AquariusController, both deployers, and the shared vanna-common library. Public Rust signatures are copied from the implementation rather than reconstructed from old docs.
+
+## Application coverage
+
+The guides cover onboarding (Freighter, OneKey and optional Dynamic email login), the Deposit / test-funds modal, Margin (including Dual Borrow), Earn, Spot, Farm, Portfolio, Analytics, and Copilot. The developer section covers transaction services, account/pool snapshots, `/api/stellar/*` routes, Mercury proxies and RPC history, Hubble gates, and the external Copilot service boundary.
+
+## Main corrections
+
+Four distinct lending markets; conservative LP collateral valuation; live debt previews and rounding directions; partial receipt redemption and utilization caps; full-collateral liquidation with external exits and allowances; settlement/close separation; Registry bootstrap/finalization and timelocks; configurable post-exec/post-borrow checks; native/WAD controller differences; and multi-transaction fallbacks in the app's deposit-and-borrow flow. The 2026-10-29 pass removed Lite mode and Privy login (no longer in the app), moved source paths and API routes to `apps/stellar` and `/api/stellar/*`, and updated Analytics to its live Registry-snapshot sections.
+
+## Verification limits
+
+This is a source-based documentation update. It does not verify deployed WASM, runtime permissions/fees, external pool availability, or production services. No deployment or financial transaction was performed. Selected historical screenshots are included as visual guides with captions; their rates, addresses, and labels are not proof of current UI behavior. Outdated implementation diagrams are excluded. Earlier review reports are archival, not current implementation references.
+
+Address values are labeled configuration snapshots. Existing page routes are retained where practical; new contract and application pages are linked in navigation.

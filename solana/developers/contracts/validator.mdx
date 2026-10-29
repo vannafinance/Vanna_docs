@@ -1,0 +1,42 @@
+---
+title: "Validator Program"
+description: "vanna_validator: review_call, call modes, and the per-protocol rules for every margin_execute target."
+mode: "wide"
+---
+
+`vanna_validator` — `6fND3vhtstp486iE6rsSNVUox3kcjNNRsSLAN7ZPs7th`
+
+## `review_call(context) -> CallPermit`
+
+The core calls this read-only before every external call, from both `margin_execute` and `public_liquidate`. The validator picks its rules by the target program and returns a permit, or fails.
+
+```text
+CallContext { mode, target_program, data, call_account_count, margin, authority, venue }
+CallPermit  { margin_indexes, tokens_in, tokens_out, max_spent, opens_venue, data }
+```
+
+`mode` is `Owner` (from `margin_execute`) or `Liquidation` (from `public_liquidate`). In liquidation mode the validator may also rewrite the call's data (`data`), for example to size a Phoenix withdrawal to what is available.
+
+## Rules by target
+
+| Target | File | Owner mode | Liquidation mode |
+|---|---|---|---|
+| Kamino Lend | `kamino.rs` | `deposit_reserve_liquidity`, `redeem_reserve_collateral` | Refused |
+| Jupiter v6 | `jupiter.rs` | `route`, `shared_accounts_route`; no platform fee | Refused |
+| Titan | `titan.rs` | `swap_route_v3`, config 3 only; no provider fee | Refused |
+| Ember | `phoenix.rs` | USDC ⇄ phUSD deposit / withdraw | Refused |
+| Phoenix | `phoenix.rs` | `deposit_funds`, `withdraw_funds`, `place_market_order` within leverage caps | Reduce-only closes inside a price band; withdrawal up to the available budget |
+| Perena | `perena.rs` | USD* deposit / withdraw; Junior tranche deposit / withdraw | Refused |
+| Basis vaults | `basis.rs` | Vault `deposit`, `withdraw` | Refused |
+
+Any other program, or any other instruction of these programs, is refused with `UnknownProgram` or `CallNotAllowed`.
+
+Details per integration: [Swaps](/solana/developers/contracts/swap), [Phoenix Perps](/solana/developers/contracts/perps), [Yield Vaults](/solana/developers/contracts/vaults).
+
+## Adding a protocol
+
+1. Add its rules as a file in the validator (and, if its positions aren't plain tokens, a reader in the oracle).
+2. Upgrade that agent program.
+3. `admin_register_integration` for the target program. Then `admin_register_asset` for any receipt token, or `admin_register_venue` for a venue.
+
+The core is not changed or redeployed.

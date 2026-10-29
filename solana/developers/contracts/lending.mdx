@@ -1,0 +1,25 @@
+---
+title: "Lending Instructions"
+description: "lender_supply, lender_redeem, public_refresh_reserve."
+mode: "wide"
+---
+
+Source: `instructions/lending_pool.rs`.
+
+## `lender_supply(assets, min_shares_out)`
+
+Accrue. Measure what actually arrived in the liquidity vault (Token-2022 fees included). Mint vTokens at the current rate, at least `min_shares_out`. Respects `supply_cap`, the operating mode and the reserve status. The first deposit locks `MIN_INITIAL_SHARES` that nobody can redeem.
+
+## `lender_redeem(shares, min_assets_out)`
+
+Accrue. Burn vTokens. Pay out at most `available_cash` (cash minus protocol fees). Require assets ≥ `min_assets_out`. Allowed in every reserve status except `Frozen`.
+
+## `public_refresh_reserve`
+
+Permissionless accrual. Anyone can update a pool so its index isn't stale before a quote.
+
+## Notes
+
+- SOL is wrapped by the client before supply. The program sees wSOL.
+- Unsolicited transfers into the liquidity vault do not change `accounted_liquidity_assets`, so they can't inflate the vToken rate.
+- The reserve counts its own lender shares (`total_supply_shares`). vTokens burned outside Vanna don't change anyone else's claim.

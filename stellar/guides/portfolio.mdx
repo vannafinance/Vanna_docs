@@ -1,0 +1,49 @@
+---
+title: "Portfolio"
+description: "Net worth, net earnings and health factor across your wallet, lending and margin account, with Lender, Trader and Balances tabs."
+mode: "wide"
+---
+
+**Portfolio** is the first item in the header. It brings your wallet, your Earn supply and your margin account together in one view. Every number is read from the chain (or Vanna's indexer) for the connected wallet only.
+
+<Frame caption="Portfolio: the three header cards and the Lender tab. Click the image to zoom.">
+  <img src="/images/stellar/portfolio/portfolio-overview.png" alt="Portfolio page with Net worth $56,435.37 split into Wallet, Lending and Margin equity, Net earnings +$0.35 with Lending and Trading chips, a Health factor card at 1.82 Safe with the chameleon mascot, Borrowed, Leverage and Interest accrued, and the Lender tab showing Lender Stats and a Lending P&L chart" loading="lazy" decoding="async" />
+</Frame>
+
+## The header cards
+
+| Card | What it shows |
+|---|---|
+| **Net worth** | Wallet tokens + lending supply (interest included) + margin account **equity** (holdings minus debt), at oracle prices. The bar splits it into Wallet, Lending and Margin equity. |
+| **Net earnings** | **Lending**: interest earned on your supply. **Trading**: reads $0.00 because spot and farm P&L have no on-chain cost basis on Stellar yet. |
+| **Health factor** | Your margin account's health factor with its zone (Safe, Healthy, At risk, Liquidation), the health bar, and Vanna's chameleon mascot. Below it: **Borrowed**, **Leverage** and **Interest accrued**. The share icon makes a card you can post. |
+
+## Tabs
+
+<Tabs>
+  <Tab title="Lender">
+    **Lending pools**: Lender Stats (Total Holdings, Supplied Assets, Avg Supply APY, Interest earned), a 30-day **Lending P&L** chart and your positions per pool, with current positions and position history.
+  </Tab>
+  <Tab title="Trader">
+    Three sub-tabs:
+
+    - **Margin**: the same account map as the Margin page (collateral, loans, account value, interest accrued, borrow rate), leverage, health factor and collateral left before liquidation.
+    - **Spot**: every token your margin account holds directly, plus your swap history.
+    - **Farm**: your Blend supply and Soroswap / Aquarius LP positions.
+  </Tab>
+  <Tab title="Balances">
+    **Wallet**, **Margin account** and **Total** cards, then a searchable token table for either the wallet or the margin account. The margin account total is shown **before** debt is subtracted.
+  </Tab>
+</Tabs>
+
+<Frame caption="Balances tab: wallet, margin account and total, with a token table for each. Click the image to zoom.">
+  <img src="/images/stellar/portfolio/portfolio-balances.png" alt="Portfolio Balances tab with Wallet $55,121.28 across 4 tokens, Margin account $2,532.42 across 7 holdings with debt not subtracted, Total $57,653.70, and a Wallet token table listing SOUSDC, XLM, AQUSDC and BLUSDC with balance, price and value" loading="lazy" decoding="async" />
+</Frame>
+
+## Good to know
+
+- Margin **equity** (in Net worth) and margin **holdings** (in Balances) differ by your debt. Don't add borrowed funds to your net worth twice.
+- Blend supply and LP positions count as collateral, but you have to withdraw them on [Farm](/stellar/guides/farm/overview) before you can spend or repay with the underlying tokens.
+- A transaction can show up in balances a few seconds before it appears in history.
+
+**Deposit** and **Transfer** buttons at the top right of the page open the same modal as the header's Deposit button. To act on a position, go to [Earn](/stellar/guides/earn/overview), [Margin](/stellar/guides/margin/overview) or [Farm](/stellar/guides/farm/overview).

@@ -1,0 +1,65 @@
+---
+title: "Admin Instructions"
+description: "Protocol init, two-step admin, modes, margin limits, assets, venues, reserves, integrations, fees."
+mode: "wide"
+---
+
+Source: `instructions/admin/{protocol,assets,reserves,integrations}.rs`.
+
+## Protocol
+
+| Instruction | Purpose |
+|---|---|
+| `initialize_protocol(treasury, max_assets_per_margin, max_debts_per_margin, max_venues_per_margin)` | Once. Must be signed by the program's upgrade authority (checked against its program data account) |
+| `admin_set_margin_limits(max_assets, max_debts, max_venues)` | Change the per-margin limits |
+| `admin_propose_authority(new_admin)` / `authority_accept_admin` | Two-step admin handover |
+| `admin_set_operating_mode(mode)` | `Normal`, `BorrowPaused`, `WithdrawOnly`, or `Halted` |
+
+The allowed-token list may hold at most `max_assets_per_margin` minus the debt and venue limits. That way, allowing a token never stops borrowing, and a liquidation always fits in one transaction.
+
+## Operating modes
+
+| Mode | Allowed |
+|---|---|
+| `Normal` (0) | Everything |
+| `BorrowPaused` (1) | Everything except borrow |
+| `WithdrawOnly` (2) | Repay, redeem, collateral deposit and withdraw, `margin_execute`, liquidate, write-off |
+| `Halted` (3) | Repay and collateral deposit only |
+
+## Assets and venues
+
+| Instruction | Purpose |
+|---|---|
+| `admin_register_asset(max_collateral_per_margin, ltv_bps, liquidation_threshold_bps, liquidation_bonus_bps, collateral_enabled, borrow_enabled, accept_issuer_controls)` | Create `AssetConfig ["asset", mint]`. Names the oracle, has it price the token once, screens the mint. A collateral-enabled token joins the allowed list |
+| `admin_update_asset_config(…)` | Same risk fields after listing |
+| `admin_set_asset_oracle` | Re-point the asset at its oracle |
+| `admin_set_token_allowed(allowed)` | Add or remove a token from the allowed list. Removing zeroes its value immediately |
+| `admin_register_venue(venue)` | Create a venue-kind `AssetConfig ["asset", venue]` (for Phoenix, the exchange account). Venues can't be borrowed or transferred |
+
+Risk parameters are validated: `ltv < liquidation_threshold ≤ 100%`, bonus at most 5%, and `threshold × (1 + bonus) ≤ 100%`.
+
+**Issuer controls.** A mint whose issuer keeps power over balances or value needs `accept_issuer_controls = true`. That covers a freeze authority, a close authority, a transfer-fee, interest-rate or scaled-UI authority, a permanent delegate, pausing, or a settable transfer hook. Fixed transfer fees, metadata, groups and confidential transfers need nothing. A live transfer hook, non-transferable mints, accounts created frozen and unknown extensions are refused. A token allowed again is screened again, and must keep its token program and decimals.
+
+## Reserves
+
+| Instruction | Purpose |
+|---|---|
+| `admin_initialize_reserve(rate_curve, reserve_factor_bps, supply_cap, borrow_cap, status)` | Create `Reserve`, its liquidity vault (idempotent ATA) and share mint |
+| `admin_update_reserve_config(…)` | Same fields |
+| `admin_collect_protocol_fees(amount)` | Sweep up to `accrued_protocol_fees` to the treasury |
+
+Reserve status: `Active` (0), `SupplyOnly` (1), `RepayOnly` (2), `Frozen` (3). Borrowing needs `Active`. Supply needs `Active` or `SupplyOnly`. Redeem is blocked only when `Frozen`. Repay is always allowed.
+
+The configured pools are USDC, USDT and SOL. The bootstrap scripts refuse to initialize a reserve for any other asset.
+
+## Integrations
+
+| Instruction | Purpose |
+|---|---|
+| `admin_register_integration` | Create `Integration ["integration", program_id]` binding an external program to its validator. The target can't be the core or the validator itself |
+| `admin_set_integration_validator` | Re-point an integration at a new validator |
+| `admin_set_integration_enabled(enabled)` | Switch an integration on or off |
+
+## Oracle admin
+
+The oracle's price book and market book are configured through `vanna_oracle` instructions, gated by the core protocol admin. See [Oracle Program](/solana/developers/contracts/oracle).

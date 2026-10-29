@@ -1,0 +1,81 @@
+---
+title: "Architecture"
+description: "Core program, oracle and validator agents, PDAs, the app, and the remaining-accounts convention."
+mode: "wide"
+---
+
+## Core and agents
+
+The core program only accounts. It knows what each margin account holds and owes, and asks two agent programs for the rest. The admin registers the agents. The core calls them read-only, with no writable accounts and no signers, and accepts their answer only as return data from the program it called. The interface lives in `programs/vanna_credit_layer/src/interface.rs`.
+
+| Agent | Entry point | Answers |
+|---|---|---|
+| Oracle (`vanna_oracle`) | `get_price(queries) -> Vec<PriceResult>` | The USD value of each token amount or venue holding, plus the checks the price passed (fresh, TWAP, confidence) |
+| Validator (`vanna_validator`) | `review_call(context) -> CallPermit` | Whether an external call is allowed, which call accounts must be the margin, which margin vaults it may pay into and out of, and spend caps |
+
+Every asset names its oracle (`AssetConfig.oracle`). Every whitelisted program names its validator (`Integration.validator`).
+
+## On-chain accounts
+
+```text
+vanna_credit_layer
+ProtocolConfig   ["protocol"]                      admin, treasury, mode, margin limits, allowed-token list
+ ├── AssetConfig ["asset", mint]                   token: risk params, oracle, issuer-controls flag
+ │    └── Reserve ["reserve", mint]                lending pool (USDC, USDT, SOL only)
+ │         ├── liquidity vault = ATA(mint, reserve)
+ │         └── share mint ["share_mint", mint]     vTokens (classic SPL)
+ ├── AssetConfig ["asset", venue]                  venue kind (the Phoenix exchange)
+ ├── Integration ["integration", program_id]       whitelisted external program + its validator
+ └── MarginAccount ["margin", authority]           one per wallet
+      ├── margin vaults = ATA(mint, margin)        live balance is the collateral
+      └── DebtPosition ["debt", margin, reserve]   borrow shares
+
+vanna_oracle
+PriceBook  ["price_book"]                          every token's OracleConfig, keyed by mint
+MarketBook ["market_book", venue]                  listed Phoenix markets, leverage caps, index prices
+```
+
+## Remaining accounts
+
+Any instruction that values the account or reviews a call takes, in `remaining_accounts`:
+
+1. For `margin_execute` and `public_liquidate`: the external call's accounts first.
+2. One `[asset_config, margin_vault]` group per allowed token, in the allowed list's order. The instruction's own token is left out. A vault that does not exist yet counts as zero.
+3. One `[asset_config, margin]` group per venue the margin holds.
+4. One `[asset_config, reserve, debt_position]` group per active debt. The instruction's own debt is left out.
+5. The agent segments: `[vanna_oracle, price_book, …price accounts]`, and for calls that need it the validator's segment (for Phoenix: `[vanna_validator, market_book, exchange]`).
+
+Agents find accounts by key. An account that is needed but missing fails the instruction. The app builds these lists in `lib/solana/margin.ts` (`buildHealthRemainingAccounts`). The scripts build them in `scripts/src/devnet-positions.ts`.
+
+<Warning>
+Do not trim the groups to save space. A missing debt or token fails closed, and the margin's health can't be computed from a partial set.
+</Warning>
+
+## Application
+
+The Solana app (`apps/solana` in the `Vanna_Finance_Backend` monorepo, which also holds the Stellar app; it grew out of `vanna-credit-backend`) is a Next.js app with React Query hooks, Zustand stores, an Anchor client, Wallet Standard wallets (Backpack) and Dynamic embedded wallets for email and social login.
+
+| Route | Product |
+|---|---|
+| `/earn` | Supply to and redeem from the USDC, USDT and SOL pools |
+| `/` and `/margin` | Margin account: deposit, borrow, repay, withdraw, flash repay (the app opens here) |
+| `/trade/spot` | Jupiter or Titan swaps (the user picks the aggregator), from the margin account |
+| `/trade/perps/[pair]` | Phoenix perps from the margin account |
+| `/farm` | Kamino Lend, Perena USD* and basis vaults from the margin account |
+| `/predict` | World.xyz prediction markets |
+| `/portfolio` | Combined view |
+| `/analytics` | Protocol and account analytics |
+| `/copilot` | AI Copilot (plans transactions through the Vanna MCP engine) |
+| `/rewards` | Coming soon |
+| `/api/solana/jupiter/*`, `/api/solana/titan/*` | Quote and swap proxies (hold the API keys server-side) |
+| `/api/solana/prices`, `/api/solana/prices/refresh` | Prices as the program reads them; fork price keeper |
+| `/api/solana/faucet`, `/api/solana/predict/faucet` | Fork faucet (registry tokens; CASH for Predict) |
+
+The browser uses `NEXT_PUBLIC_SOLANA_RPC_URL` (hosted: `https://rpc-devnet.solana.vanna.finance`). Server routes may use a loopback `FORK_RPC_URL` when the app and Surfpool share a machine. Despite the `devnet` hostname, this is a Surfpool **mainnet fork**, not the public Solana Devnet cluster.
+
+## Boundaries
+
+- Earn vTokens are not margin collateral.
+- Perps run on Phoenix through `margin_execute`. There is no perps engine inside Vanna.
+- Fork cheatcodes (faucet, price keeper, pool healing) are demo infrastructure, not mainnet behaviour.
+- Source support is not the same as a verified public-mainnet deployment.

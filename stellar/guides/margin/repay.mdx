@@ -1,0 +1,46 @@
+---
+title: "Repay a Loan"
+description: "Pay back a loan from your margin account's own balance of that asset, partly or in full."
+mode: "wide"
+---
+
+Repaying sends tokens from your **margin account** back to the lending pool. It never pulls from your wallet.
+
+<Steps>
+  <Step title="Open Repay Loan">
+    On **Margin**, open **Repay Loan**, or click **Repay** next to a loan in **Current Positions** to open the tab on that asset.
+  </Step>
+  <Step title="Check the two tiles">
+    **Net Outstanding Amount to Repay** is the live debt for that asset, interest included. **Available Balance in Margin Account** is what the account holds of that asset.
+  </Step>
+  <Step title="Enter the amount">
+    Use **10% / 25% / 50% / 100%** (a share of the debt, capped to your balance) or type an amount.
+  </Step>
+  <Step title="Review and Pay Now">
+    The preview shows Outstanding Debt, Margin Collateral, Health Factor and Liquidation Buffer before → after. Click **Pay Now** and approve.
+  </Step>
+</Steps>
+
+## Not enough of the asset in the account?
+
+The tab tells you and offers **Transfer from wallet**. You have three ways to get the token into the margin account:
+
+<CardGroup cols={3}>
+  <Card title="From your wallet" icon="wallet" href="/stellar/guides/margin/transfer-collateral">
+    Transfer Collateral, wallet → margin account.
+  </Card>
+  <Card title="Swap for it" icon="arrow-right-arrow-left" href="/stellar/guides/trade/spot-swap">
+    Swap another token in the account on Spot.
+  </Card>
+  <Card title="Exit a Farm position" icon="seedling" href="/stellar/guides/farm/overview">
+    Withdraw from Blend or remove LP liquidity first.
+  </Card>
+</CardGroup>
+
+## Good to know
+
+- **100% clears the debt.** The app adds a small buffer for interest that accrues while you sign; the contract only takes what is actually owed.
+- **Repaying from collateral** lowers both your holdings and your debt. It usually raises the health factor; check the preview.
+- **Repay the right pool.** Each loan is repaid in its own asset: BLUSDC debt with BLUSDC, SoUSDC debt with SoUSDC.
+
+Next: [Transfer Collateral](/stellar/guides/margin/transfer-collateral).

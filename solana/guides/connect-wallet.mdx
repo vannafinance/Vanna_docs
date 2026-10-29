@@ -1,0 +1,138 @@
+---
+title: "Connect Your Wallet"
+description: "Sign in with email or a social account, or connect Backpack and point it at the Vanna fork RPC."
+mode: "wide"
+---
+
+Click **Connect wallet** at the top right of the app to open **Sign in to Vanna**. One sign-in works for both Solana and Stellar.
+
+<Frame caption="Sign in to Vanna: email, Google, X or GitHub, or a wallet. On Solana, Backpack is live; Solflare and Phantom are marked Soon.">
+  <img src="/images/solana/wallet/sign-in.png" alt="Sign in to Vanna dialog with an email field and Continue button, Google, X and GitHub buttons, Stellar wallets Freighter, OneKey and LOBSTR (Soon), and Solana wallets Backpack, Solflare (Soon) and Phantom (Soon), powered by Dynamic" loading="lazy" decoding="async" />
+</Frame>
+
+## Choose how to sign in
+
+<Tabs>
+  <Tab title="Email or social">
+    <Steps>
+      <Step title="Enter your email">
+        Type your email and click **Continue**, or pick **Google**, **X** or **GitHub**.
+      </Step>
+      <Step title="Confirm">
+        For email, enter the 6-digit code sent to your inbox and click **Sign in**. Social logins send you to the provider and back.
+      </Step>
+      <Step title="Done">
+        Vanna (through [Dynamic](https://www.dynamic.xyz)) creates an embedded wallet for you: one Solana wallet and one Stellar wallet per login. There's nothing to install and no RPC to change, because the app signs and sends through the fork for you.
+      </Step>
+    </Steps>
+  </Tab>
+  <Tab title="Backpack">
+    <Steps>
+      <Step title="Install Backpack">
+        Install the [Backpack](https://backpack.app/download) browser extension and create (or import) a wallet. Use a **test** wallet: nothing on the fork is real money, but there's no reason to expose a wallet that holds real funds.
+      </Step>
+      <Step title="Add the fork RPC">
+        Point Backpack at the Vanna fork. Follow [the steps below](#add-the-vanna-rpc-to-your-wallet).
+      </Step>
+      <Step title="Connect">
+        In **Sign in to Vanna**, click **Backpack** under **Solana** and approve the connection. Your wallet name appears in the header.
+      </Step>
+    </Steps>
+  </Tab>
+</Tabs>
+
+| Wallet | Status on Solana |
+|---|---|
+| **Backpack** | Live. Supports a custom RPC, so it can sign on Vanna's fork |
+| **Solflare** | Soon. It checks every transaction against Solana mainnet and has no custom-RPC option, so it can't sign fork transactions. Arrives with mainnet launch |
+| **Phantom** | Soon |
+| **Email, Google, X, GitHub** | Live, through Dynamic embedded wallets |
+
+<Note>
+If the dialog shows a Stellar wallet with a **Switch** tag (or Backpack while you're on Stellar), clicking it switches the app to that chain first.
+</Note>
+
+## Add the Vanna RPC to your wallet
+
+This section is for **Backpack** users; email and social logins skip it.
+
+Vanna runs on a Solana **mainnet fork**. The app already reads and sends every transaction through the fork RPC, but Backpack also needs it: otherwise the wallet shows your real Mainnet balances and simulates transactions against Mainnet, so previews look wrong or fail.
+
+```text
+https://rpc-devnet.solana.vanna.finance
+```
+
+The purple strip at the top of every page shows this URL with a **Copy** button.
+
+<Frame caption="The RPC strip at the top of the app: click Copy to copy the URL.">
+  <img src="/images/solana/rpc-banner.png" alt="Purple banner reading: Vanna runs on a Solana mainnet fork: add RPC https://rpc-devnet.solana.vanna.finance to your wallet. Setup guide" loading="lazy" decoding="async" />
+</Frame>
+
+<Steps>
+  <Step title="Open Backpack">
+    Open the Backpack extension. With its default RPC it shows your public Mainnet balances, not the fork.
+
+    <Frame caption="Backpack on its default RPC.">
+      <img src="/images/solana/wallet/1-open-wallet.png" alt="Backpack wallet home screen showing a 0 SOL balance on the default RPC" loading="lazy" decoding="async" />
+    </Frame>
+  </Step>
+  <Step title="Open Settings">
+    Click the **account icon** (top left), then **Settings**.
+
+    <Frame caption="Account menu with Settings.">
+      <img src="/images/solana/wallet/2-open-settings.png" alt="Backpack account menu open with the Settings option highlighted" loading="lazy" decoding="async" />
+    </Frame>
+  </Step>
+  <Step title="Select Solana">
+    Click **Solana** (not Solana Devnet).
+
+    <Frame caption="Settings: pick the Solana network.">
+      <img src="/images/solana/wallet/3-select-solana.png" alt="Backpack settings list with Solana and Solana Devnet entries" loading="lazy" decoding="async" />
+    </Frame>
+  </Step>
+  <Step title="Open RPC Connection">
+    Click **RPC Connection**. It shows **Backpack Default RPC** until you change it.
+
+    <Frame caption="Solana settings: RPC Connection.">
+      <img src="/images/solana/wallet/4-rpc-connection.png" alt="Backpack Solana settings showing RPC Connection set to Backpack Default RPC" loading="lazy" decoding="async" />
+    </Frame>
+  </Step>
+  <Step title="Choose Custom">
+    Click **Custom**.
+
+    <Frame caption="RPC Connection: choose Custom.">
+      <img src="/images/solana/wallet/5-custom.png" alt="Backpack RPC Connection screen with Backpack Default RPC and Custom options" loading="lazy" decoding="async" />
+    </Frame>
+  </Step>
+  <Step title="Paste the Vanna RPC and click Update">
+    Paste `https://rpc-devnet.solana.vanna.finance` into the **RPC** field and click **Update**.
+
+    <Frame caption="Change RPC Connection with the Vanna fork URL.">
+      <img src="/images/solana/wallet/6-paste-rpc.png" alt="Backpack Change RPC Connection screen with the Vanna fork RPC URL entered and an Update button" loading="lazy" decoding="async" />
+    </Frame>
+  </Step>
+</Steps>
+Backpack now shows **Custom Rpc: https://rpc-devnet.solana.vanna.finance** at the top of the wallet panel, and your balances match the app. Reload the app if it was already open.
+
+<Warning>
+Running the stack on your own machine? Use your local node `http://127.0.0.1:8899` instead (see [Developer Setup](/solana/developers/setup)).
+</Warning>
+
+## Access code
+
+The test app at [test.vanna.finance](https://test.vanna.finance) (Solana in the chain switcher) is private. The first time you open it, it asks for an **access code** before anything loads. Enter the code the Vanna team gave you; your browser remembers it for about 30 days. If the code is changed, you'll be asked again.
+
+## Same login, same account
+
+Your margin account is derived from your wallet address. Sign in the same way (same email, same social account or same Backpack wallet) to return to the same collateral, debt, Farm and Predict positions. A different login is a different wallet, so it has a different account.
+
+## Next steps
+
+<CardGroup cols={2}>
+  <Card title="Get test funds" icon="faucet" href="/solana/guides/faucet">
+    Mint every supported token from the Deposit window.
+  </Card>
+  <Card title="Open a margin account" icon="scale-balanced" href="/solana/guides/margin/open-account">
+    Create your account and deposit collateral.
+  </Card>
+</CardGroup>

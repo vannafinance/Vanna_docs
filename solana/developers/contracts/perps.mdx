@@ -1,0 +1,73 @@
+---
+title: "Phoenix Perps"
+description: "How a margin account trades Phoenix perpetuals through margin_execute, how the oracle values the position, and how it is liquidated."
+mode: "wide"
+---
+
+Perps run on **Phoenix** (Ellipsis Labs' perpetuals exchange). Vanna has no perps engine of its own. The margin account is its own Phoenix trader, and every step is a [`margin_execute`](/solana/developers/contracts/margin-execute) call, health-checked after it.
+
+Sources: `programs/vanna_validator/src/phoenix.rs`, `programs/vanna_oracle/src/phoenix.rs`, `vanna-credit-backend/lib/solana/{phoenix,perps}.ts`.
+
+## Programs and accounts
+
+| Role | Address / seed |
+|---|---|
+| Phoenix Eternal program | `EtrnLzgbS7nMMy5fbD42kXiUzGg8XQzJ972Xtk1cjWih` |
+| Phoenix exchange (global config, the venue key) | `2zskx2iyCvb6Stg7RBZkt1f6MrF4dpYtMG3yMvKwqtUZ` |
+| Ember (USDC ⇄ phUSD) | `EMBERpYNE6ehWmXymZZS2skiFmCa9V5dp14e1iduM5qy` |
+| phUSD mint | `PhUsd11YkbjSaWjFncfAAmatntsjx3MgDR9B6g1ks3A` |
+| Trader account | Phoenix PDA `["trader", margin, 0u16]`, with the margin as authority |
+| Venue asset | `AssetConfig ["asset", exchange]`, kind `Venue` |
+| Market book | `vanna_oracle` PDA `["market_book", exchange]` |
+
+The whole Phoenix trader account counts as one collateral line on the margin.
+
+## Lifecycle
+
+```text
+open  = Ember deposit (USDC → phUSD) → Phoenix deposit_funds → place_market_order      (one tx)
+close = place_market_order, reduce-only                                                (one tx)
+        then withdraw_funds → Ember withdraw (phUSD → USDC)                            (one tx)
+```
+
+Phoenix market orders are immediate-or-cancel and fill against the book inside the transaction. There is no keeper and no pending order.
+
+## Validator rules
+
+| Call | Rule |
+|---|---|
+| Ember deposit / withdraw | Owner mode only; 8 accounts; spends from the USDC vault into the phUSD vault, or back |
+| `deposit_funds` | Owner mode only; phUSD from the margin's phUSD vault to its trader account; opens the venue |
+| `withdraw_funds` | Only what Phoenix's withdraw budget pays now. Refused while any withdrawal is queued |
+| `place_market_order`, increase | Owner mode only; the market must be listed and its trading switch on; a limit price is required. Exposure at the limit price, plus every other open position at the index price, must stay within the market's leverage cap × the trader's collateral. At most 4 open positions |
+| `place_market_order`, reduce-only | Always allowed for the owner. In liquidation mode, the limit price must sit within a band of the index price |
+
+The leverage cap is set per market in the market book (`list_market`). On the hosted fork, SOL, ETH and BTC are listed at 5x, and TSLA and META at 3x.
+
+## Valuation
+
+The oracle values the trader account as:
+
+```text
+equity = collateral + Σ positions (base × index price − entry notional + funding − taker fee to close)
+value  = max(0, equity)
+```
+
+Index and USDC prices carry the same freshness and TWAP checks as every other price. For borrowing, the oracle counts collateral and the losses of open positions, but not unrealized gains.
+
+The venue leaves the margin's active list once nothing is open.
+
+## Liquidation
+
+A Phoenix position can't change hands, so `public_liquidate` takes venue calls first (`calls: Vec<VenueCall>`), run in liquidation mode:
+
+- Reduce-only closes priced within a band of the fresh index: 5% divided by the market's leverage cap, at most 3%.
+- A withdrawal of the trader's collateral up to what Phoenix's withdraw budget pays now. It lands in the margin's phUSD vault. phUSD is a registered collateral-only asset priced at USDC, so the liquidator can then seize it in the same instruction.
+
+While anyone's Phoenix withdrawal is queued, the withdrawal is refused, but the closes and the margin's other tokens can still be liquidated. With at most 4 open positions, closing all of them, withdrawing and settling fits one transaction with a lookup table.
+
+## Known limits
+
+- A stock perp's index (TSLA, META) goes stale while its market is closed, and liquidation closes need a fresh index. Those markets have lower leverage caps for that reason.
+- After a deposit into Phoenix, Phoenix refuses withdrawals for a short period. An unhealthy owner can't deposit again, so the delay can't be repeated.
+- On mainnet, Phoenix grants deposit, withdraw and order capabilities to onboarded traders itself. On the fork, the app's `/api/perps/phoenix-access` route stands in for that onboarding.

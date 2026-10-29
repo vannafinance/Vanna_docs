@@ -1,0 +1,36 @@
+---
+title: "Kamino Integration"
+description: "Supply margin funds to Kamino's main market. The cTokens stay in the margin account as collateral."
+mode: "wide"
+---
+
+A margin account can supply tokens, its own or borrowed, to a Kamino Lend reserve in Kamino's **main market**. The call goes through `margin_execute`. The Kamino receipt (cToken) lands back in the margin account and counts toward the health factor.
+
+```text
+Program  KLend2g3cP87fffoy8q1mQqGKjrxjC8boSyAYavgmjD
+Market   7u3HeHxYDLhnCoErrtycNokbQYbWGzLs6JSDqGAv5PfF
+```
+
+## What the validator allows
+
+Only Kamino's `deposit_reserve_liquidity` (supply) and `redeem_reserve_collateral` (redeem), in owner mode, with the margin as owner and the margin's own vaults on both sides. The spend is capped at the call's amount.
+
+## How cTokens are valued
+
+Each cToken is registered as a collateral-only asset. Its price source names its Kamino reserve. The oracle reads the reserve's exchange rate and multiplies by the underlying token's own price. As Kamino interest accrues, the exchange rate rises, and so does the cToken's value in the health factor.
+
+## The leveraged farm
+
+1. Deposit collateral into the margin account.
+2. Borrow USDC, USDT or SOL from Vanna.
+3. Supply the borrowed tokens to Kamino.
+
+The account earns Kamino's supply rate on the whole position and pays Vanna's borrow rate on the borrowed part. The spread, times the leverage, is the carry. If Vanna's borrow rate rises above Kamino's supply rate, the carry turns negative.
+
+## Unwind
+
+Redeem the cTokens through `margin_execute`, then repay from margin. A liquidator can seize cTokens directly and redeem them from Kamino.
+
+<Note>
+Kamino Liquidity (multi-asset LP strategies) isn't supported. That program rejects CPI, so a margin account can never hold its shares.
+</Note>

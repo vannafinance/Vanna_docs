@@ -1,0 +1,46 @@
+---
+title: "Program Entrypoint"
+description: "vanna_credit_layer instruction list, module map, and the two agent programs."
+mode: "wide"
+---
+
+`programs/vanna_credit_layer/src/lib.rs`
+
+```text
+H37YVBG3eGtz89ofd7iDLc2PJgn12778392XeU2QJcGC
+```
+
+## Modules
+
+| Module | Job |
+|---|---|
+| `state/` | `ProtocolConfig`, `AssetConfig`, `Reserve`, `MarginAccount`, `DebtPosition`, `Integration` |
+| `math/` | Fixed point, shares, interest-rate model, health factor |
+| `risk_engine.rs` | Finds and validates every holding of a margin, has the oracle value it, checks health |
+| `interface.rs` | Core ↔ agent interface: price queries and results, call context and permits |
+| `validation/` | Operating-mode and reserve-status gates, account and token-transfer checks |
+| `instructions/admin/` | `protocol.rs`, `assets.rs`, `reserves.rs`, `integrations.rs` |
+| `instructions/lending_pool.rs` | Supply, redeem, refresh |
+| `instructions/account_manager/` | `account.rs`, `collateral.rs`, `borrow.rs`, `exec.rs`, `liquidate.rs` |
+
+## Instructions
+
+| Group | Instructions |
+|---|---|
+| [Admin](/solana/developers/contracts/admin) | `initialize_protocol`, `admin_set_margin_limits`, `admin_propose_authority`, `authority_accept_admin`, `admin_set_operating_mode`, `admin_register_asset`, `admin_set_token_allowed`, `admin_register_venue`, `admin_update_asset_config`, `admin_set_asset_oracle`, `admin_initialize_reserve`, `admin_update_reserve_config`, `admin_collect_protocol_fees`, `admin_register_integration`, `admin_set_integration_validator`, `admin_set_integration_enabled` |
+| [Lending](/solana/developers/contracts/lending) | `lender_supply`, `lender_redeem`, `public_refresh_reserve` |
+| [Margin](/solana/developers/contracts/margin) | `user_create_margin`, `user_close_margin`, `user_reclaim_rent`, `user_deposit_collateral`, `user_withdraw_collateral` |
+| [Borrowing](/solana/developers/contracts/borrowing) | `user_borrow`, `user_repay_from_margin` |
+| [External calls](/solana/developers/contracts/margin-execute) | `margin_execute` |
+| [Liquidation](/solana/developers/contracts/liquidation) | `public_liquidate`, `admin_write_off` |
+
+## Agent programs
+
+| Program | ID | Instructions |
+|---|---|---|
+| [`vanna_oracle`](/solana/developers/contracts/oracle) | `FXY5DRfekMUTbUp4uyCFpCZmCccrp6kPq3hTM4GRihnc` | `get_price`, `open_price_book`, `set_price_source`, `open_market_book`, `list_market` |
+| [`vanna_validator`](/solana/developers/contracts/validator) | `6fND3vhtstp486iE6rsSNVUox3kcjNNRsSLAN7ZPs7th` | `review_call` |
+
+## Events
+
+Liquidation, write-off and `margin_execute` events are emitted through a self-CPI (`emit_cpi!`), so they survive long external-program logs such as Phoenix's. Read them from the inner instructions. Other events (`Borrowed`, `DebtRepaid`, `CollateralDeposited`, `LiquiditySupplied`, and so on) are in `events.rs`.

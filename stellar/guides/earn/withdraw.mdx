@@ -1,0 +1,42 @@
+---
+title: "Withdraw from Earn"
+description: "Redeem vTokens for the underlying asset plus the interest it earned."
+mode: "wide"
+---
+
+Withdrawing burns your vTokens and sends the underlying, interest included, back to your **wallet**.
+
+<Steps>
+  <Step title="Open the pool">
+    Go to **Earn → Positions** (or the pool) where you hold vTokens.
+  </Step>
+  <Step title="Switch to Withdraw Liquidity">
+    In the form on the right, choose **Withdraw Liquidity**.
+  </Step>
+  <Step title="Enter vTokens to redeem">
+    The amount is in **vTokens** (for example vXLM), not the underlying. Use **10% / 25% / 50% / 100%**; 100% uses your exact vToken balance.
+  </Step>
+  <Step title="Sign and check">
+    Approve in your wallet, then check the underlying received and any vTokens left.
+  </Step>
+</Steps>
+
+## When a withdrawal is limited
+
+<AccordionGroup>
+  <Accordion title="The pool doesn't have enough cash">
+    Part of every pool is lent to margin accounts. You can only redeem against **Available Liquidity** (shown on **Details**). If none is available, the transaction fails; try again after borrowers repay or utilization falls.
+  </Accordion>
+  <Accordion title="A large withdrawal fills only partly">
+    One redemption pays at most the smallest of: what you asked for, **50% of the pool's total assets**, and the cash available. Only the vTokens for the paid part are burned. The rest stay in your wallet and keep earning; withdraw them in another transaction.
+  </Accordion>
+  <Accordion title="The pool is paused">
+    A paused pool stops deposits, withdrawals and new borrows until it is unpaused.
+  </Accordion>
+</AccordionGroup>
+
+<Note>
+**Total Supplied** includes money currently lent out. It is not the cash you can withdraw right now; **Available Liquidity** is.
+</Note>
+
+See [vTokens](/stellar/learn/vtokens) and [Pool Mechanics](/stellar/learn/lending-pool-mechanics).

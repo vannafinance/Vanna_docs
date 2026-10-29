@@ -1,0 +1,39 @@
+---
+title: "For Traders and Borrowers"
+description: "Open a margin account, borrow up to 10x, then swap or farm with the borrowed funds under one health factor."
+mode: "wide"
+---
+
+import RiskNotice from "/snippets/stellar/risk-notice.mdx";
+
+A **margin account** is your own Soroban smart contract. It holds your collateral and everything you borrow, swap into or farm. One health factor covers all of it.
+
+## Your path
+
+<Steps>
+  <Step title="Create the account">
+    Open **Margin** and click **Create your Margin Account**. See [Open a Margin Account](/stellar/guides/margin/open-account).
+  </Step>
+  <Step title="Deposit and borrow">
+    In **Leverage your Assets**, deposit XLM, BLUSDC, AqUSDC or SoUSDC and borrow one asset (**Single Borrow**) or two (**Dual Borrow**) at 1x to 10x. See [Borrow](/stellar/guides/margin/borrow).
+  </Step>
+  <Step title="Put the funds to work">
+    [Swap](/stellar/guides/trade/spot-swap) on Soroswap or Aquarius, or [Farm](/stellar/guides/farm/overview) on Blend, Soroswap and Aquarius, straight from the margin account.
+  </Step>
+  <Step title="Watch your health factor">
+    Keep it comfortably above **1.10**. The Margin page's **Liquidation** card shows how far you are from the line in dollars. See [Health Factor](/stellar/guides/margin/health-factor).
+  </Step>
+  <Step title="Unwind">
+    Exit Farm positions, [repay](/stellar/guides/margin/repay) your loans, then [transfer collateral](/stellar/guides/margin/transfer-collateral) back to your wallet.
+  </Step>
+</Steps>
+
+## Limits to know
+
+- New borrows must keep the account's health factor above **1.10**, and the pool must have cash to lend. A pool can't be borrowed past **95%** utilization.
+- Spot blocks a swap that would drop your health factor below **1.15**.
+- BLUSDC, AqUSDC and SoUSDC are different tokens. Borrow the one your venue uses.
+
+<RiskNotice />
+
+See [Margin](/stellar/guides/margin/overview), [Spot](/stellar/guides/trade/spot-swap) and [Farm](/stellar/guides/farm/overview).

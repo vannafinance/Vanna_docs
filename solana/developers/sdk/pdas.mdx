@@ -1,0 +1,43 @@
+---
+title: "PDA Helpers"
+description: "Seeds used by the core and oracle programs, mirrored in vanna-credit-backend/lib/solana/pdas.ts."
+mode: "wide"
+---
+
+Core program (`VANNA_PROGRAM_ID`):
+
+```ts
+protocolConfigPda()                   // ["protocol"]
+assetConfigPda(mint)                  // ["asset", mint]       (also ["asset", venue] for a venue)
+reservePda(mint)                      // ["reserve", mint]
+shareMintPda(mint)                    // ["share_mint", mint]
+marginPda(authority)                  // ["margin", authority]
+debtPositionPda(margin, reserve)      // ["debt", margin, reserve]
+integrationPda(programId)             // ["integration", program_id]
+```
+
+Oracle program (`ORACLE_PROGRAM_ID`):
+
+```ts
+priceBookPda()                        // ["price_book"]
+marketBookPda(venue)                  // ["market_book", venue]
+```
+
+Token accounts:
+
+```ts
+reserveVault(mint, tokenProgram)          // ATA(mint, reserve PDA)
+marginVault(margin, mint, tokenProgram)   // ATA(mint, margin PDA) — its live balance is the collateral
+lenderShareAccount(lender, mint)          // ATA(share mint, lender), classic SPL Token
+```
+
+External:
+
+```ts
+// Phoenix trader owned by the margin account (Phoenix program)
+["trader", margin, u16 0]
+// Pyth push-oracle feed account (push-oracle program)
+[u16 shard 0 LE, feed_id_bytes]
+```
+
+All are `findProgramAddressSync`. Each mint's token program matters for ATAs: the xStocks are Token-2022, everything else is classic SPL Token.

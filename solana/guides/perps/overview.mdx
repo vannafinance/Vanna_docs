@@ -1,0 +1,63 @@
+---
+title: "Perps Overview"
+description: "Long or short SOL, ETH, BTC, TSLA and META on Phoenix, straight from your margin account."
+mode: "wide"
+---
+
+import RiskNotice from "/snippets/solana/risk-notice.mdx";
+
+**Trade → Perps** opens perpetual futures on **Phoenix** from your margin account. Your margin account is its own Phoenix trader: Vanna's program signs every order for it and checks the account's health after each one.
+
+<Frame caption="Perps: your margin and Phoenix strip, market header, chart, order book and the order panel.">
+  <img src="/images/solana/perps/phoenix-perps.png" alt="ETHUSDC perps page on Phoenix with index price, 24h volume, open interest, funding, market status, margin account strip, price chart, order book and a Long order panel at 3x" loading="lazy" decoding="async" />
+</Frame>
+
+## Markets
+
+| Market | Underlying |
+|---|---|
+| SOL-PERP | Solana |
+| ETH-PERP | Ether |
+| BTC-PERP | Bitcoin |
+| TSLA-PERP | Tesla stock |
+| META-PERP | Meta stock |
+
+Each market has its own maximum leverage set by Phoenix (shown as **Max 5×** under the market name). Stock markets follow their market hours; **Market status** shows whether the market is open and its price feed is fresh.
+
+## The page
+
+| Area | What it shows |
+|---|---|
+| **Market header** | Mark price and 24h change, index price, 24h volume, open interest, **Funding / 1h** with the countdown to the next funding, market status and the **Venue** (Phoenix) |
+| **Margin account strip** | Health factor, account leverage, room before liquidation and USDC available, then your Phoenix perps value and open P&L |
+| **Chart** | Price chart with 1m to 1D timeframes |
+| **Order book / Trades** | Phoenix's live book and recent trades |
+| **Order panel** | Long / Short, collateral, size, leverage, slippage and the order preview |
+| **Positions / History** | Open positions (size, collateral, leverage, entry, mark, liq. price, PnL) with **Close** and **Close All**, and past orders |
+
+## How collateral works
+
+Perps collateral is **USDC from your margin account**. When you open a position, that USDC is moved into your margin account's Phoenix trader account and the market order is placed, all in one transaction. When you close and no position is left, the USDC comes back to the margin account. Need more USDC? **+ Borrow** next to the collateral field takes you to borrowing.
+
+Your Phoenix collateral and open P&L count toward your margin account's health factor.
+
+## Orders
+
+**Market** orders only for now (**Limit** is marked **Soon**). A market order fills immediately against Phoenix's order book inside the transaction, or not at all: there's no pending order and no keeper. **Slippage** (1% by default) sets the worst price you accept.
+
+## Funding
+
+Perps pay or charge funding every hour. When funding is positive, longs pay shorts; when negative, shorts pay longs. The rate is shown in the header.
+
+<RiskNotice />
+
+## Next steps
+
+<CardGroup cols={2}>
+  <Card title="Open a long" icon="arrow-trend-up" href="/solana/guides/perps/long">
+    Profit when the price rises.
+  </Card>
+  <Card title="Open a short" icon="arrow-trend-down" href="/solana/guides/perps/short">
+    Profit when the price falls.
+  </Card>
+</CardGroup>

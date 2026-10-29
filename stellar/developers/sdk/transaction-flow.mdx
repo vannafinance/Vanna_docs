@@ -1,0 +1,36 @@
+---
+title: "Transaction Flow"
+description: "Prepare, sign, submit, confirm, and reconcile Stellar transactions."
+mode: "wide"
+---
+
+## Browser transaction lifecycle
+
+1. Resolve the active wallet through `lib/wallet-adapter.ts` and obtain its source account.
+2. Build the operation using the configured testnet passphrase and exact ScVal types.
+3. Prepare/simulate the transaction to derive authorization and Soroban resource requirements.
+4. Sign the prepared transaction with the active wallet: Freighter, OneKey, or the Dynamic email/social wallet when enabled.
+5. Submit to Soroban RPC and poll the transaction hash for a terminal result.
+6. Refresh account, pool, and wallet state after confirmation.
+
+Dynamic signs whole XDR envelopes, and the adapter checks the returned envelope. (A legacy Privy raw-hash path remains in `lib/wallet-adapter.ts`, but the sign-in dialog no longer offers Privy.) A public read-source address can be used for read simulations without a wallet; it is not a funding or signing credential.
+
+## Status and retry behavior
+
+A simulation result or submission response is not final confirmation. The service layer handles sequence/footprint races with bounded rebuild/retry paths. `resubmitOnTryAgainLater` resubmits the same signed envelope when the RPC queue declines an attempt. Inspect failed transaction diagnostics before retrying a business-rule rejection.
+
+Transaction progress is shared through `lib/tx-progress.tsx` and stores. Some operations pad simulated resource budgets to account for changes between simulation and execution. A timeout or missing history row does not prove the transaction failed; reconcile its hash and on-chain balances.
+
+## Multi-step strategies
+
+The Margin **Leverage your Assets** tab uses the atomic `deposit_and_borrow` / `deposit_and_borrow_cross` call for a single collateral (one signature). Dual Borrow's second asset follows as a separate `borrow`, and multi-collateral deposits or a call that overflows the per-transaction budget fall back to separate deposit and borrow transactions. Spot swaps, Farm supply and LP actions are separate `execute` submissions. Confirmed earlier steps remain if a later step fails; inspect the account before retrying.
+
+Copilot writes add their own plan approval, wallet binding, execution policy, and receipt flow. Do not assume every Copilot write uses the same browser signing path or that plan approval means on-chain success.
+
+
+## Source reference
+
+- `Vanna_Finance_Backend/apps/stellar/lib/stellar-utils.ts`
+- `Vanna_Finance_Backend/apps/stellar/lib/wallet-adapter.ts`
+- `Vanna_Finance_Backend/apps/stellar/components/margin/mg-leverage.tsx`
+- `Vanna_Finance_Backend/apps/stellar/lib/copilot/handle.ts`

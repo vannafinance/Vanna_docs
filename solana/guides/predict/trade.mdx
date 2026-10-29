@@ -1,0 +1,67 @@
+---
+title: "Trade on Predict"
+description: "Buy and sell Yes / No shares on a World.xyz event."
+mode: "wide"
+---
+
+<Frame caption="An event page: each outcome is its own Yes / No market, with the trade panel on the right.">
+  <img src="/images/solana/predict/event.png" alt="Who will win the 2026 NFL championship event page with leader, volume, open interest and Earn while you wait up to 1.8%, an Outcomes list with Buy Yes and Buy No prices per team, and a Buy panel with One outcome and Bet slip tabs paying 10 CASH for SF 49ers Yes at 16.6 cents" loading="lazy" decoding="async" />
+</Frame>
+
+## Buy
+
+<Steps>
+  <Step title="Open an event">
+    Click an event card on [Predict](/solana/guides/predict/overview). The page shows each outcome's probability, your holdings ("You hold 315.71 Yes…") and a **Buy Yes / Buy No** button per outcome.
+  </Step>
+  <Step title="Pick the outcome and side">
+    Click **Buy Yes** or **Buy No** on an outcome, or choose the **Market** and **YES / NO** in the trade panel.
+  </Step>
+  <Step title="Enter the amount">
+    Enter how much CASH to spend, or use the % chips. Your CASH balance is shown under the field.
+  </Step>
+  <Step title="Check More details">
+    **Avg price** (cents per share), **Shares** you'll get, **Pays if right** (shares × $1) and **Profit if right**. The **Earns while you wait** box shows how much of this position will be paired and its estimated yield.
+  </Step>
+  <Step title="Buy and sign">
+    Click **Buy Yes** / **Buy No** and approve. Your shares go straight into Vanna's pool in the same approval.
+  </Step>
+</Steps>
+
+## Bet slip
+
+On events with more than one tradable outcome, switch the panel from **One outcome** to **Bet slip** to buy several outcomes at once. Add legs with **Add an outcome**; the slip shows each leg, the total cost and what you get if each pick is right. The bet slip is for buying only.
+
+## Sell
+
+Switch the panel to **Sell**, pick the outcome and side you hold, and enter how many shares to sell. You can also use **Sell** on a position row under the event. Shares in your wallet are sold first; if you hold fewer than you're selling, the rest are redeemed from your pool shares in the same transaction. Shares sell at the current bid.
+
+## Your positions on the event
+
+<Frame caption="The Earning tab (pairs and what each side earns per market) and the Earns while you wait box in the trade panel.">
+  <img src="/images/solana/predict/earning-tab.png" alt="Earning tab with Earning, Prices, Rules and Activity tabs, a market table with pool balance, pairs, Yes earns and No earns, and an Earns while you wait box showing paired share, your paired Yes and estimated monthly yield above a Buy Yes button" loading="lazy" decoding="async" />
+</Frame>
+
+Each position shows **Avg / now** price, what's **Earning in pool**, and what it **Pays if right**, with **Buy more** and **Sell**. Below, the tabs are:
+
+| Tab | Shows |
+|---|---|
+| **Earning** | Pairs earning in Vanna's USDC pool, how much of each side is paired or waiting, and what Yes and No earn |
+| **Prices** | Price history once it's recorded |
+| **Rules** | How the market resolves and its data source |
+| **Activity** | Recent trades |
+
+## When the event resolves
+
+Winning shares pay $1 each, losing shares $0. Anything earned in the pool while you waited is already part of your position (see [Earn While You Wait](/solana/guides/predict/earn-while-you-wait)).
+
+## Next steps
+
+<CardGroup cols={2}>
+  <Card title="Earn while you wait" icon="hourglass-half" href="/solana/guides/predict/earn-while-you-wait">
+    How your shares earn until resolution.
+  </Card>
+  <Card title="Predict (concept)" icon="book" href="/solana/learn/predict">
+    How Vanna's Predict pools work.
+  </Card>
+</CardGroup>

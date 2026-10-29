@@ -1,0 +1,95 @@
+---
+title: "FAQ"
+description: "Quick answers about the Vanna app on Solana."
+mode: "wide"
+---
+
+## Access and setup
+
+<AccordionGroup>
+  <Accordion title="Where is the app?" icon="globe">
+    Open [test.vanna.finance](https://test.vanna.finance) and choose **Solana** in the chain switcher at the top right. The same site also runs Vanna on Stellar.
+  </Accordion>
+  <Accordion title="Why is it asking for an access code?" icon="lock">
+    The test app is private. Enter the access code the Vanna team gave you; your browser remembers it for about 30 days. If the code is changed, you're asked again. Don't have one? Ask the Vanna team.
+  </Accordion>
+  <Accordion title="Is this Solana Devnet?" icon="server">
+    No. Vanna runs on a **Solana mainnet fork** (Surfpool): real mainnet programs and accounts, cloned onto a test node. The RPC hostname contains `devnet`, but it isn't public Devnet.
+  </Accordion>
+  <Accordion title="Which wallets and logins work?" icon="wallet">
+    Sign in with **email**, **Google**, **X** or **GitHub** (an embedded wallet is created for you), or connect **Backpack**. Solflare and Phantom show as **Soon**: Solflare checks every transaction against Solana mainnet and has no custom-RPC option, so it can't sign on the fork yet. See [Connect Your Wallet](/solana/guides/connect-wallet).
+  </Accordion>
+  <Accordion title="Do I need to change my wallet's RPC?" icon="plug">
+    Only with **Backpack**. Add `https://rpc-devnet.solana.vanna.finance` as a custom RPC so it shows fork balances and previews transactions correctly. See [Add the Vanna RPC](/solana/guides/connect-wallet#add-the-vanna-rpc-to-your-wallet). Email and social logins don't need it.
+  </Accordion>
+  <Accordion title="Where is the faucet?" icon="faucet">
+    Click **Deposit** in the header and use **Test funds**: **Mint** one token or **Mint all**. You get 1,000 of each token, 10 of each xStock and 1,000 CASH, as often as you like. See [Faucet](/solana/guides/faucet).
+  </Accordion>
+  <Accordion title="Are test funds real?" icon="coins">
+    No. Minting writes test balances directly into the fork. They have no value on Mainnet, and devnet or mainnet tokens sent to your address won't show up in the app.
+  </Accordion>
+</AccordionGroup>
+
+## Borrowing and risk
+
+<AccordionGroup>
+  <Accordion title="What can I use as collateral?" icon="vault">
+    SOL, USDC, JitoSOL, JupSOL, JupUSD and the xStocks NVDAx, GOOGLx, AAPLx and TSLAx. Farm receipts (kSOL, kUSDC, USD\*, vbSOL…) count too.
+  </Accordion>
+  <Accordion title="What can I borrow?" icon="hand-holding-dollar">
+    SOL, USDC and USDT.
+  </Accordion>
+  <Accordion title="What's the maximum leverage?" icon="gauge-high">
+    Up to **10×** on the Margin page's slider, as long as your health factor stays above the 1.15 safety floor. Perps orders go up to each Phoenix market's own limit, shown under the market name on the Perps page (for example **Max 5×** on ETH-PERP).
+  </Accordion>
+  <Accordion title="When can my account be liquidated?" icon="triangle-exclamation">
+    When its health factor (collateral ÷ debt) is **1.10 or below**. See [Liquidation](/solana/guides/margin/liquidation).
+  </Accordion>
+  <Accordion title="Why can't I repay from my wallet?" icon="rotate-left">
+    Repays come from the borrowed token held in your margin account. Move more in with [Transfer Collateral](/solana/guides/margin/transfer-collateral), or use [Flash repay](/solana/guides/margin/repay#flash-repay), which swaps other holdings to cover the loan.
+  </Accordion>
+  <Accordion title="Can I withdraw from Earn at any time?" icon="arrow-up-from-bracket">
+    Yes, up to the pool's available liquidity (what isn't currently borrowed).
+  </Accordion>
+</AccordionGroup>
+
+## Trading, Farm and Predict
+
+<AccordionGroup>
+  <Accordion title="Which swap aggregator is used?" icon="arrow-right-arrow-left">
+    You choose: **Jupiter** (the default) or **Titan**, from the dropdown in the swap card's header. Either way the swap runs from your margin account and is health-checked. See [Spot Swap](/solana/guides/trade/spot-swap).
+  </Accordion>
+  <Accordion title="Which perps markets are there?" icon="chart-line">
+    SOL, ETH, BTC, TSLA and META perps on **Phoenix**, with USDC from your margin account as collateral. Market orders only; limit orders are marked Soon. Stock markets follow their market hours. See [Perps](/solana/guides/perps/overview).
+  </Accordion>
+  <Accordion title="Why doesn't depositing into a Farm vault lower my health factor?" icon="seedling">
+    You swap one asset in your margin account for a receipt of about the same value, and the receipt counts as collateral. See [Farm](/solana/guides/farm/overview).
+  </Accordion>
+  <Accordion title="Why is a basis vault's APY low or negative?" icon="arrow-trend-down">
+    Basis vaults earn Phoenix perp funding. When funding turns negative, the vault's short pays instead of earning. See [Delta-Neutral](/solana/guides/farm/delta-neutral#what-can-go-wrong).
+  </Accordion>
+  <Accordion title="What is Predict and what do I pay with?" icon="bullseye">
+    Predict lists real World.xyz events. Each outcome has a Yes and a No share; a winning share pays $1. You pay in **CASH**, World's USD token; mint test CASH from **Deposit → Test funds**. See [Predict](/solana/guides/predict/overview).
+  </Accordion>
+  <Accordion title="How does Predict earn while I wait?" icon="hourglass-half">
+    Matched Yes and No shares are merged into USDC and lent in Vanna's USDC pool; the interest comes back as extra shares of your side. See [Earn While You Wait](/solana/guides/predict/earn-while-you-wait).
+  </Accordion>
+</AccordionGroup>
+
+## Everything else
+
+<AccordionGroup>
+  <Accordion title="Is there a rewards program?" icon="gift">
+    Not yet. **Rewards** in the header is marked **Soon**: points for lending, trading and predicting, referrals and a leaderboard are on the way, across Solana and Stellar.
+
+    <Frame caption="The Rewards page today: coming soon.">
+      <img src="/images/solana/rewards/coming-soon.png" alt="Rewards page with a Coming soon badge: points for lending, trading and predicting, referrals and a leaderboard are on the way" loading="lazy" decoding="async" />
+    </Frame>
+  </Accordion>
+  <Accordion title="Can an AI assistant use Vanna for me?" icon="sparkles">
+    Yes. Use the built-in [Copilot](/solana/guides/copilot), or connect Claude, Cursor or another MCP client through [Vanna MCP](/solana/guides/mcp). Either way, your wallet signs every transaction.
+  </Accordion>
+  <Accordion title="Where are the programs?" icon="code">
+    The core program is `H37YVBG3eGtz89ofd7iDLc2PJgn12778392XeU2QJcGC`. See [Deployed Contracts](/solana/developers/deployed-contracts).
+  </Accordion>
+</AccordionGroup>

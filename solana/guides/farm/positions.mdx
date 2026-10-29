@@ -1,0 +1,50 @@
+---
+title: "Farm Positions"
+description: "Track what you've farmed, what it's earned, and exit."
+mode: "wide"
+---
+
+There are three places to see your Farm positions.
+
+## Farm → Positions
+
+On the Farm page, switch from **Vaults** to **Positions** to list only the vaults you hold, across Kamino, Perena and the basis vaults, with your holding in each.
+
+## The vault page
+
+Each vault page's **All Transactions** tab shows:
+
+| Field | Meaning |
+|---|---|
+| **Position value** | What your holding is worth now, in USD |
+| **Receipt balance** | Your kSOL / USD\* / vbBTC… |
+| **Earned yield** | Your gain since your first deposit (the date is shown below it) |
+| **Current Position** | Asset, protocol, supplied amount or value, receipt balance and APY |
+| **Position History** | Every deposit and withdrawal with date, amount, status and transaction hash |
+
+Use **Customize** to choose the columns and the filter to narrow the history.
+
+## Margin → Positions
+
+Farm receipts are collateral, so they also appear on the left of the Margin page's positions map. The **Farm** chip under **Borrowed money is in** shows how much is deployed in Farm and jumps there. Portfolio → Trader → **Farm** lists the same positions.
+
+## Exiting
+
+| Venue | How to exit |
+|---|---|
+| Kamino | **Withdraw** a percentage on the vault page; the token returns to your margin account |
+| Perena | **Withdraw** shares; USDC returns to your margin account (USD\* Junior: 1% instant-exit fee) |
+| Basis vaults | **Withdraw** shares; the vault unwinds both legs and returns USDC |
+
+To close everything at once, including repaying your loans, use [Flash repay](/solana/guides/margin/repay#flash-repay). It redeems Kamino receipts automatically; vault shares can be withdrawn on their pages.
+
+## Next steps
+
+<CardGroup cols={2}>
+  <Card title="Flash repay" icon="bolt" href="/solana/guides/margin/repay#flash-repay">
+    Unwind and repay in guided steps.
+  </Card>
+  <Card title="Farm overview" icon="seedling" href="/solana/guides/farm/overview">
+    Compare every vault.
+  </Card>
+</CardGroup>

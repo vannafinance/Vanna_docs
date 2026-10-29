@@ -1,0 +1,69 @@
+---
+title: "Earn While You Wait"
+description: "How matched Yes and No shares earn interest in Vanna's USDC pool until the event resolves."
+mode: "wide"
+---
+
+Prediction shares usually sit idle for days or weeks until the event resolves. On Vanna they earn.
+
+## Pairing
+
+For any one market, **1 Yes share + 1 No share** always pays exactly **$1** at resolution, whatever happens. So a Yes/No pair is as good as $1 of USDC. Vanna uses that:
+
+<Steps>
+  <Step title="Your shares go into Vanna's pool">
+    When you buy on Predict, your shares are deposited into Vanna's outcome pool for that market in the same approval.
+  </Step>
+  <Step title="Yes and No are paired">
+    The pool matches Yes shares against No shares held in it (from you and from other users).
+  </Step>
+  <Step title="Pairs are merged into USDC and lent">
+    Each pair is merged back into $1 of USDC and that USDC is supplied to Vanna's USDC lending pool, where it earns the pool's supply rate.
+  </Step>
+  <Step title="Yield comes back as extra shares">
+    The interest is paid to you as extra shares of the side you hold. Because it's extra Yes (or No) shares, the yield pays out only if your side wins.
+  </Step>
+</Steps>
+
+Shares that can't be paired yet (more Yes than No in the pool, or the reverse) are **waiting**: they're held safely but don't earn until the other side arrives.
+
+## Reading the numbers
+
+| Where | Field | Meaning |
+|---|---|---|
+| Event card | **Earn up to X%** | The best rate any side of this event can earn right now |
+| Trade panel | **Paired** | How much of the shares you're buying will be paired |
+| Trade panel | **Your paired Yes** | Your paired shares before → after this trade |
+| Trade panel | **Est. yield** | Estimated earnings per month at the current rate |
+| Earning tab | **Pairs / Yes earns / No earns** | Pool balance per market and what each side earns |
+| Summary strip | **Earning in USDC pool / Passive yield / Earned** | Your totals across all markets |
+
+The side that's scarcer in the pool earns more, because each of its shares backs more of the pool's pairs.
+
+## Where to see it
+
+The same numbers show up in two places:
+
+- **Earn → USDC → Analytics** lists how much USDC each Predict market has supplied to the pool.
+- **Analytics → Prediction Vaults** shows every Predict pool: shares held, pairs waiting and USDC supplied. See [Analytics](/solana/guides/analytics#prediction-vaults).
+
+<Frame caption="Earn → USDC → Analytics: USDC supplied by each Predict market. ">
+  <img src="/images/solana/earn-usdc-from-predict.png" alt="From Predict markets card listing Democrats, LA Rams, Galatasaray and Republicans with the USDC each supplied and its share of the pool" loading="lazy" decoding="async" />
+</Frame>
+
+## Risks
+
+- The yield is paid in shares of your side, so if your side loses, the yield is worth $0 along with it.
+- The pool's USDC is lent through Vanna's USDC pool and carries that pool's risks (see [For Liquidity Providers](/solana/guides/for-liquidity-providers)).
+- Rates move with the USDC pool's supply APY and with how balanced Yes and No are.
+
+## Next steps
+
+<CardGroup cols={2}>
+  <Card title="Trade on Predict" icon="ticket" href="/solana/guides/predict/trade">
+    Buy Yes or No on an event.
+  </Card>
+  <Card title="Prediction Vaults analytics" icon="chart-pie" href="/solana/guides/analytics#prediction-vaults">
+    Every Predict pool at a glance.
+  </Card>
+</CardGroup>

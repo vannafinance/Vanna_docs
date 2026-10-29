@@ -1,0 +1,77 @@
+---
+title: "Margin Overview"
+description: "One margin account: many collaterals, borrow up to 10×, and use the loan across Solana."
+mode: "wide"
+---
+
+import HealthWarning from "/snippets/solana/health-factor-warning.mdx";
+
+The **Margin** page (also the page the app opens on) is where you manage your margin account: deposit collateral, borrow, repay and move collateral in or out.
+
+<Frame caption="Margin: account stats on top, the action panel on the left and Margin Account Info on the right.">
+  <img src="/images/solana/margin/overview.png" alt="Margin page with a Multicollateral Loans banner, Net Health Factor with the chameleon mascot, Collateral Left Before Liquidation, Net Available Collateral, Net amount Borrowed, Net Leverage Taken, the Leverage your Assets / Repay Loan / Transfer Collateral tabs and Margin Account Info" loading="lazy" decoding="async" />
+</Frame>
+
+## Account stats
+
+| Stat | Meaning |
+|---|---|
+| **Net Health Factor** | Collateral ÷ debt. Liquidatable at 1.10 or below. **No debt** when you owe nothing |
+| **Collateral Left Before Liquidation** | How much value your collateral can lose before the account hits 1.10 |
+| **Net Available Collateral** | Collateral minus debt: your equity |
+| **Net amount Borrowed** | Total debt in USD, including accrued interest |
+| **Net Leverage Taken** | Everything the account holds (borrowed funds included, open perps at full size) ÷ your equity. 1.00x = no borrowing |
+
+## The three tabs
+
+| Tab | What it does | Guide |
+|---|---|---|
+| **Leverage your Assets** | Deposit collateral and borrow in one transaction, with a 1×–10× leverage slider | [Deposit](/solana/guides/margin/deposit-collateral) · [Borrow](/solana/guides/margin/borrow) |
+| **Repay Loan** | Repay from the tokens in your margin account; Flash repay closes everything | [Repay](/solana/guides/margin/repay) |
+| **Transfer Collateral** | Move tokens between your wallet (Portfolio account) and your margin account | [Transfer Collateral](/solana/guides/margin/transfer-collateral) |
+
+## Margin Account Info
+
+The right column shows Total Borrowed value, Net Available Collateral, Total Value, Net Health Factor and Net Borrow Rate, then:
+
+- **Liquidation**: your health factor on a bar, the 1.10 liquidation line and the dollar buffer left before it.
+- **Oracles and LTs**: the oracle program, the 1.10× liquidation threshold, the Vanna program address, and every token's live price with its source (Kamino Scope or Pyth) and freshness.
+
+<Frame caption="Borrowing with the leverage slider, and the Liquidation and Oracles panels.">
+  <img src="/images/solana/margin/borrow-leverage.png" alt="Leverage your Assets panel depositing 10 SOL and borrowing USDC at 2x, with the Liquidation card and Oracles and LTs list" loading="lazy" decoding="async" />
+</Frame>
+
+## Positions
+
+<Frame caption="Current Positions: collateral on the left, the account value in the middle, each loan on the right, and where the borrowed money is.">
+  <img src="/images/solana/margin/positions.png" alt="Account map with five collaterals (SOL, AAPLx, GOOGLx, USDC and more behind Show all) linked to an Account value node with interest accrued and borrow rate, two loans (SOL 90% of debt, USDC 10% of debt) with Repay buttons, Flash repay and share buttons, and Borrowed money is in chips for Spot, Farm and Idle" loading="lazy" decoding="async" />
+</Frame>
+
+**Current Positions** draws the whole account as one map:
+
+- **Collateral** on the left: every token the account holds, including Farm receipts such as kSOL, kUSDC, USD\* and vbSOL. **Show all** expands a long list.
+- **Account value** in the middle, with **Interest accrued** and the **Borrow rate**.
+- **Borrowed** on the right: each loan with its share of total debt and a **Repay** button.
+- **Borrowed money is in**: chips showing how much of the loan sits in **Spot**, **Perps** or **Farm** positions and how much is **Idle** in the account. Click a chip to jump to that page.
+- **Flash repay** unwinds the account; the share button makes a shareable card.
+
+**Positions History** lists past actions.
+
+<HealthWarning />
+
+## Next steps
+
+<CardGroup cols={2}>
+  <Card title="Open a margin account" icon="user-plus" href="/solana/guides/margin/open-account">
+    One signature, once per wallet.
+  </Card>
+  <Card title="Deposit collateral" icon="arrow-down-to-bracket" href="/solana/guides/margin/deposit-collateral">
+    SOL, USDC, LSTs, JupUSD or xStocks.
+  </Card>
+  <Card title="Borrow" icon="hand-holding-dollar" href="/solana/guides/margin/borrow">
+    Up to 10× with the leverage slider.
+  </Card>
+  <Card title="Health factor" icon="heart-pulse" href="/solana/guides/margin/health-factor">
+    The one number that keeps you safe.
+  </Card>
+</CardGroup>

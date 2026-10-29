@@ -1,0 +1,66 @@
+---
+title: "Margin Account"
+description: "Deposit collateral, borrow one or two assets at 1x to 10x, repay and move collateral, all from one Stellar smart account."
+mode: "wide"
+---
+
+import RiskNotice from "/snippets/stellar/risk-notice.mdx";
+
+Your **margin account** is a Soroban smart contract that only you control. It holds your collateral, everything you borrow, and anything you swap or farm with it. One **health factor** covers the whole account.
+
+<Frame caption="The Margin page: the Leverage your Assets tab on the left, Margin Account Info and the Liquidation card on the right. Click the image to zoom.">
+  <img src="/images/stellar/margin/margin-leverage.png" alt="Margin page with Leverage your Assets, Repay Loan and Transfer Collateral tabs, a 10 XLM deposit from the wallet balance, Add Collateral, a Single Borrow / Dual Borrow toggle, a BLUSDC borrow with Max Value, a 1x to 10x leverage slider set to 2, and on the right Margin Account Info (Total Borrowed value, Net Available Collateral, Total Value, Net Health Factor 1.82, Net Borrow Rate 3.78%) and a Liquidation card showing 1.82 Safe, liquidation at 1.10 with a dollar buffer" loading="lazy" decoding="async" />
+</Frame>
+
+## The three tabs
+
+<CardGroup cols={3}>
+  <Card title="Leverage your Assets" icon="arrow-trend-up" href="/stellar/guides/margin/borrow">
+    Deposit collateral and borrow in one go, with Single or Dual Borrow and a 1x to 10x slider.
+  </Card>
+  <Card title="Repay Loan" icon="hand-holding-dollar" href="/stellar/guides/margin/repay">
+    Pay back a loan from the margin account's own balance.
+  </Card>
+  <Card title="Transfer Collateral" icon="arrow-right-arrow-left" href="/stellar/guides/margin/transfer-collateral">
+    Move tokens between your wallet and the margin account.
+  </Card>
+</CardGroup>
+
+## The right column
+
+| Card | What it shows |
+|---|---|
+| **Margin Account Info** | **Total Borrowed value** (debt with interest), **Net Available Collateral** (holdings minus debt), **Total Value** (everything the account holds), **Net Health Factor**, and **Net Borrow Rate** (your blended borrow rate) |
+| **Liquidation** | The health factor, its zone (Safe, Healthy, At risk, Liquidation), the bar from 1.10 to 2.50+, and the dollar **buffer** you can lose before reaching **1.10** |
+| **Oracles and LTs** | The on-chain Oracle and Risk Engine contracts, the liquidation threshold and each asset's oracle price |
+
+## Positions
+
+<Frame caption="Current Positions: collateral on the left, loans on the right with Repay, and where the borrowed money is now. Click the image to zoom.">
+  <img src="/images/stellar/margin/margin-positions.png" alt="Positions section with Current Positions and Positions History tabs showing one Account: Collateral 4,745.10 XLM and 399.95 BLUSDC, an Account value node of $2,532.42 with Interest accrued $1.73 and Borrow rate 3.78%, Borrowed 4 assets (SOUSDC 76% of debt, XLM 23%, AQUSDC 1%, BLUSDC 1%) each with a Repay button, and a footer saying Borrowed money is in Farm $579.18 and Idle $747.47" loading="lazy" decoding="async" />
+</Frame>
+
+**Current Positions** shows the whole account as one map, because every deposit backs every loan:
+
+- **Collateral**: what you deposited (borrowed tokens sitting in the account aren't counted twice).
+- **Account value**: total holdings, with **Interest accrued** and the **Borrow rate**.
+- **Borrowed**: each loan, its share of total debt and a **Repay** button that opens the Repay tab on that asset.
+- **Borrowed money is in**: where the borrowed funds sit now, **Farm** (deployed to Blend or LP) or **Idle** (in the account).
+
+**Positions History** lists your margin transactions, each linked to Stellar Expert.
+
+## Start here
+
+<Steps>
+  <Step title="Open an account">
+    [Open a Margin Account](/stellar/guides/margin/open-account).
+  </Step>
+  <Step title="Deposit and borrow">
+    [Deposit collateral](/stellar/guides/margin/deposit-collateral) and [borrow](/stellar/guides/margin/borrow).
+  </Step>
+  <Step title="Use the funds">
+    [Swap](/stellar/guides/trade/spot-swap) or [farm](/stellar/guides/farm/overview), then watch your [health factor](/stellar/guides/margin/health-factor).
+  </Step>
+</Steps>
+
+<RiskNotice />

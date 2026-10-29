@@ -1,0 +1,70 @@
+---
+title: "FAQ"
+description: "Quick answers about using Vanna on Stellar testnet: wallets, test funds, leverage, health factor, liquidation and more."
+mode: "wide"
+---
+
+<AccordionGroup>
+  <Accordion title="Is this real money?">
+    No. Vanna on Stellar runs on **Stellar testnet** at [test.vanna.finance](https://test.vanna.finance). Every token is a free test token with no value. Don't send mainnet XLM or USDC to your Vanna addresses; it won't show up.
+  </Accordion>
+
+  <Accordion title="Where is the app, and why does it ask for a code?">
+    Vanna for both chains is one app at [test.vanna.finance](https://test.vanna.finance). It is in private testing, so your first visit asks for an **access code**; ask the Vanna team for one. After that, pick **Stellar** in the chain switcher at the top right.
+  </Accordion>
+  <Accordion title="Which wallets can I use?">
+    **Freighter** and **OneKey**, both set to Stellar testnet. LOBSTR is listed as **Soon** because it signs for mainnet only. When email sign-in is enabled, the **Sign in to Vanna** dialog also offers email, Google, X and GitHub, which give you a Stellar wallet without an extension. See [Connect Your Wallet](/stellar/guides/connect-wallet).
+  </Accordion>
+
+  <Accordion title="How do I get test tokens?">
+    Click **Deposit** in the header and use **Test funds**: **Mint** per token or **Mint all**. XLM comes from Friendbot (10,000, once per address), BLUSDC from Blend's faucet (once), AqUSDC from Aquarius's faucet (1,000 per mint, any time) and SoUSDC from Soroswap's faucet (any time, short cooldown). Some mints ask you to approve a trustline.
+  </Accordion>
+
+  <Accordion title="Why are there three kinds of USDC?">
+    Each Stellar protocol on testnet uses its own USDC token: **BLUSDC** for Blend, **AqUSDC** for Aquarius and **SoUSDC** for Soroswap. They're priced the same (about $1) but are different contracts, with separate Vanna lending pools. Borrow or hold the one your venue needs.
+  </Accordion>
+
+  <Accordion title="What can I lend, borrow and use as collateral?">
+    XLM, BLUSDC, AqUSDC and SoUSDC, for all three. Blend supply receipts and Soroswap / Aquarius LP positions held in your margin account also count as collateral.
+  </Accordion>
+
+  <Accordion title="Which protocols does Vanna connect to?">
+    **Blend** for lending (Farm supply of XLM and BLUSDC), **Soroswap** (XLM / SoUSDC) and **Aquarius** (XLM / AqUSDC) for swaps on Spot and liquidity on Farm. Prices come from **Reflector** through Vanna's oracle.
+  </Accordion>
+
+  <Accordion title="What's the maximum leverage?">
+    Up to **10x** on the Margin slider, as long as the account stays above a health factor of 1.10 after borrowing. The app shows the highest leverage your deposit allows, and **Max Value** fills it in.
+  </Accordion>
+
+  <Accordion title="What is Dual Borrow?">
+    A toggle on **Margin → Leverage your Assets**. Instead of one asset, it borrows **two different assets from two pools** against the same deposit, split 50/50 by default. It takes two transactions: deposit plus the first borrow, then the second borrow. See [Borrow](/stellar/guides/margin/borrow).
+  </Accordion>
+
+  <Accordion title="What is the health factor?">
+    Your margin account's total collateral divided by its total debt, in USD. Above **1.50** is Safe, 1.25 to 1.50 Healthy, above 1.10 to 1.25 At risk. See [Health Factor](/stellar/guides/margin/health-factor).
+  </Accordion>
+
+  <Accordion title="When can I be liquidated, and what do I lose?">
+    When the health factor is **1.10 or below**. A liquidator repays all your debt and takes **all** remaining collateral, including Blend and LP positions, not just a bonus. Keep a buffer, and repay or add collateral early. See [Liquidation](/stellar/guides/margin/liquidation).
+  </Accordion>
+
+  <Accordion title="What does it cost?">
+    Borrowers pay the pool's variable **Borrow APY**, which rises with utilization; the Margin page shows your blended **Net Borrow Rate** and Positions shows interest accrued. Every transaction also pays a small Stellar network fee in XLM. Lenders earn the **Supply APY**, paid as growing vToken value.
+  </Accordion>
+
+  <Accordion title="Can I withdraw from Earn at any time?">
+    Yes, up to the pool's **Available Liquidity** (what isn't lent out). One redemption pays at most 50% of the pool's total assets; anything above that stays as vTokens for another withdrawal. See [Withdraw](/stellar/guides/earn/withdraw).
+  </Accordion>
+
+  <Accordion title="Why can't I swap a large amount on Spot?">
+    Spot blocks any swap that would lower your health factor below **1.15**, and warns below 1.25. Reduce the amount, repay some debt, or add collateral. See [Spot Swap](/stellar/guides/trade/spot-swap).
+  </Accordion>
+
+  <Accordion title="What can Copilot do?">
+    Answer questions about your account and prepare transactions from plain English: deposit, borrow, Dual Borrow, repay, swap, Earn supply / withdraw, Blend supply and LP. A plan is valid for 5 minutes and your wallet signs each step. See [Copilot](/stellar/guides/copilot).
+  </Accordion>
+
+  <Accordion title="Where are the contracts?">
+    Every address is on [Deployed Contracts](/stellar/developers/deployed-contracts). The Account Manager is `CAZLR6EHZXQNZJIFNP6F7SIJQC3P64MKHHQNZSSG5BNAEFCYTTGTDZXB`.
+  </Accordion>
+</AccordionGroup>

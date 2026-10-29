@@ -1,6 +1,7 @@
 ---
 title: "Vanna Protocol"
-sidebarTitle: "Overview"
+sidebarTitle: "Welcome"
+description: "Lend, borrow up to 10x into one margin account, and use that credit across DeFi on Stellar and Solana."
 mode: "wide"
 ---
 
@@ -19,32 +20,84 @@ mode: "wide"
   </div>
 </div>
 
-<a href="/guides/getting-started" className="vanna-featured">
-  <div className="vanna-badge">101</div>
-  <div className="vanna-featured-text">
-    <div className="vanna-featured-title">Complete User Guide</div>
-    <p>Step-by-step guides for depositing, borrowing, farming, and trading. No code required.</p>
-  </div>
-  <div className="vanna-arrow">❯</div>
-</a>
+Vanna has two sides. **Lenders** supply assets to lending pools and earn interest. **Traders** open a margin account, deposit collateral, borrow up to 10x, and use the borrowed funds in swaps, farms and other protocols without leaving the account. One health factor covers the whole account.
 
-<div className="vanna-audience">
-  <a href="/guides/earn/overview" className="vanna-audience-card">
-    <div className="vanna-card-title">Liquidity Providers</div>
-    <p>Supply assets to Vanna's lending pools and earn yield from borrower interest - passively, with no active management required.</p>
-    <div className="vanna-audience-btn">❯</div>
-  </a>
-  <a href="/guides/margin/overview" className="vanna-audience-card">
-    <div className="vanna-card-title">Traders & Borrowers</div>
-    <p>Open a Smart Margin Account, borrow against your collateral, and deploy capital into supported spot and yield strategies on Stellar testnet.</p>
-    <div className="vanna-audience-btn">❯</div>
-  </a>
-  <a href="/developers/overview" className="vanna-audience-card">
-    <div className="vanna-card-title">Developers & Integrators</div>
-    <p>Build on the Stellar testnet implementation with application-local TypeScript services, direct contract calls, and registered controllers.</p>
-    <div className="vanna-audience-btn">❯</div>
-  </a>
-</div>
+Vanna runs on **Stellar** and **Solana**. Both use the same app at [test.vanna.finance](https://test.vanna.finance): pick your chain in the switcher at the top right.
 
+## Choose a chain
 
-<Note>These docs describe the reviewed Stellar testnet source. See <a href="/developers/review-scope">review scope</a> for versions and deployment-verification limits.</Note>
+<CardGroup cols={2}>
+  <Card title="Vanna on Stellar" icon="/images/chains/stellar.png" href="/stellar/home">
+    Stellar testnet. Lend XLM and USDC, borrow with Single or Dual Borrow, swap on Soroswap or Aquarius, and farm on Blend and AMM pools.
+  </Card>
+  <Card title="Vanna on Solana" icon="/images/chains/solana.png" href="/solana/home">
+    Solana mainnet fork. Use SOL, LSTs, stables and tokenized stocks as collateral, swap on Jupiter or Titan, trade Phoenix perps, farm vaults, and trade predictions.
+  </Card>
+</CardGroup>
+
+## Quick links
+
+<Tabs>
+  <Tab title="Stellar">
+    <CardGroup cols={3}>
+      <Card title="Getting started" icon="rocket" href="/stellar/guides/getting-started">
+        Connect a wallet and get test funds.
+      </Card>
+      <Card title="Borrow" icon="arrow-trend-up" href="/stellar/guides/margin/borrow">
+        Deposit collateral and borrow up to 10x.
+      </Card>
+      <Card title="Supply to Earn" icon="piggy-bank" href="/stellar/guides/earn/supply">
+        Lend to a pool and earn interest.
+      </Card>
+      <Card title="Health factor" icon="heart-pulse" href="/stellar/guides/margin/health-factor">
+        How liquidation risk is measured.
+      </Card>
+      <Card title="Deployed contracts" icon="file-contract" href="/stellar/developers/deployed-contracts">
+        Testnet contract addresses.
+      </Card>
+      <Card title="FAQ" icon="circle-question" href="/stellar/resources/faq">
+        Common questions.
+      </Card>
+    </CardGroup>
+  </Tab>
+  <Tab title="Solana">
+    <CardGroup cols={3}>
+      <Card title="Getting started" icon="rocket" href="/solana/guides/getting-started">
+        Sign in, add the fork RPC and get test funds.
+      </Card>
+      <Card title="Borrow" icon="arrow-trend-up" href="/solana/guides/margin/borrow">
+        Deposit collateral and borrow up to 10x.
+      </Card>
+      <Card title="Perps" icon="chart-line" href="/solana/guides/perps/overview">
+        Long or short on Phoenix from your margin account.
+      </Card>
+      <Card title="Predict" icon="chart-pie" href="/solana/guides/predict/overview">
+        Trade predictions that earn while you wait.
+      </Card>
+      <Card title="Deployed programs" icon="file-contract" href="/solana/developers/deployed-contracts">
+        Program IDs and accounts.
+      </Card>
+      <Card title="FAQ" icon="circle-question" href="/solana/resources/faq">
+        Common questions.
+      </Card>
+    </CardGroup>
+  </Tab>
+</Tabs>
+
+## Features by chain
+
+| Feature | Stellar | Solana |
+| :---- | :---- | :---- |
+| Lending pools | XLM, BLUSDC, AqUSDC, SoUSDC | SOL, USDC, USDT |
+| Margin account, up to 10x | Yes, with Single and Dual Borrow | Yes |
+| Collateral | XLM, USDC, Blend and LP positions | SOL, LSTs, stables, tokenized stocks |
+| Spot swaps | Soroswap, Aquarius | Jupiter, Titan |
+| Perpetuals | — | Phoenix |
+| Farming | Blend, Soroswap and Aquarius LP | Kamino, Perena, delta-neutral vaults |
+| Prediction markets | — | World.xyz |
+| Analytics and Copilot | Yes | Yes, plus an MCP connector |
+| Network | Stellar testnet | Solana mainnet fork |
+
+<Note>
+The app is in private testing, so your first visit to [test.vanna.finance](https://test.vanna.finance) asks for an access code. Ask the Vanna team on [Discord](https://discord.gg/vanna) for one. All funds are test funds with no real value.
+</Note>

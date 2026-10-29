@@ -1,0 +1,60 @@
+---
+title: "Borrow"
+description: "Borrow XLM, BLUSDC, AqUSDC or SoUSDC against your collateral at 1x to 10x, with Single or Dual Borrow."
+mode: "wide"
+---
+
+import RiskNotice from "/snippets/stellar/risk-notice.mdx";
+
+Borrowing happens in the **Leverage your Assets** tab, together with a deposit or against collateral already in the account.
+
+<Frame caption="Deposit 10 XLM and borrow BLUSDC at 2x: the Single / Dual Borrow toggle, Max Value and the 1x to 10x slider. Click the image to zoom.">
+  <img src="/images/stellar/margin/margin-leverage.png" alt="Leverage your Assets tab with a 10 XLM deposit marked WB, Add Collateral, Single Borrow selected on the Single / Dual Borrow toggle, a BLUSDC borrow of 1.6955648 with a Max Value button, Total $1.70 of Max $1.70, and the leverage slider at 2 on a 1x, 4x, 7x, 10x scale" loading="lazy" decoding="async" />
+</Frame>
+
+<Steps>
+  <Step title="Set up the deposit">
+    Under **Deposit**, pick a token and amount. **WB** deposits from your wallet. **MB** sizes the loan against collateral already in the margin account, so nothing new is deposited.
+  </Step>
+  <Step title="Choose Single or Dual Borrow">
+    **Single Borrow** puts the whole loan on one asset. **Dual Borrow** splits it 50/50 across two different assets from two pools (you can edit each amount).
+  </Step>
+  <Step title="Pick the asset">
+    Choose XLM, BLUSDC, AqUSDC or SoUSDC. Borrow the USDC variant your venue uses: BLUSDC for Blend, SoUSDC for Soroswap, AqUSDC for Aquarius.
+  </Step>
+  <Step title="Set the size">
+    Drag the slider (**1x to 10x**), use **− / +**, type an amount, or click **Max Value**. **Total** and **Max** show the loan in USD. Max = deposit × (leverage − 1).
+  </Step>
+  <Step title="Review and sign">
+    **Transaction Details** shows account leverage, what you're depositing and borrowing, margin collateral, outstanding debt, health factor and liquidation buffer, before → after. Click **Deposit & Borrow** (or **Borrow** in MB mode) and approve.
+  </Step>
+</Steps>
+
+## How many signatures
+
+| Case | Transactions |
+|---|---|
+| One collateral, Single Borrow | **One**: deposit and borrow together (`deposit_and_borrow`) |
+| One collateral, Dual Borrow | **Two**: deposit + first borrow, then the second borrow |
+| Several collaterals | Deposits first, then the borrow(s) |
+| MB (borrow only) | One borrow per asset |
+
+If a combined deposit-and-borrow would exceed Soroban's per-transaction budget, the app splits it into a deposit and then a borrow. If the second borrow of a Dual Borrow fails, the first one stays done. Check your positions before retrying.
+
+## Where the loan goes
+
+Borrowed tokens land in your **margin account**, not your wallet, and count as collateral there. From there you can [swap](/stellar/guides/trade/spot-swap) or [farm](/stellar/guides/farm/overview). To take them out, use [Transfer Collateral](/stellar/guides/margin/transfer-collateral); that withdrawal is health-checked.
+
+## Limits
+
+- The Risk Engine rejects a borrow unless the account stays **above 1.10** afterward. The app shows the highest leverage that allows, up to 10x.
+- A pool lends only the cash it holds, and no borrow can push it past **95% utilization**.
+- The app warns you when the health factor after borrowing would sit between 1.10 and 1.25.
+
+## Interest
+
+Debt grows at the pool's **Borrow APY**, which rises with utilization. **Net Borrow Rate** on the Margin page is your account's blended rate. Accrued interest shows in **Positions** and on **Portfolio**.
+
+<RiskNotice />
+
+Next: [Repay](/stellar/guides/margin/repay).

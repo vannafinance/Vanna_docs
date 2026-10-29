@@ -1,0 +1,43 @@
+---
+title: "Withdraw"
+description: "Redeem vTokens for the underlying asset plus the interest it earned."
+mode: "wide"
+---
+
+<Steps>
+  <Step title="Open the pool">
+    On [Earn](/solana/guides/earn/overview), open the pool you supplied to.
+  </Step>
+  <Step title="Choose Withdraw Liquidity">
+    Switch the right-hand panel to **Withdraw Liquidity**.
+  </Step>
+  <Step title="Enter an amount">
+    Enter how much of the underlying asset to withdraw, or use the % chips. **100%** redeems all your vTokens.
+  </Step>
+  <Step title="Confirm">
+    Check the preview, click **Withdraw Liquidity** (**Withdraw All** at 100%) and approve in your wallet. The vTokens are burned and the underlying (with its accrued interest) arrives in your wallet.
+  </Step>
+</Steps>
+
+## If the pool is busy
+
+You can only withdraw cash the pool is holding right now, shown as **Available Liquidity** (supplied minus borrowed). In a pool with very high utilization, a large withdrawal may have to wait until borrowers repay or are liquidated. High utilization also pushes rates up, which encourages repayment and new supply.
+
+## Interest
+
+Interest accrues continuously. The amount you receive is your vTokens × the current exchange rate, so it already includes everything earned since you supplied.
+
+<Tip>
+You can also withdraw from [Portfolio → Lender](/solana/guides/portfolio): each supplied pool has **Withdraw** and **Supply more** buttons.
+</Tip>
+
+## Next steps
+
+<CardGroup cols={2}>
+  <Card title="Earn overview" icon="piggy-bank" href="/solana/guides/earn/overview">
+    Compare pools, rates and utilization.
+  </Card>
+  <Card title="vTokens" icon="coins" href="/solana/learn/vtokens">
+    How your receipt grows in value.
+  </Card>
+</CardGroup>

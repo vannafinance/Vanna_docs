@@ -1,0 +1,57 @@
+---
+title: "Kamino Lending"
+description: "Supply SOL, USDC or USDT from your margin account to Kamino and earn its supply APY."
+mode: "wide"
+---
+
+Kamino is Solana's largest lending market. From Farm you supply margin-account tokens to Kamino's main market and receive Kamino **receipt tokens** (kSOL, kUSDC, kUSDT) that grow as Kamino borrowers pay interest.
+
+<Frame caption="Kamino SOL vault page: Supply APY, Borrow APY, utilization and pool size, your position and the Supply panel.">
+  <img src="/images/solana/farm/kamino-sol.png" alt="Kamino SOL vault page with Supply APY, Borrow APY, Utilization Rate and Total Pool Supply, Position value and Receipt balance, and a Supply panel previewing 10 SOL" loading="lazy" decoding="async" />
+</Frame>
+
+## Supply
+
+<Steps>
+  <Step title="Open the vault">
+    On **Farm → Lending / Single Assets**, click SOL, USDC or USDT with the **Kamino** badge.
+  </Step>
+  <Step title="Enter the amount">
+    In **Supply**, type an amount or use the % chips. **Margin** shows what your margin account holds of that token. Need more? Deposit or borrow on [Margin](/solana/guides/margin/overview) first.
+  </Step>
+  <Step title="Read the details">
+    The details box shows the network, your deposit before → after, the **Est. receipt received** (kSOL…), the APY and projected monthly earnings.
+  </Step>
+  <Step title="Supply">
+    Click **Supply SOL to Kamino** and approve. The receipt lands in your margin account.
+  </Step>
+</Steps>
+
+## Withdraw
+
+Switch to **Withdraw**, choose a percentage of your position and confirm. The receipt is redeemed and the underlying token returns to your margin account. [Flash repay](/solana/guides/margin/repay#flash-repay) also redeems every Kamino receipt automatically.
+
+## The numbers
+
+| Field | Meaning |
+|---|---|
+| **Supply APY / Borrow APY** | Kamino's live rates for that reserve |
+| **Utilization Rate** | How much of Kamino's reserve is borrowed |
+| **Total Pool Supply** | Size of Kamino's reserve |
+| **Receipt balance** | Your kSOL / kUSDC / kUSDT. It's a share of the reserve, so the number is much larger than the underlying it's worth |
+| **Earned yield** | What your position has earned since your first deposit |
+
+## Leveraged Kamino
+
+Borrow on Margin, then supply here: you earn Kamino's supply APY on the borrowed amount and pay Vanna's borrow APY on it. It's profitable while Kamino's supply rate is above Vanna's borrow rate for that asset. Watch both, since both move with utilization.
+
+## Next steps
+
+<CardGroup cols={2}>
+  <Card title="Farm positions" icon="list" href="/solana/guides/farm/positions">
+    Track earnings and exit.
+  </Card>
+  <Card title="Kamino integration" icon="book" href="/solana/learn/kamino-integration">
+    How Vanna supplies to Kamino under the hood.
+  </Card>
+</CardGroup>

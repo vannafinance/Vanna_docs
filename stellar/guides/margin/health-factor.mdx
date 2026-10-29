@@ -1,0 +1,55 @@
+---
+title: "Health Factor"
+description: "The one number that decides whether you can borrow more, withdraw, or get liquidated."
+mode: "wide"
+---
+
+import HealthFactorWarning from "/snippets/stellar/health-factor-warning.mdx";
+
+The **health factor (HF)** compares everything your margin account holds with everything it owes:
+
+```text
+Health factor = total collateral (USD) / total debt (USD)
+```
+
+Collateral includes tokens you deposited, tokens you borrowed (they sit in the account), tokens you swapped into, Blend supply and Soroswap / Aquarius LP positions. Tokens count at full oracle value, with no per-asset haircuts. LP positions are valued conservatively, at twice the smaller side of the pool's reserves. An account with no debt shows **No debt**.
+
+<HealthFactorWarning />
+
+## Zones
+
+| Health factor | Label in the app | What it means |
+|---|---|---|
+| 1.50 and above | **Safe** | Comfortable room |
+| 1.25 to 1.50 | **Healthy** | Fine, but watch it |
+| above 1.10 to 1.25 | **At risk** | Close to the line; the app warns before actions that land here |
+| 1.10 or below | **Liquidation** | Anyone can liquidate the account |
+
+The **Liquidation** card on the Margin page shows the HF on a bar from **1.10** to **2.50+** and a **buffer**: how many dollars of collateral value you can lose before reaching 1.10.
+
+```text
+buffer = total collateral − 1.10 × total debt
+```
+
+## What moves it
+
+| Up | Down |
+|---|---|
+| Depositing collateral | Borrowing more |
+| Repaying debt | Withdrawing to your wallet |
+| Your collateral's price rising | Your collateral's price falling |
+| Your debt asset's price falling | Your debt asset's price rising, interest accruing |
+
+Swaps and Farm deposits move value between assets inside the account, so they change the HF only by fees, price impact and how LP positions are valued.
+
+## Where the app checks it
+
+- **Borrow:** the Risk Engine requires the account to stay above **1.10** after the borrow.
+- **Withdraw to wallet:** the app blocks withdrawals that would bring the HF to 1.10 or below; the Risk Engine checks again on-chain.
+- **Spot:** a swap that would drop the HF below **1.15** is blocked.
+
+<Tip>
+To raise your health factor fast: [repay](/stellar/guides/margin/repay) some debt or [deposit more collateral](/stellar/guides/margin/deposit-collateral). Farm positions must be exited before their tokens can repay a loan.
+</Tip>
+
+See [Liquidation](/stellar/guides/margin/liquidation) and the [technical health factor page](/stellar/learn/health-factor).

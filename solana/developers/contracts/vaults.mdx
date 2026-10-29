@@ -1,0 +1,53 @@
+---
+title: "Yield Vaults"
+description: "Kamino Lend, Perena USD* and the delta-neutral basis vaults from the margin account: validator rules and how the oracle values each receipt."
+mode: "wide"
+---
+
+Each of these integrations turns a margin token into a receipt token that stays in the margin account. The receipt is registered as a collateral-only asset, priced by the oracle from the issuing protocol's own accounts, and counts toward the health factor like any other allowed token. Every deposit and withdrawal is a [`margin_execute`](/solana/developers/contracts/margin-execute) call in owner mode. Liquidation-mode calls are refused, because a liquidator takes the receipt tokens themselves.
+
+## Kamino Lend
+
+Validator: `programs/vanna_validator/src/kamino.rs`. Program `KLend2g3cP87fffoy8q1mQqGKjrxjC8boSyAYavgmjD`.
+
+- Only `deposit_reserve_liquidity` and `redeem_reserve_collateral`, with exactly 12 accounts and a non-zero amount.
+- The margin signs as the owner. The call spends from one margin vault (up to the amount) and pays into another.
+- The app supplies to Kamino's **main market** reserves (`lib/solana/kamino.ts`).
+
+**Valuation.** A cToken's price source names its klend reserve (`receipt_account`). The oracle reads the reserve's exchange rate into the underlying, then prices the underlying from its own Scope / Pyth source. The underlying must already be in the price book with matching decimals.
+
+<Note>
+Kamino Liquidity (multi-asset LP strategies) is not supported. That program rejects CPI, so a margin account can never hold its shares.
+</Note>
+
+## Perena USD* and USD* Junior
+
+Validator: `programs/vanna_validator/src/perena.rs`. Program `save8RQVPMWNTzU18t3GBvBkN9hT7jsGjiCQ28FpD9H`.
+
+- USD* vault deposit / withdraw, and the **Junior** tranche's deposit / withdraw. The senior tranche is refused.
+- Each call has a fixed account count, spends from one margin vault and pays into the other (USDC ⇄ share).
+- Queued withdrawals are refused.
+
+**Valuation.** The oracle reads Perena's own USD share price: the vault's share price for USD*, the tranche state's junior share price for Junior. The NAV's last update is the price's timestamp. USDC is not priced twice, since Perena already values its USDC holdings. A stale NAV counts as zero for the owner, but at its last value for liquidation.
+
+## Basis vaults
+
+Validator: `programs/vanna_validator/src/basis.rs`. Oracle: `programs/vanna_oracle/src/basis.rs`. Program `GtuQoYxzytGKtLqQGkYrVbsaPHTZN5jboP25DrSmKvGr` (`vanna_phoenix_vault`, fork only).
+
+Each vault takes USDC, buys its asset through Jupiter, and holds it against a short of the same size on Phoenix. There is one vault per asset (SOL, ETH, BTC, TSLA, META), each with its own 6-decimal share token.
+
+- Only the vault's `deposit` and `withdraw`, in owner mode.
+- The margin is the vault's `user` (account 0) and must not appear anywhere else in the call. The vault forwards its signers to the Jupiter route, so the margin's signature must not reach it.
+- A deposit spends at most its USDC amount from the margin's USDC vault and must not shrink its share vault. A withdrawal spends at most its share amount and must not shrink the USDC vault.
+- The account count must be exactly the vault's 32 named accounts plus Phoenix's index accounts plus the route's.
+- The keeper's `rebalance`, `set_deposits_open` and the admin instructions are refused.
+
+**Valuation.** The oracle computes the vault's NAV itself, at Vanna's prices rather than Phoenix's mark: the asset held at its Phoenix market's index price (from Vanna's market book), plus the Phoenix trader's equity (collateral, plus each position at the index with unsettled funding, less the taker fee to close). A share is worth the lower of `NAV / supply` and the vault's own `(NAV + $1) / (supply + 1)`. Because the spot asset and the short use the same index, a price move barely changes the share's value.
+
+**Fork constraint.** A margin account can't deposit into the SOL vault, because Phoenix's trader realloc needs a system transfer from the vault's `user`, which a program-owned account can't make. A margin can still hold SOL-vault shares bought from a wallet, borrow against them, and redeem them.
+
+## Client notes
+
+- The margin's receipt ATA must exist before a deposit. The margin can't pay rent, so the wallet creates it in the same transaction.
+- Basis-vault calls are one v0 transaction with a lookup table. The app keeps one lookup table per vault (`lib/solana/vault-catalogue.ts`).
+- Vault and share addresses are listed in [Configured Accounts](/solana/developers/deployed-contracts#yield-vaults).

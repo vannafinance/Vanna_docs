@@ -100,6 +100,8 @@ body:has(.vanna-poster) li:not(:has(svg)):has(a[href="home"]) {
 .vanna-poster-tick.bl { bottom: 22px; left: 22px;    border-bottom: 1px solid; border-left: 1px solid; }
 .vanna-poster-tick.br { bottom: 22px; right: 22px;   border-bottom: 1px solid; border-right: 1px solid; }
 
+.vanna-poster { container-type: inline-size; }
+
 .vanna-poster-content {
   position: relative;
   z-index: 2;
@@ -110,7 +112,7 @@ body:has(.vanna-poster) li:not(:has(svg)):has(a[href="home"]) {
   text-align: center;
   gap: 20px;
   height: 100%;
-  padding: 40px 60px;
+  padding: 40px 32px;
   width: 100%;
 }
 
@@ -145,15 +147,17 @@ body:has(.vanna-poster) li:not(:has(svg)):has(a[href="home"]) {
 
 .vanna-poster-line {
   font-family: 'Plus Jakarta Sans', system-ui, sans-serif;
-  font-size: 54px;
-  line-height: 1.02;
+  /* Scales with the viewport so a line never overflows the poster; wraps as a last resort. */
+  font-size: clamp(18px, 4.3cqi, 46px);
+  line-height: 1.2;
   font-weight: 700;
   letter-spacing: -0.035em;
   color: #ffffff;
   display: block;
   text-align: center;
   width: 100%;
-  white-space: nowrap;
+  white-space: normal;
+  text-wrap: balance;
 }
 
 .vanna-poster-line .accent {
@@ -169,9 +173,10 @@ body:has(.vanna-poster) li:not(:has(svg)):has(a[href="home"]) {
 @media (max-width: 768px) {
   .vanna-poster           { height: 260px; }
   .vanna-poster-content   { padding: 32px 32px; gap: 16px; }
-  .vanna-poster-line      { font-size: 32px; white-space: normal; }
+  .vanna-poster-line      { font-size: clamp(18px, 5.6cqi, 30px); }
   .vanna-poster-logo      { height: 28px; }
 }
+
 
 /* ─── Homepage Layout ──────────────────────────────────────────── */
 
@@ -414,7 +419,8 @@ header > div > a {
 }
 
 /* Launch App button — target by href directly */
-a[href="https://app.vanna.finance"] {
+header a[href="https://app.vanna.finance"],
+header a[href="https://test.vanna.finance"] {
   font-size: 16px !important;
   padding: 10px 22px !important;
 }

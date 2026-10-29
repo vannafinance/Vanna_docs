@@ -1,0 +1,29 @@
+---
+title: "Dual Yield Stack"
+description: "Earn on Vanna's lending pools and on Blend at the same time. An illustrative testnet workflow."
+mode: "wide"
+---
+
+Hold an **Earn** position in your wallet while a separate, margin-funded **Blend** supply position runs in your margin account. The two yields come from different places, with different custody, rates and withdrawal limits.
+
+<Steps>
+  <Step title="Earn leg">
+    Supply on **Earn** from your wallet. See [Supply](/stellar/guides/earn/supply).
+  </Step>
+  <Step title="Farm leg">
+    Deposit and borrow on **Margin**, then supply the borrowed token to Blend on **Farm**. See [Leveraged Yield](/stellar/guides/farm/leveraged-yield).
+  </Step>
+  <Step title="Manage each leg">
+    The Earn leg is managed on its pool; the Farm leg through the margin account and its health factor.
+  </Step>
+  <Step title="Exit">
+    Redeem on Earn (it may fill partly). Withdraw from Blend, then repay the loan.
+  </Step>
+</Steps>
+
+## Good to know
+
+- **vTokens don't back the margin leg.** Your Earn position doesn't protect the margin account from liquidation.
+- **No guaranteed sum.** The combined yield isn't guaranteed to be positive or price-neutral.
+
+See [Sample Strategies](/stellar/guides/sample-strategies) and [Repay](/stellar/guides/margin/repay).

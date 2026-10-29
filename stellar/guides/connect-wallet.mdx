@@ -1,0 +1,68 @@
+---
+title: "Connect Your Wallet"
+description: "Sign in with Freighter or OneKey on Stellar testnet, then mint free test tokens from the Deposit button."
+mode: "wide"
+---
+
+## Supported sign-in methods
+
+Click **Connect wallet** at the top right. The **Sign in to Vanna** dialog lists:
+
+| Method | Status on Stellar testnet |
+|---|---|
+| **Freighter** | Live. Set Freighter's network to **Testnet**. |
+| **OneKey** | Live. Unlock OneKey and make sure it has a Stellar account. |
+| **LOBSTR** | Shown as **Soon**. LOBSTR signs for Stellar mainnet only. |
+| **Email, Google, X, GitHub** | Shown only when email sign-in is enabled for the build. It is powered by Dynamic and gives you a Stellar wallet without an extension. |
+
+<Note>
+The dialog also lists Solana wallets. Picking one switches you to Vanna on Solana; Stellar positions stay with your Stellar address.
+</Note>
+
+## Connect
+
+<Steps>
+  <Step title="Prepare the wallet">
+    Install [Freighter](https://www.freighter.app/), create or import an account, and switch its network to **Testnet**.
+  </Step>
+  <Step title="Open the sign-in dialog">
+    Go to [test.vanna.finance](https://test.vanna.finance), enter your access code if asked, choose **Stellar** in the chain switcher at the top right, and click **Connect wallet**.
+  </Step>
+  <Step title="Approve the connection">
+    Pick **Freighter** (or OneKey) and approve in the wallet pop-up. Your wallet name, for example **@Freighter**, replaces the button.
+  </Step>
+  <Step title="Check the address">
+    Open the wallet menu to see your address. If you already have a margin account, Vanna finds it on-chain automatically.
+  </Step>
+</Steps>
+
+## Get test tokens
+
+Click **Deposit** in the header. The **Portfolio account** modal opens on the **Deposit** tab:
+
+<Frame caption="Test funds with one-click Mint per token and Mint all, plus your receive address and QR code. Click the image to zoom.">
+  <img src="/images/stellar/onboarding/deposit-modal-test-funds.png" alt="Portfolio account modal showing Freighter GCQP...ZUQ5 on Testnet, Deposit and Transfer tabs, Test funds tiles for XLM, BLUSDC, AqUSDC and SoUSDC with Mint buttons, a Mint all button, and a Receive panel with QR code and Copy address" loading="lazy" decoding="async" />
+</Frame>
+
+| Token | Source | How often |
+|---|---|---|
+| **XLM** | Stellar Friendbot, 10,000 XLM | Once per account (Friendbot funds an address only once) |
+| **BLUSDC** | Blend testnet faucet. Sends a basket: USDC, BLND, wETH and wBTC | Once per wallet |
+| **AqUSDC** | Aquarius testnet faucet, 1,000 per mint | Any time |
+| **SoUSDC** | Soroswap testnet faucet | Any time, with a short cooldown between mints |
+
+**Mint all** mints every token that isn't already funded or cooling down. Some mints open your wallet once to add the token's trustline; approve it. The **Receive** panel shows your address and QR code. Send only Stellar **testnet** assets there; mainnet XLM or USDC will not show up in Vanna.
+
+<Tip>
+Keep some XLM in your wallet. Every Stellar transaction pays a small XLM fee, and each trustline raises your account's minimum XLM reserve. The app always leaves that reserve untouched when you deposit or supply XLM.
+</Tip>
+
+## Move funds to your margin account
+
+The modal's **Transfer** tab moves tokens between your wallet and your margin account. It is the same form as **Margin → Transfer Collateral**. See [Transfer Collateral](/stellar/guides/margin/transfer-collateral).
+
+## Reconnect
+
+Use the same wallet to return to the same positions. A different address has different balances and a different margin account.
+
+Next: [Earn](/stellar/guides/earn/overview) or [Open a Margin Account](/stellar/guides/margin/open-account).

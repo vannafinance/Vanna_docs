@@ -1,0 +1,57 @@
+---
+title: "TypeScript Integration"
+description: "Use the application-local Stellar service layer."
+mode: "wide"
+---
+
+The Stellar app (`@vanna/stellar-app`) declares Next.js `^16.2.3`, React `19.2.0`, Stellar SDK `^14.4.3`, and Freighter API `^6.0.1`. These are repository declarations, not claims about latest upstream releases.
+
+## Run the application
+
+From the `Vanna_Finance_Backend` monorepo root:
+
+```bash
+npm ci
+npm run dev:stellar   # Stellar app only, on port 3002
+```
+
+`npm run dev` starts both chain apps. Environment variables are listed in `apps/stellar/docs/README.md` (copy `.env.example` to `.env.local`). Basic contract reads use the configured testnet RPC. Mercury history (`MERCURY_URL`, `MERCURY_KEY`), email login (a Dynamic environment ID), Copilot (MCP settings) and Hubble (`STATS_ENABLED`, Google credentials) need their own configuration. Keep service credentials server-side.
+
+## Service map
+
+| Module | Export |
+|---|---|
+| `lib/stellar-utils.ts` | `ContractService`, `WalletService`, `CONTRACT_ADDRESSES`, `ASSET_TYPES` |
+| `lib/margin-utils.ts` | `MarginAccountService` |
+| `lib/blend-utils.ts` | `BlendService` |
+| `lib/soroswap-utils.ts` | `SoroswapService` |
+| `lib/aquarius-utils.ts` | `AquariusService` |
+| `lib/wallet-adapter.ts` | Wallet-kind-independent address, access, and signing functions (Freighter, OneKey, Dynamic) |
+
+Imports using `@xlm/` (or `@/`) assume the application's TypeScript aliases. There is no generated universal client behind these service methods; read their argument types before reusing them.
+
+## Encode exact amounts
+
+For direct contract calls, use decimal strings or bigint, not floating-point multiplication by 10^18:
+
+```typescript
+import { nativeToScVal } from '@stellar/stellar-sdk';
+
+const oneTokenWad = 1_000_000_000_000_000_000n;
+const amountArg = nativeToScVal(oneTokenWad, { type: 'u256' });
+const symbolArg = nativeToScVal('XLM', { type: 'symbol' });
+```
+
+A token balance is native units. Pool deposit and manager repayment amounts are WAD. Pool redemption expects WAD **receipt quantity**. Controller minima and LP-removal units vary by protocol; see the controller references.
+
+## Checks
+
+`npm run lint`, `npm test`, and `npm run build` are the application checks. Rust integrated tests depend on the imported prerequisite WASMs. Documentation updates do not establish that a deployment or full integration test passed.
+
+
+## Source reference
+
+- `Vanna_Finance_Backend/package.json`
+- `Vanna_Finance_Backend/apps/stellar/package.json`
+- `Vanna_Finance_Backend/apps/stellar/lib/stellar-utils.ts`
+- `Vanna_Finance_Backend/apps/stellar/docs/README.md`

@@ -1,0 +1,32 @@
+---
+title: "Predict"
+description: "World.xyz prediction markets in the Vanna app, with an outcome yield pool that lends matched pairs into Vanna's USDC pool."
+mode: "wide"
+---
+
+The Predict page lists **World.xyz** prediction markets and trades them from the wallet on the hosted fork. It is a wallet product, not a margin-account integration: positions don't count toward the margin health factor.
+
+## World.xyz markets
+
+World's market program holds each market's collateral in **CASH**, a Token-2022 stablecoin, and mints a YES and a NO outcome token (6 decimals each). Splitting and merging are permissionless: N CASH ⇄ N YES + N NO. A winning outcome token redeems 1 CASH.
+
+| Role | Address |
+|---|---|
+| World market program | `prediCtPZCttYMvm2W3PtxmMxLmT1dtN7riU6Cxh6tM` |
+| CASH mint | `CASHx9KJUStyftLFWGvEVf59SGeG9sh5FfcnZMVPCASH` |
+
+Market discovery and prices come from mainnet (the latest maker fills), since the fork clones accounts only as they are touched.
+
+## Outcome yield pool
+
+Vanna's `outcome_yield_pool` program (`4kFzca1u9TUAVK7BjJZ5vVtfJ2QRATs38vN8Bq6qZwG3`) lets outcome tokens earn while they wait for resolution:
+
+1. Outcome tokens bought on an allowlisted market can go into the pool in the same wallet approval. The holder receives pool shares (9 decimals).
+2. A keeper merges matched YES + NO pairs back into CASH, swaps it to USDC, and supplies it to Vanna's USDC lending pool (`lender_supply` on the core program).
+3. On redeem, the pool pays from its unmatched outcome tokens first and covers any shortfall from its USDC position.
+
+The allowlist is read on-chain, never hardcoded. Only markets the pool has allowlisted can be deposited.
+
+<Note>
+Predict runs on the hosted mainnet fork with a fork maker standing in for World's mainnet market makers. It is demo infrastructure, not a live mainnet integration.
+</Note>

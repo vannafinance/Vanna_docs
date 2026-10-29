@@ -1,0 +1,133 @@
+---
+title: "Copilot"
+description: "Ask about your account or describe a change in plain English. The Copilot plans it with live numbers; your wallet signs every transaction."
+mode: "wide"
+---
+
+**Copilot** is an AI assistant built into the app that knows your Vanna account. Ask it a question ("What is my health factor?", "What am I earning on Farm?") or describe what you want done ("Borrow 500 USDC", "Put 100 USDC and 1 SOL into Earn, then show my APY"), and it answers with live figures or prepares the transactions for your wallet to sign.
+
+It does the same things as the rest of the app (Earn, Margin, Trade, Farm, Predict) with the same rules and the same numbers. You just say what you want instead of filling in each page.
+
+<Frame caption="Copilot answering a health-factor question, with the sidebar on the left.">
+  <img src="/images/solana/copilot/Copilot_HF.png" alt="Copilot page answering What's my health factor with a Margin Account card showing health factor 9.50, collateral, debt, liquidation at 1.10 and safety floor 1.15, and a sidebar with sign-in status, health factor, position lists and recent chats" loading="lazy" decoding="async" />
+</Frame>
+
+## Getting Started
+
+<Steps>
+  <Step title="Open Copilot">
+    Click **Copilot** in the header with your wallet connected. If your wallet is still reconnecting, the page waits a moment instead of asking you to connect again.
+  </Step>
+  <Step title="Sign in">
+    Sign a short login message in your wallet. This is not a transaction and costs no fee. It proves you own this wallet, so the Copilot only ever reads and acts for your own account.
+  </Step>
+  <Step title="Ask">
+    Type in the box at the bottom (*Ask about a position, or describe a change*) and press Enter.
+  </Step>
+</Steps>
+
+A sign-in lasts **24 hours** from when you signed, whether you use it or not. After that, the Copilot asks you to sign the login message again.
+
+## The Sidebar
+
+<Frame caption="The sidebar with Margin Positions and Earn Positions open.">
+  <img src="/images/solana/copilot/Copilot_Slidebar.png" alt="Copilot sidebar showing Signed in status, health factor 9.50 Healthy, Margin Positions with SOL, USDC, USDT and kSOL collateral and SOL and USDC borrowed, and Earn Positions with SOL and USDC supplied" loading="lazy" decoding="async" style={{ maxWidth: "380px", margin: "0 auto" }} />
+</Frame>
+
+| Part | What it shows |
+|---|---|
+| **Sign-in status** | "Signed in" with your wallet, or a prompt to sign in. If you switch to another wallet in your extension, it tells you the wallet differs from the sign-in |
+| **Health factor** | Your margin account's current health factor |
+| **Margin Positions** | Each asset in your margin account: **Collateral** (what you deposited or swapped into) and **Borrowed** (your debt) |
+| **Earn Positions** | What you supplied to the Earn pools, at the amount you could redeem now |
+| **Perps Positions** | Your open Phoenix perps (shown only when you have some) |
+| **Predict Positions** | Your Yes / No shares, in your wallet or in Vanna's pool (shown only when you have some) |
+| **Recents** | Your earlier chats. Rename or delete one from its menu; **New chat** starts a fresh one |
+
+Position lists start closed: click a heading to open one. Each row shows the same logo as the rest of the app (tokens, vault shares, perps markets, and team or event art for Predict).
+
+## What It Can Do
+
+| You want to | Try |
+|---|---|
+| **Read your account** | "What's my health factor?", "Show my positions", "How much do I owe?", "What's in my wallet?" |
+| **Know your limits** | "How much more USDC can I borrow safely?", "How much SOL can I withdraw?", "What's the highest leverage I can take on SOL?" |
+| **Ask what-if** | "What happens if SOL drops 20%?", "What would my health be if I borrow 300 USDC?" |
+| **Compare yield** | "Where can I earn the most on USDC?", "What does the BTC Basis vault pay?" |
+| **Lend** | "Supply 100 USDC to Earn", "Withdraw all my SOL from Earn" |
+| **Use margin** | "Open a margin account and deposit 2 SOL", "Borrow 1,000 USDC", "Repay all my USDT", "Withdraw as much SOL as is safe" |
+| **Lever up** | "Lever my SOL 2x", "Deposit 100 USDC and borrow SOL 3x against it", "Borrow USDC until my health is 1.5" |
+| **Swap** | "Swap 5 SOL to USDC", "Swap 1 SOL to USDC in my wallet", "Swap SOL to get exactly 100 USDC" |
+| **Farm** | "Put 50 USDC into Kamino", "Deposit 200 USDC into BTC Basis", "Withdraw half my USD\*" |
+| **Perps** | "Which perps markets are open?", "Open a 2x SOL long with 20 USDC", "Close my ETH short" |
+| **Predict** | "Show me prediction markets", "Buy 10 CASH of Yes on Barcelona", "Sell all my positions", "Sell half my 49ers shares", "Get me test CASH" |
+| **Exit** | "Close everything": leaves Farm, repays debt and withdraws, in an order where your health only improves |
+
+You can chain several actions in one message, up to 8 transactions ("Deposit 100 USDC, borrow 50 USDT, then show my health factor"). Amounts can be exact ("5 SOL"), in dollars ("$200 of SOL"), a share ("half", "25%"), everything ("all"), or as much as is safe ("max").
+
+## How It Works With the App
+
+The Copilot is not a separate product with its own numbers. It works through the same pieces the app uses:
+
+| On the website | In the Copilot |
+|---|---|
+| [Portfolio](/solana/guides/portfolio) and [Margin](/solana/guides/margin/overview) cards | Answers about health, collateral, debt and positions, with the same values |
+| Max buttons on Margin (keep health at 1.15) | "As much as is safe" uses the same 1.15 floor and formula |
+| [Earn](/solana/guides/earn/overview) supply / withdraw | The same Earn transactions |
+| [Spot](/solana/guides/trade/spot-swap) swap (Jupiter or Titan route) | Swaps happen in your margin account by default, like the Spot page; in your wallet only if you ask |
+| [Perps](/solana/guides/perps/overview) on Phoenix | The same markets and order rules, with your margin account's USDC as collateral |
+| [Farm](/solana/guides/farm/overview): Kamino, Basis, Perena | The same vaults; shares stay in your margin account as collateral |
+| [Predict](/solana/guides/predict/overview) | The same event list and prices (it uses the Predict page's own data, so you see every event and outcome), the same buy and sell transactions, CASH only, shares go into Vanna's pool |
+| [Test funds](/solana/guides/faucet) | Only test CASH for Predict can be requested here; mint other tokens from **Deposit → Test funds** |
+
+Every transaction is built and simulated by the [Vanna MCP](/solana/guides/mcp), the same engine that lets other AI apps use Vanna. Under the chat box the app reminds you: *every write asks your wallet for a signature; nothing is sent without it.*
+
+## Approving a Plan
+
+When you ask for a change, the Copilot shows a card before anything happens.
+
+<Frame caption="A single action: Projected Impact shows your health factor, collateral and debt before → after, with Approve and run, Cancel and the countdown.">
+  <img src="/images/solana/copilot/approve-and-run.png" alt="Copilot answering Deposit 10 SOL in my margin account with a card showing Projected Impact: health factor 12.63 to 13.62 on a bar marking 1.10 liquidation and the 1.15 copilot floor, collateral and debt before and after, Approve and run and Cancel buttons and Expires in 4:42, beside the sidebar with Margin, Earn and Predict positions" loading="lazy" decoding="async" />
+</Frame>
+
+1. **Review.** A single action shows its **Projected Impact**: your health factor on a bar with the 1.10 liquidation line and the 1.15 Copilot floor, plus collateral and debt before → after. A multi-step plan lists each step with its exact amount, how many wallet signatures it needs, any warnings, and your health factor after the plan.
+2. **Approve within 5 minutes.** Click **Approve and run** (**Approve & run** on a multi-step plan). A countdown from 4:59 shows how long it's valid. After that it expires, and you ask again so it uses fresh prices.
+3. **Sign each step.** For each step the Copilot checks live data again, builds the transaction, and your wallet asks you to sign it. A step that only shows you something (like your health factor) needs no signature. A Predict trade with several transactions is signed in **one** wallet approval.
+4. **Done.** A step shows as confirmed only when the chain has confirmed it.
+
+<Frame caption="A three-step plan waiting for approval: deposit, a borrow sized to 3x, and a health-factor report, with the countdown at the top right.">
+  <img src="/images/solana/copilot/Copilot_Multi-Plan.png" alt="Approve Plan card expiring in 4:38 with three steps: deposit 10 SOL as margin collateral, borrow 2,149.484995 USDC, and a report step showing the health factor with no signature, plus an execution preview and a 3x leverage note" loading="lazy" decoding="async" />
+</Frame>
+
+<Frame caption="The same plan running: the deposit is confirmed and the borrow is being checked before it is sent.">
+  <img src="/images/solana/copilot/Copilot_Plan_Execution.png" alt="Executing step 2 of 3: deposit 10 SOL confirmed with its signature, borrow USDC checking before it is sent, show health factor next, and a Cancel remaining steps button" loading="lazy" decoding="async" />
+</Frame>
+
+You can stop a running plan at any time with **Cancel remaining steps**. Steps already confirmed stay done.
+
+If prices move and a step would take your health below 1.15, the plan pauses instead of sending it.
+
+## Safety
+
+- **Nothing moves without your signature.** The Copilot never holds a key and never signs. If you don't sign, nothing happens.
+- **The AI never picks a number.** It understands what you want; the app computes every amount from live on-chain data and checks it before you see it.
+- **Same limits as the app.** Actions that can lower your health keep it at **1.15 or above**; liquidation is at 1.10. Adding collateral and repaying are always allowed.
+- **Your account only.** It can't read for or act on another wallet, send funds to an address, run arbitrary programs, change protocol settings or liquidate anyone.
+- **Only what's on Vanna.** Tokens outside the app, options, spot shorts and multi-asset LP positions are refused (shorts are available as Phoenix perps).
+- **No orders for later.** It can't watch prices or act later (stop-loss, limit, DCA, "when SOL hits 200"). It tells you which part it won't do and does the rest now.
+- **No predictions.** On Predict it shows the market's prices; it never tells you which outcome will win.
+
+<Note>
+The Copilot can misread a request. Always check the plan card (asset, amount, direction and health factor after) before you approve and sign.
+</Note>
+
+## Next steps
+
+<CardGroup cols={2}>
+  <Card title="Vanna MCP" icon="plug" href="/solana/guides/mcp">
+    Use the same capabilities from Claude, Cursor or any MCP client.
+  </Card>
+  <Card title="Health factor" icon="heart-pulse" href="/solana/guides/margin/health-factor">
+    The floor every Copilot plan respects.
+  </Card>
+</CardGroup>

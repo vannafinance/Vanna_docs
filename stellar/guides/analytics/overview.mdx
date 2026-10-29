@@ -1,0 +1,66 @@
+---
+title: "Risk Monitoring Dashboard"
+description: "Protocol-wide risk on Stellar testnet, read live from the chain: every margin account, its health, debt and collateral."
+mode: "wide"
+---
+
+**Analytics** is a public, protocol-wide risk dashboard. It reads the list of margin accounts straight from the **Registry** contract, then reads each account's collateral and debt and prices them with Vanna's Reflector-backed oracle. There's no private database: anyone can check every account. No wallet is needed to view it.
+
+The strip at the top says what you're looking at, for example **Live · Stellar testnet · 200 open margin accounts read from the Registry · 4 lending pools · Reflector prices**, with the update time and a **Refresh** button. The deep scan covers the most recent 200 accounts.
+
+<Frame caption="Analytics Overview: the KPI cards and the Accounts table, with the section sidebar on the left. Click the image to zoom.">
+  <img src="/images/stellar/analytics/analytics-overview.png" alt="Analytics Overview with the Live Stellar testnet strip, KPI cards for Bad debt (estimated) $0.00, Can be liquidated 1, Liquidatable debt $326.78, Accounts at risk / active 15 / 111, Average health 3.64, Collateral at risk $114.79K, Average leverage 3.89x and Total debt $95.79K, and an Accounts table with All, Liquidatable, At risk, Safe and No debt filters and a wallet search" loading="lazy" decoding="async" />
+</Frame>
+
+## Sections
+
+<Tabs>
+  <Tab title="Risk">
+    | Section | What it answers |
+    |---|---|
+    | **Overview** | Is anything wrong? Bad debt, liquidatable accounts and debt, accounts at risk, average health and leverage, total debt and collateral, then the Accounts table and lending summary |
+    | **Positions** | Look up any wallet; accounts by health and leverage; collateral and debt by asset |
+    | **Liquidations** | Who can be liquidated now, who's closest, past liquidations and the 1.10 line |
+    | **Top accounts** | Debt concentration, largest borrowers and recent activity |
+    | **Alerts** | What needs attention now, by priority (Act now, Critical, Warning, For information) |
+  </Tab>
+  <Tab title="Markets">
+    | Section | What it answers |
+    |---|---|
+    | **Lending Pools** | Supplied, borrowed and available to withdraw per pool, plus the on-chain borrow-rate curve |
+    | **Collateral** | Which assets accounts hold, how each is priced, and the kind (token, Blend deposit, LP) |
+    | **Prices** | The Reflector price for each asset and whether the latest read was live |
+  </Tab>
+  <Tab title="Tools">
+    | Section | What it answers |
+    |---|---|
+    | **What-if Calculator** | Reprice every account with your own price moves and see before / after |
+    | **Risk Explorer** | Stress scenarios run against the live accounts |
+    | **Advanced positions** | Positions grouped by collateral type, correlated-drop groups and borrow-rate impact |
+  </Tab>
+</Tabs>
+
+All tools are **read-only**: they never send a transaction or ask for a signature.
+
+<Frame caption="Further down Overview: debt at each health level with the 1.10 liquidation line, what collateral is made of, and the lending summary. Click the image to zoom.">
+  <img src="/images/stellar/analytics/analytics-health-collateral.png" alt="Accounts by health column chart of debt per health band with a dashed liquidation line at 1.10, a What collateral is made of donut showing $350.71K split into Held in account 93.0%, Blend deposits 6.2% and Aquarius / Soroswap LP 0.8%, and cards for Supplied by lenders, Borrowed, Available to withdraw and Borrowed share" loading="lazy" decoding="async" />
+</Frame>
+
+## Reading the numbers
+
+- **Accounts table:** your own margin account is listed first, with its real rank. Click a row to open that account's page.
+- **Health bands** are display buckets. The only contract threshold is **1.10**.
+- **Bad debt (estimated)** is an account owing more than it holds. It's a derived figure, not a write-off in the pools.
+- **Empty accounts** (no collateral and no debt) aren't counted as active.
+
+<CardGroup cols={3}>
+  <Card title="Positions" icon="magnifying-glass" href="/stellar/guides/analytics/positions">
+    Look up accounts and see the spread.
+  </Card>
+  <Card title="Liquidations" icon="triangle-exclamation" href="/stellar/guides/analytics/liquidations">
+    Who's at the line.
+  </Card>
+  <Card title="Risk Explorer" icon="flask" href="/stellar/guides/analytics/risk-explorer">
+    Stress the live accounts.
+  </Card>
+</CardGroup>

@@ -1,0 +1,29 @@
+---
+title: "Interest Rate Model"
+description: "A polynomial utilization curve. Borrow interest funds lender yield."
+mode: "wide"
+---
+
+Each pool's borrow rate depends on its utilization `u = borrows / (cash + borrows)`. The curve has three coefficients set by the admin:
+
+```text
+annual_rate = rate_multiplier × (linear·u + linear·u^32 + jump·u^64)
+```
+
+- At low utilization the linear term dominates, so borrowing is cheap.
+- As utilization approaches 100%, the `u^32` and `u^64` terms take over and the rate climbs steeply. That pulls in new lenders and pushes borrowers to repay before the pool runs dry.
+- An empty pool (`u = 0`) charges nothing.
+
+The rate is applied per second (`SECONDS_PER_YEAR = 31,556,952`).
+
+## Where interest goes
+
+Interest accrues on every pool touch (and on `public_refresh_reserve`). A reserve-factor slice goes to `accrued_protocol_fees`. The rest increases `total_borrow_assets`, which raises the value of every vToken.
+
+```text
+lender APY ≈ borrow APR × utilization × (1 − reserve_factor)
+```
+
+Rounding remainders carry over between accruals, so frequent updates neither overcharge borrowers nor shortchange the treasury.
+
+Exact coefficients live on each `Reserve` account. Read them on-chain rather than assuming defaults.

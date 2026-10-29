@@ -1,0 +1,32 @@
+---
+title: "Tokenized Stocks"
+description: "xStocks on Solana as margin collateral, priced by Kamino Scope, and stock perps on Phoenix."
+mode: "wide"
+---
+
+## The tokens
+
+| Token | Issuer | Program | Decimals | Role in Vanna |
+|---|---|---|---|---|
+| NVDAx | xStocks (Backed) | Token-2022 | 8 | Collateral only |
+| GOOGLx | xStocks (Backed) | Token-2022 | 8 | Collateral only |
+| AAPLx | xStocks (Backed) | Token-2022 | 8 | Collateral only |
+| TSLAx | xStocks (Backed) | Token-2022 | 8 | Collateral only |
+
+xStocks are not lending pools in Vanna. You can't supply or borrow them. You can hold them in a margin account, borrow USDC, USDT or SOL against them, and swap into or out of them through Jupiter or Titan.
+
+## Pricing
+
+Each xStock is priced from Kamino's Scope aggregator (Chainlink xStocks and Pyth Lazer, cross-checked by Scope), with the same freshness and TWAP limits Kamino's own reserves use. The xStock price already applies the mint's scaled-UI multiplier, so it prices one raw token. Amounts in the app are raw token amounts, which can differ slightly from wallets that apply the multiplier.
+
+## Issuer controls
+
+The xStocks' issuer keeps powers such as a freeze authority. Vanna registers such mints only with an explicit `accept_issuer_controls`, and a frozen vault counts for nothing in the health factor.
+
+## Stock exposure without the token
+
+- **Long with leverage**: borrow USDC and swap it into an xStock inside the margin account.
+- **Stock perps**: Phoenix lists TSLA and META perps. See [Perps on Phoenix](/solana/learn/perps-on-phoenix).
+- **Delta-neutral**: the TSLA and META basis vaults hold spot exposure to the stock against a Phoenix short. See [Yield Vaults](/solana/learn/yield-vaults).
+
+Transfer fees, if a Token-2022 mint ever has one, are measured on every move. Quotes and health use the amount that actually arrived.

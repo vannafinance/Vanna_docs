@@ -1,5 +1,9 @@
 # Stellar testnet documentation refresh
 
+## 2026-10-29 update
+
+User guides, Learn, Developers, home and FAQ under `stellar/` were refreshed against `Vanna_Finance_Backend/apps/stellar` (HEAD `dcec458`) and the contract reference verified on-chain on 2026-10-24 (`Stellar/docs/Vanna Protocol Stellar Contract Doc.md`). Contracts are unchanged at `1d333fb`. App URL is https://test.stellar.vanna.finance. Lite mode, Privy login and the separate Faucet page were removed from the docs (no longer in the app); screenshots were replaced with 15 current captures under `images/stellar/`, and pre-redesign screenshots were deleted. The rest of this file describes the 2026-09-12 review.
+
 Reviewed: 2026-09-12.
 
 Updated `Vanna_docs` from the local `Protocol_V1_Soroban_testnet` and `mercury-stellar-backend` implementations. No application or contract source was changed, and no deployment or financial transaction was performed.

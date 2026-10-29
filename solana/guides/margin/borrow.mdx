@@ -1,0 +1,61 @@
+---
+title: "Borrow"
+description: "Borrow SOL, USDC or USDT against your collateral, up to 10× leverage."
+mode: "wide"
+---
+
+import RiskNotice from "/snippets/solana/risk-notice.mdx";
+
+Borrowing happens in the **Leverage your Assets** tab, together with (or without) a deposit.
+
+<Frame caption="Deposit 10 SOL and borrow USDC at 2×: Max Value, the leverage slider and the total.">
+  <img src="/images/solana/margin/borrow-leverage.png" alt="Leverage panel with SOL deposit, USDC borrow of 1089.45, Single Borrow / Dual Borrow toggle and a 1x to 10x leverage slider" loading="lazy" decoding="async" />
+</Frame>
+
+<Steps>
+  <Step title="Set up the deposit">
+    Choose collateral under **Deposit**. **WB** deposits from your wallet; **MB** borrows against collateral already in your margin account.
+  </Step>
+  <Step title="Choose Single or Dual Borrow">
+    **Single Borrow** borrows one asset. **Dual Borrow** splits the loan 50/50 across two assets, sized from the leverage slider.
+  </Step>
+  <Step title="Pick the asset">
+    Choose SOL, USDC or USDT under **Borrow**.
+  </Step>
+  <Step title="Set the size">
+    Drag the leverage slider (**1× to 10×**), use **−/+**, type an amount, or click **Max Value**. **Total** and **Max** show the loan in USD.
+  </Step>
+  <Step title="Review and sign">
+    Check **Transaction Details**: the account's health factor, leverage and collateral before → after. Click **Deposit & Borrow** and approve.
+  </Step>
+</Steps>
+
+## Where the loan goes
+
+Borrowed tokens land in your **margin account**, not your wallet. From there you can swap, trade perps or farm. To take them to your wallet, use [Transfer Collateral](/solana/guides/margin/transfer-collateral) (Margin account → Portfolio account); that withdrawal is health-checked.
+
+## Limits
+
+- The program rejects any borrow that would leave the account at a health factor of **1.10 or below**.
+- The app's Max keeps a **1.15** safety floor so a small price move right after borrowing doesn't put you at the line.
+- You can't borrow more than the pool has available (see the pool's Available Liquidity on [Earn](/solana/guides/earn/overview)).
+
+## Interest
+
+Debt grows at the pool's **Borrow APY**, which rises with the pool's utilization. **Net Borrow Rate** on the Margin page is your account's blended rate; accrued interest shows in the Positions table and on Portfolio.
+
+<RiskNotice />
+
+## Next steps
+
+<CardGroup cols={3}>
+  <Card title="Swap" icon="arrow-right-arrow-left" href="/solana/guides/trade/spot-swap">
+    Turn the loan into another token.
+  </Card>
+  <Card title="Trade perps" icon="chart-line" href="/solana/guides/perps/overview">
+    Long or short on Phoenix.
+  </Card>
+  <Card title="Repay" icon="rotate-left" href="/solana/guides/margin/repay">
+    Pay back part or all of a loan.
+  </Card>
+</CardGroup>

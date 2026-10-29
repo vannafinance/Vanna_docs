@@ -1,0 +1,33 @@
+---
+title: "Liquidation"
+description: "Permissionless, partial, bonus-paid close of accounts at HF ≤ 1.10, plus admin write-off of dust bad debt."
+mode: "wide"
+---
+
+Anyone can liquidate a margin account once its health factor is at or below 1.10. One liquidation repays part of **one debt** and takes **one token**.
+
+## How much
+
+- **Repay**: up to 50% of the chosen debt. The full debt can be repaid when HF ≤ 1 + the token's bonus, or when the debt is worth $100 or less.
+- **Seize**: tokens worth at most the repaid value × (1 + the token's liquidation bonus). The bonus is at most 5%.
+- **Solvency guard**: while the margin is still solvent, the multiplier is capped at the health factor. A liquidation never takes more than the margin's equity, so it never turns a solvent account into bad debt.
+
+The liquidator sets `min_seized` as a slippage bound.
+
+## Phoenix positions
+
+A Phoenix position can't change hands. The liquidator closes it inside the same `public_liquidate`: reduce-only market orders priced within a band of the index price, then a withdrawal of the trader's collateral back to the margin. The band is tighter for higher-leverage markets.
+
+## Prices
+
+Debts need fresh prices. Collateral counts at its reported value, so stale dust can't block a liquidation. The two prices actually settled must be fresh and within confidence, but they don't need to sit inside the TWAP band, so a crash never blocks liquidation.
+
+## Write-off
+
+When a margin is left with $1 or less of collateral and still owes more, the admin can write off its debts. The pool's accrued protocol fees absorb the loss first, then lenders.
+
+## Known limits
+
+- Eligibility uses the spot price, so a short wick can trigger a liquidation. The close factor and the bonus cap bound the cost.
+- A debt whose price nobody can refresh would block liquidation, so only assets with crankable prices (Scope, Pyth) are borrowable.
+- A stock perp's index goes stale while its market is closed. Those markets carry lower leverage caps.

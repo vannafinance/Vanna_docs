@@ -1,0 +1,33 @@
+---
+title: "Margin Instructions"
+description: "Create, deposit, withdraw, reclaim rent, and close the margin account."
+mode: "wide"
+---
+
+Source: `instructions/account_manager/{account,collateral}.rs`.
+
+## `user_create_margin`
+
+Initialize `["margin", authority]`. One per wallet. Authority = signer.
+
+## `user_deposit_collateral(amount)`
+
+`init_if_needed` the margin vault (`ATA(mint, margin)`), then a measured transfer in. The asset must be a collateral-enabled token, not a venue.
+
+Any allowed token that reaches the vault counts, however it got there: deposit, borrow, swap, or a plain transfer.
+
+## `user_withdraw_collateral(amount, min_health_factor_wad)`
+
+Transfer from the margin vault to the wallet. If the margin has debt, the full-set health factor after the withdrawal must exceed 1.10 and `min_health_factor_wad`. A debt-free withdrawal reads no prices at all.
+
+## `user_reclaim_rent`
+
+Close an empty margin vault, a fully repaid `DebtPosition`, or both, and return the rent to the authority.
+
+## `user_close_margin`
+
+Requires no debts and no venues. Closes the margin PDA and returns its rent.
+
+## Limits
+
+Each margin holds at most `max_debts_per_margin` debts and `max_venues_per_margin` venues. Collateral tokens are bounded by the protocol's allowed-token list, so every health scan has a fixed upper cost.
