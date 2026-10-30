@@ -39,7 +39,7 @@
         {
           "anchor": "X / Twitter",
           "icon": "x-twitter",
-          "href": "https://x.com/vannafinance"
+          "href": "https://x.com/vannaprotocol"
         }
       ]
     },
@@ -498,7 +498,7 @@
   ],
   "footer": {
     "socials": {
-      "x": "https://x.com/vannafinance",
+      "x": "https://x.com/vannaprotocol",
       "github": "https://github.com/vannafinance",
       "discord": "https://discord.gg/vanna"
     }
